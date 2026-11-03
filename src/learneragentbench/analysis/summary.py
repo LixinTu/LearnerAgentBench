@@ -7,6 +7,8 @@ from collections import defaultdict
 from pathlib import Path
 from typing import Any
 
+from ..verify.base import NON_CAPABILITY_VERIFIERS
+
 
 def bootstrap_ci(values: list[float], *, n_boot: int = 2000, alpha: float = 0.05, seed: int = 0) -> tuple[float, float]:
     if not values:
@@ -50,6 +52,22 @@ def _sidecar(run_dir: Path) -> dict[str, Any]:
     return meta
 
 
+def capability_scores_of(verdict: dict[str, Any]) -> dict[str, float]:
+    """Per-capability score of a stored verdict, recomputed from its checks so that a run scored before a
+    change of definition reads the same as a new one. Falls back to the stored numbers if it has no checks."""
+    checks = verdict.get("checks") or []
+    if not checks:
+        return dict(verdict.get("capability_scores", {}))
+    earned: dict[str, float] = defaultdict(float)
+    total: dict[str, float] = defaultdict(float)
+    for c in checks:
+        if not c.get("capability") or c.get("passed") is None or c.get("verifier") in NON_CAPABILITY_VERIFIERS:
+            continue
+        total[c["capability"]] += float(c.get("weight", 1.0))
+        earned[c["capability"]] += float(c.get("weight", 1.0)) if c["passed"] else 0.0
+    return {k: round(earned[k] / w, 3) for k, w in total.items() if w}
+
+
 def summarize_runs(root: str | Path, *, group_by: str = "model,variant_id") -> str:
     verdicts = load_verdicts(root)
     if not verdicts:
@@ -77,7 +95,7 @@ def summarize_runs(root: str | Path, *, group_by: str = "model,variant_id") -> s
                      f"{no_calls:6d} {hard:5d} {viol:9d} {attr_s}")
     caps: dict[str, list[float]] = defaultdict(list)
     for v in verdicts:
-        for cap, val in v.get("capability_scores", {}).items():
+        for cap, val in capability_scores_of(v).items():
             caps[cap].append(val)
     if caps:
         lines.append("")

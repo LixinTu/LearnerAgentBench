@@ -37,6 +37,11 @@ def verifier(name: str) -> Callable[[Verifier], Verifier]:
     return deco
 
 
+# "The run ended with a message" says nothing about any capability, and counting it made a chatbot score 0.84 on
+# long_horizon_task_completion. It still counts toward the task's score and success.
+NON_CAPABILITY_VERIFIERS = frozenset({"trajectory.completed"})
+
+
 class VerifyContext:
     def __init__(self, *, world: World, initial_world: World | None, trajectory: Trajectory, task: TaskSpec,
                  variant: VariantSpec) -> None:
@@ -132,7 +137,7 @@ def assemble_verdict(ctx: VerifyContext, results: list[CheckResult]) -> Verdict:
     task_success = (not hard_failures and not unverified and score == max_score and t.status == "completed")
     cap_scores: dict[str, float] = {}
     for cap in Capability:
-        rs = [r for r in scored if r.capability == cap]
+        rs = [r for r in scored if r.capability == cap and r.verifier not in NON_CAPABILITY_VERIFIERS]
         if rs:
             cap_scores[cap.value] = round(sum(r.weight for r in rs if r.passed) / sum(r.weight for r in rs), 3)
     notes = []

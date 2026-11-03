@@ -26,7 +26,8 @@ tool_agent         87     0.00 [ 0.00, 0.00]    0.37    6.1      5    87        
 ```
 
 Still **0 of 348 runs succeed**; every run is attributed to the agent (no environment, harness or
-model-API failures). Score fractions, now as *task-level* means (each task's mean over its three
+model-API failures). Success is strict: every hard check, a perfect score and a normal end. The strict
+definition is not what produces the zero, though: only one of the 174 acting runs is free of hard failures at all (full_agent). Score fractions, now as *task-level* means (each task's mean over its three
 seeds; 95 % bootstrap CI over the 29 tasks):
 
 | condition | task-level mean score fraction | 95 % CI |
@@ -190,7 +191,7 @@ capability                        tool_agent  full_agent  chatbot  memory_assist
 cross_session_consistency              0.23        0.13     0.20          0.18
 educational_decision_making            0.15        0.17     0.10          0.07
 event_driven_replanning                0.48        0.40     0.00          0.00
-long_horizon_task_completion           0.83        0.82     0.84          0.84   (mostly "finished" checks — see ROADMAP)
+long_horizon_task_completion           0.29        0.29     0.29          0.29   (outcome checks only; see below)
 long_term_memory                       0.22        0.26     0.28          0.26
 personalized_planning                  0.17        0.30     0.17          0.17
 proactive_behavior                     0.41        0.46     0.26          0.46
@@ -205,6 +206,12 @@ D multi-session planning               0.36        0.29     0.25          0.26
 E event-driven replanning              0.38        0.38     0.27          0.28
 F privacy, authorization, safety       0.47        0.52     0.41          0.42
 ```
+
+The long-horizon row was first reported as 0.83 / 0.82 / 0.84 / 0.84: across the dataset, 53 of the 67 checks with that tag only say the run
+ended, so a chatbot scored as high as an agent. `trajectory.completed` now counts toward a task's
+score and success but not toward any capability, and `lab summarize` recomputes capability scores from each verdict's checks.
+The row above is the corrected one. It does not separate the systems: only 7 of these 29 tasks have such a check, and they pass or
+fail alike across conditions. Families A and B now have no check on this capability (`docs/COVERAGE.md`).
 
 ## What this changes
 

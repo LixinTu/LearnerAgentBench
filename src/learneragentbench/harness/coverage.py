@@ -7,6 +7,7 @@ from typing import Any
 
 from ..schema import Capability, CounterfactualCondition, TaskFamily
 from ..tasks import Dataset
+from ..verify.base import NON_CAPABILITY_VERIFIERS
 
 FAMILY_SHORT = {f: f.value.split("_", 1)[0] for f in TaskFamily}
 
@@ -18,8 +19,8 @@ def coverage_matrix(ds: Dataset) -> dict[str, Any]:
     personas_by_family: dict[str, set[str]] = defaultdict(set)
     for tid in ds.task_ids():
         t = ds.load_task(tid)
-        caps = {c.capability.value for c in t.checks if c.capability}
-        caps |= {c.capability.value for v in t.variants for c in v.checks_add if c.capability}
+        caps = {c.capability.value for c in t.checks if c.capability and c.verifier not in NON_CAPABILITY_VERIFIERS}
+        caps |= {c.capability.value for v in t.variants for c in v.checks_add if c.capability and c.verifier not in NON_CAPABILITY_VERIFIERS}
         conds = {v.condition.value for v in t.variants}
         tools = set(t.available_tools)
         events = {e.event_kind.value for e in t.event_timeline} | {e.event_kind.value for v in t.variants for e in v.patch.events_add}
