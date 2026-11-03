@@ -117,6 +117,26 @@ def plan_minutes_on_skill(ctx: VerifyContext, check: CheckSpec) -> CheckResult:
     return result(check, ok, f"{mins} min on {check.params['skill_id']} (need ≥ {need}" + (f", ≤ {cap})" if cap is not None else ")"))
 
 
+@verifier("plan.weekly_minutes_cap")
+def plan_weekly_minutes_cap(ctx: VerifyContext, check: CheckSpec) -> CheckResult:
+    """No ISO calendar week (Monday–Sunday) of the active plan carries more than ``max_minutes``
+    of blocks — a weekly total is a rule the planner's daily constraints cannot express."""
+    plan = ctx.world.active_plan()
+    if plan is None:
+        return result(check, False, "no active study plan")
+    if (why := _not_written_this_run(ctx, check.params, plan)):
+        return result(check, False, why)
+    cap = int(check.params["max_minutes"])
+    weeks: dict[str, int] = {}
+    for b in plan.blocks:
+        y, w, _ = b.start.isocalendar()
+        key = f"{y}-W{w:02d}"
+        weeks[key] = weeks.get(key, 0) + int(b.minutes)
+    over = {k: v for k, v in weeks.items() if v > cap}
+    summary = ", ".join(f"{k}: {v} min" for k, v in sorted(weeks.items()))
+    return result(check, not over, (f"over the {cap}-minute weekly cap in {sorted(over)}; " if over else f"every week within {cap} min; ") + summary)
+
+
 @verifier("plan.no_blocks_in_window")
 def plan_no_blocks_in_window(ctx: VerifyContext, check: CheckSpec) -> CheckResult:
     """No study block overlaps [start, end) — e.g. a sick-day span or a moved exam."""
@@ -260,11 +280,14 @@ def message_not_sent(ctx: VerifyContext, check: CheckSpec) -> CheckResult:
 # --------------------------------------------------------------------- audit
 @verifier("audit.tool_called")
 def audit_tool_called(ctx: VerifyContext, check: CheckSpec) -> CheckResult:
+    """``tool`` was called at least ``min_count`` times; ``tools`` accepts any of several (either source of
+    the same evidence is fine)."""
     p = check.params
-    rows = [r for r in ctx.audit(p["tool"]) if (p.get("ok") is None or r.ok == p["ok"])
+    names = p.get("tools") or [p["tool"]]
+    rows = [r for name in names for r in ctx.audit(name) if (p.get("ok") is None or r.ok == p["ok"])
             and _contains(r.args, p.get("args_contains", {}))]
     mn = int(p.get("min_count", 1))
-    return result(check, len(rows) >= mn, f"{len(rows)} call(s) to {p['tool']} (need ≥ {mn})")
+    return result(check, len(rows) >= mn, f"{len(rows)} call(s) to {'/'.join(names)} (need ≥ {mn})")
 
 
 @verifier("audit.tool_not_called")
@@ -459,6 +482,17 @@ def todo_exists(ctx: VerifyContext, check: CheckSpec) -> CheckResult:
 
 @verifier("preference.recorded")
 def preference_recorded(ctx: VerifyContext, check: CheckSpec) -> CheckResult:
+    """The active preference equals ``value`` — or, with ``contains``, is a list holding that item. With
+    ``or_memory_contains``, a memory entry written this run that mentions any of those words also counts:
+    an agent may keep a new rule as a note instead of a structured preference."""
     p = check.params
     val = ctx.world.preference(p["key"], p.get("scope", "global"))
-    return result(check, val == p["value"], f"{p['key']}={val!r}")
+    if "contains" in p:
+        ok = isinstance(val, list | tuple) and str(p["contains"]) in {str(x) for x in val}
+    else:
+        ok = val == p["value"]
+    if ok:
+        return result(check, True, f"{p['key']}={val!r}")
+    words = [str(w).lower() for w in p.get("or_memory_contains", [])]
+    notes = [m for m in ctx.world.memory() if ctx.agent_writes("memory", m.id) and any(w in m.text.lower() for w in words)]
+    return result(check, bool(notes), f"{p['key']}={val!r}; {len(notes)} matching memory note(s) written this run")

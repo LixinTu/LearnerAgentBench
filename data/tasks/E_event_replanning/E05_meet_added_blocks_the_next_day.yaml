@@ -180,3 +180,11 @@ negative_cases:
       - {type: tool_call, tool: update_study_plan, args: {plan_id: plan_exam2, rationale: "meet noted"}}
       - {type: final, message: "There's a meet Saturday; your plan is otherwise fine."}
     expect_fail_checks: [day_after_meet_cleared]
+  - id: clears_sunday_by_rote
+    description: the meet is on Friday, so the blocked day is Saturday; clears Sunday out of habit and studies on Saturday
+    variant: meet_on_a_study_free_day
+    actions:
+      - {type: tool_call, tool: get_preferences, args: {}}
+      - {type: tool_call, tool: update_study_plan, args: {rationale: "cleared Sunday after the meet", replace_blocks: [{start: "2026-11-03T06:00:00", end: "2026-11-03T06:50:00", skill_ids: [sampling], activity: practice}, {start: "2026-11-04T06:00:00", end: "2026-11-04T06:50:00", skill_ids: [conf_intervals], activity: practice}, {start: "2026-11-07T09:00:00", end: "2026-11-07T09:50:00", skill_ids: [sampling], activity: practice}, {start: "2026-11-07T10:00:00", end: "2026-11-07T10:50:00", skill_ids: [conf_intervals], activity: practice}, {start: "2026-11-10T19:00:00", end: "2026-11-10T20:00:00", skill_ids: [sampling, conf_intervals], activity: mock_exam}]}}
+      - {type: final, message: "Cleared Sunday since it's the day after the meet weekend."}
+    expect_fail_checks: [saturday_cleared]

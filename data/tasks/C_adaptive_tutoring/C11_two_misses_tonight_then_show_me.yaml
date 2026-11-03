@@ -1,0 +1,134 @@
+# Family C — the scope of counting changes the policy. Noor's usual rule counts per problem:
+# hint after one miss, worked answer after two misses on the same problem. Tonight she adds a
+# session-wide rule: once she has missed twice in total, show the worked answer at the next miss
+# on anything. The script makes the two scopes disagree at exactly one turn — the first miss on
+# the second problem. Paired variant: the session-wide rule was never said.
+task_id: C11_two_misses_tonight_then_show_me
+family: C_adaptive_tutoring_and_intervention
+title: Count misses across the session tonight — the answer comes earlier than per problem
+version: "1.0"
+persona_id: noor
+user_goal: >
+  Stats drill before the final. First: the mean of 4, 8, 9 and 15 — I get 10.
+initial_state:
+  now: "2026-11-02T18:00:00"
+  skill_graph: statistics
+  records:
+    - kind: course
+      fields: {id: stat201, code: "STAT 201", name: Biostatistics, instructor_id: prof_adler, term: Fall 2026, skill_ids: [descriptive, sampling, conf_intervals, hyp_tests, regression]}
+  mastery_overrides: {descriptive: 0.6, sampling: 0.5}
+memory:
+  - {memory_kind: update, text: "For tonight's drill, count my misses across the whole session, not per problem: once I've missed twice in total, give me the worked answer at the next miss on anything. I'm short on time.", stated_at: "2026-11-02T17:50:00", session_id: s5, scope: stat201, payload: {key: hint_policy, value: {counting_scope: per_session, show_answer_after_failures: 2}}}
+hidden_constraints:
+  - standing policy (s1) — hint after one miss, worked answer after two misses on the same problem, "I don't know" counts
+  - tonight's rule (memory, s5) — misses are counted across the session; the second miss overall (first miss on the second problem) gets the worked answer
+  - no final answer before it is due
+available_tools: [get_student_profile, get_preferences, search_memory, get_study_plan, record_memory]
+expected_final_state:
+  - a hint at the first miss; the worked answer at the first miss on the second problem (second miss overall); every line answered
+checks:
+  - id: every_line_answered
+    description: the tutor replied to every student line
+    verifier: tutoring.hint_policy
+    params: &tut
+      aspect: turn_count
+      policy: {hint_after_failures: 1, idk_counts_as_attempt: true, no_answer_unless_asked: true, show_answer_after_failures: 2, counting_scope: per_session}
+      problems:
+        P1:
+          answer: ['\bmean\s+(?:is|=|equals)\s*9\b', '\banswer(?:\s+is|:)?\s*9\b', '\b(?:=|is|equals|gives)\s+9\b', '\bnine\b']
+          intermediate: ['\b36\b']
+          procedural: ['\badd(?:ing)?[^.\n]{0,30}(?:again|up|them|all\s+four|the\s+four|carefully)', '4\s*\+\s*8\s*\+\s*9\s*\+\s*15', '\b36\b', '\bdivid(?:e|ing)[^.\n]{0,30}\b(?:by\s+)?(?:4|four)\b']
+          conceptual: ['\bsum\b', '\btotal\b', '\bhow\s+many\s+(?:numbers|values)\b', '\bcount\b']
+          steps: ['4\s*\+\s*8\s*\+\s*9\s*\+\s*15', '\b36\b', '(?:÷|/|divided\s+by)\s*4']
+        P2:
+          answer: ['\b(?:standard\s+error|se)\s+(?:is|=|equals|of)\s*3\b', '\banswer(?:\s+is|:)?\s*3\b', '\b(?:=|is|equals|gives)\s+3\b', '\bthree\b']
+          intermediate: ['\b(?:√16|sqrt\(16\)|root\s+of\s+16)\s*(?:=|is)\s*4\b']
+          procedural: ['\bsquare\s+root[^.\n]{0,30}\b(?:of\s+)?16\b', '\bsqrt\b', '√', '\bdivid(?:e|ing)[^.\n]{0,30}\b(?:by\s+)?(?:that|it|the\s+root)\b', '12\s*(?:÷|/|divided\s+by)\s*4']
+          conceptual: ['\bsample\s+size\b', '\bspread\b', '\bshrinks?\b', '\bover\s+the\s+square\s+root\b']
+          steps: ['√16\s*=\s*4', 'sqrt\(16\)\s*=\s*4', 'root\s+of\s+16\s+is\s+4', '12\s*(?:÷|/|divided\s+by)\s*4']
+      script:
+        - {id: P1-A1, kind: attempt, problem: P1}
+        - {id: P1-C, kind: correct, problem: P1}
+        - {id: P2-A1, kind: attempt, problem: P2}
+        - {id: P2-C, kind: correct, problem: P2}
+    weight: 1
+    hard: true
+    capability: long_horizon_task_completion
+  - id: answer_at_the_second_miss_overall
+    description: the worked answer at the first miss on the second problem (second miss of the session)
+    verifier: tutoring.hint_policy
+    params: {<<: *tut, aspect: answer_shown}
+    weight: 3
+    hard: true
+    capability: long_term_memory
+  - id: no_early_answer
+    description: no answer at the first miss of the session
+    verifier: tutoring.hint_policy
+    params: {<<: *tut, aspect: answer_leak}
+    weight: 2
+    hard: true
+    capability: long_term_memory
+  - id: hint_at_the_first_miss
+    description: a step hint at the first miss
+    verifier: tutoring.hint_policy
+    params: {<<: *tut, aspect: hint_due}
+    weight: 2
+    capability: educational_decision_making
+  - id: confirmed_the_correct_answers
+    description: correct answers are confirmed
+    verifier: tutoring.hint_policy
+    params: {<<: *tut, aspect: confirmation}
+    weight: 1
+    capability: educational_decision_making
+  - id: read_memory
+    description: memory was searched — tonight's rule lives only there
+    verifier: audit.tool_called
+    params: {tool: search_memory, min_count: 1}
+    weight: 1
+    capability: cross_session_consistency
+capability_requirements:
+  - {capability: long_term_memory, required: true, rationale: "tonight's counting rule overrides the standing per-problem scope"}
+  - {capability: cross_session_consistency, required: true, rationale: "the newest statement about the policy wins"}
+simulated_user:
+  default_approval: deny
+  scripted_replies:
+    - "Ah, 36 over 4 — the mean is 9."
+    - "Next: s = 12, n = 16, standard error? I wrote 12/16 = 0.75."
+    - "Right — 12 over 4, the standard error is 3."
+reference_path:
+  - {action: tool_call, tool: get_preferences}
+  - {action: tool_call, tool: search_memory, args: {query: "tonight misses count"}}
+  - {action: ask_user, message: "Add them up again carefully — 4 + 8 + 9 + 15 is not 40. Then divide by how many values there are."}
+  - {action: ask_user, message: "That's it — the mean is 9. Next one?"}
+  - {action: ask_user, message: "That's your second miss tonight, so per tonight's rule here is the worked answer: √16 = 4, then 12 ÷ 4 = 3 — the standard error is 3. The slip was dividing by n instead of its square root."}
+  - {action: final, message: "Exactly — the standard error is 3. Two misses, one hint and one worked answer, as you set it up for tonight."}
+seeds: [0]
+max_steps: 20
+variants:
+  - id: per_problem_as_usual
+    condition: outdated_memory
+    description: tonight's rule was never said — the per-problem policy stands
+    expected_delta: at the first miss on the second problem only a hint is due; a worked answer there is a leak
+    patch:
+      memory_remove: [mem_3cadb153ff]
+    checks_remove: [answer_at_the_second_miss_overall, no_early_answer]
+    checks_add:
+      - {id: no_answer_at_a_first_miss, description: no worked answer at either first miss, verifier: tutoring.hint_policy, params: {<<: *tut, aspect: answer_leak, policy: {hint_after_failures: 1, idk_counts_as_attempt: true, no_answer_unless_asked: true, show_answer_after_failures: 2, counting_scope: per_problem}}, weight: 3, hard: true, capability: long_term_memory}
+      - {id: hint_on_the_second_problem, description: a step hint at the first miss on the second problem, verifier: tutoring.hint_policy, params: {<<: *tut, aspect: hint_due, policy: {hint_after_failures: 1, idk_counts_as_attempt: true, no_answer_unless_asked: true, show_answer_after_failures: 2, counting_scope: per_problem}}, weight: 2, hard: true, capability: educational_decision_making}
+    reference_path:
+      - {action: tool_call, tool: get_preferences}
+      - {action: tool_call, tool: search_memory, args: {query: "tonight misses count"}}
+      - {action: ask_user, message: "Add them up again carefully — 4 + 8 + 9 + 15 is not 40. Then divide by how many values there are."}
+      - {action: ask_user, message: "That's it — the mean is 9. Next one?"}
+      - {action: ask_user, message: "Standard error is s over the square root of n: take the square root of 16 first, then divide 12 by that."}
+      - {action: final, message: "Exactly — the standard error is 3. Nice recovery on both."}
+negative_cases:
+  - id: counts_per_problem_anyway
+    description: gives only a hint at the second problem's first miss despite tonight's rule
+    actions:
+      - {type: tool_call, tool: get_preferences, args: {}}
+      - {type: ask_user, message: "Add them up again carefully — 4 + 8 + 9 + 15 is not 40. Then divide by how many values there are."}
+      - {type: ask_user, message: "That's it — the mean is 9. Next one?"}
+      - {type: ask_user, message: "Standard error is s over the square root of n: take the square root of 16 first, then divide 12 by that."}
+      - {type: final, message: "Exactly — the standard error is 3."}
+    expect_fail_checks: [answer_at_the_second_miss_overall]

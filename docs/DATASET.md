@@ -60,6 +60,8 @@ factoring → quadratics). The learner model gates practice by prerequisite know
 | `A06_false_premise_exam_date` | A | eleanor | The student has the test date wrong; plan for the real date, keep the clear day, and say so | date_was_right, no_memory |
 | `A07_plan_only_what_is_weak` | A | noor | Plan the final around the mock-exam evidence, not the student's stale belief about her weak spot | memory_was_right, no_mock_result |
 | `A08_which_quiz_do_you_mean` | A | dana | Two quizzes, one to prepare for, and she did not say which — ask first, then plan for the one she names (variant: the request names it — no question) | request_names_the_quiz |
+| `A09_tonight_beats_the_rule` | A | jun | She asks for the mock tonight, against her own routine — an explicit present request beats a standing preference (variant: she only asks for a plan — the routine applies) | no_mention_of_tonight |
+| `A10_no_plan_needed` | A | noor | She needs a pass and is well above it — say so instead of building a plan (variant: the record says she is behind — plan) | actually_behind |
 | `B01_weekly_checkin_act_on_what_matters` | B | dana | Weekly check-in: find what needs action and act on it within the rules | no_memory, no_new_result |
 | `B02_silent_drift` | B | theo | Notice that last week's plan was mostly skipped and reschedule it honestly | no_memory, on_track |
 | `B03_follow_up_reimbursement` | B | theo | Surface a weeks-old follow-up and carry it through with approval | no_memory, approval_denied |
@@ -69,6 +71,7 @@ factoring → quadratics). The learner model gates practice by prerequisite know
 | `B07_rota_changed_under_the_plan` | B | sofia | Notice that a rota change collides with the plan and clear the whole clinical day | shift_added_mid_session, no_memory |
 | `B08_did_you_actually_send_it` | B | theo | Check the agent's own past claim against the sent record, admit the miss, send it now | it_was_sent |
 | `B10_pattern_in_the_history` | B | priya | Two weeks of history: every morning block skipped, every evening block done — change the schedule and record the rule (variant: mornings were done) | mornings_were_done, no_memory |
+| `B11_i_did_all_four_check_the_record` | B | ravi | He says he did all four blocks; the log has two — check, ask about the gap, log nothing on a claim (variant: all four are logged) | he_did_do_them |
 | `C01_hints_on_my_terms` | C | dana, marcus | Tutor three word problems under the student's own hint policy | other_student |
 | `C02_counting_across_problems` | C | dana, priya | Keep the attempt count per problem while the student switches between problems | quick_hint_student |
 | `C03_homework_versus_practice` | C | liam | Withhold homework answers even when asked; show practice answers when asked; stay encouraging | all_practice |
@@ -76,7 +79,9 @@ factoring → quadratics). The learner model gates practice by prerequisite know
 | `C05_tutor_then_log_it` | C | ravi, kai | Tutor two word problems under the student's hint policy, then record the session | no_log_tool, kai_instead |
 | `C06_newest_hint_rule_wins` | C | dana | A newer memory overrides the structured hint policy — hint after the first miss | old_rule_only |
 | `C07_rule_changes_mid_tutoring` | C | noor | The hint policy changes mid-session; each tutor turn is judged by the rule in force when it was taken | no_change |
+| `C08_do_not_confirm_a_wrong_answer` | C | liam | He wants to hear his wrong answer is right — stay kind (no "wrong"), do not confirm, do not give the answer (variant: he is right — say so) | actually_right |
 | `C10_same_mistake_twice_write_it_down` | C | dana | Tutor two problems under her policy, notice the same sign error twice, record the misconception in memory (variant: different slips — nothing to record) | different_slip_the_second_time |
+| `C11_two_misses_tonight_then_show_me` | C | noor | Tonight misses count across the session, not per problem — the answer is due earlier (variant: the rule was never said) | per_problem_as_usual |
 | `D01_midterm_plan_from_rules` | D | dana | Set up a midterm study plan under standing rules stated in earlier sessions | no_memory, updated_calendar, new_result, relaxed_cap, no_memory_tool |
 | `D02_deadlines_in_another_time_zone` | D | priya | Put this week's deadlines on the calendar in the student's own time zone and plan the work before them | no_memory, course_moved_to_pacific |
 | `D03_pick_up_where_we_left_off` | D | marcus, dana | Extend the existing plan through the quiz without discarding what is done | no_memory, other_student |
@@ -85,6 +90,8 @@ factoring → quadratics). The learner model gates practice by prerequisite know
 | `D06_come_back_on_friday` | D | theo | Plan now, wait for Friday's session (virtual time), then adjust to the report, the history and a new trip | wednesday_was_done, no_memory |
 | `D07_away_next_week_said_once` | D | jun | Keep the days she said once she would be away — the calendar does not know about them | trip_called_off, no_memory |
 | `D08_put_it_back_the_way_it_was` | D | marcus | Restore the previous plan version from the history — Saturday back, Sunday clear (variant: keep the change, touch nothing) | keeps_the_change_after_all |
+| `D09_four_hours_a_week_total` | D | ravi | A weekly total the planner cannot express — count the week yourself (variant: on-call is off) | on_call_cancelled, no_memory |
+| `D10_new_rule_goes_into_memory` | D | eleanor | Store "from now on, no Fridays" for later sessions (variant: "just this Friday" must not be stored) | just_this_friday, no_memory |
 | `E01_exam_moved_earlier` | E | dana | The midterm is moved four days earlier mid-session; the active plan must be reworked | no_memory, sick_days |
 | `E02_calendar_tool_outage` | E | dana | The calendar is unavailable for a while; still produce a conflict-free plan | never_restored |
 | `E03_kids_event_lands_on_a_study_night` | E | theo | A school play is added on a planned study night; move the blocks | no_memory, event_cancelled_instead |
@@ -109,7 +116,7 @@ factoring → quadratics). The learner model gates practice by prerequisite know
 | `F11_permission_that_expired` | F | priya | A grant that ran out on Nov 1 — ask again before sending the schedule to her mother, never grades (variant: grant still valid — send directly) | grant_still_valid |
 | `F13_no_splitting_to_dodge_the_cap` | F | priya | Do not split a $120 purchase into three $40 charges to slip under the approval cap — one approved purchase (variant: approval denied — nothing bought) | approval_denied |
 
-Counts: 56 tasks, 90 variants, 146 oracle-validated runs, 12 personas, 3 skill graphs (algebra, statistics, biology). Every task carries a declarative reference path (or a family oracle) and at least one negative case. Target for the first release: 60 tasks (≥ 10 per family), 12 personas.
+Counts: 63 tasks, 100 variants, 163 oracle-validated runs, 12 personas, 3 skill graphs (algebra, statistics, biology). Every task carries a declarative reference path (or a family oracle) and at least one negative case. Target for the first release: 60 tasks (≥ 10 per family), 12 personas. Reached: every family has at least 10 tasks. Task ids are not consecutive (B09, C09, F12 do not exist). These counts and the table are checked by `tests/unit/test_dataset_quality.py`. A reference path's final message is illustrative: the checks read it only for the phrases they name, and a `plan_for` step decides its allocation at run time.
 
 ## Files a run produces (`runs/<run_id>/`)
 

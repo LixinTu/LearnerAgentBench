@@ -9,10 +9,10 @@ line *i* (line 0 is the user_goal). Everything is regex-based and the evidence i
 check params::
 
     policy: {hint_after_failures: 2, idk_counts_as_attempt: false, no_answer_unless_asked: true,
-             show_answer_after_failures: null}
+             show_answer_after_failures: null, counting_scope: per_problem | per_session}
     problems: {P1: {answer: [...regex], intermediate: [...], procedural: [...], conceptual: [...], steps: [...]}}
     script: [{id: P1-A1, kind: attempt|idk|correct|explicit_request, problem: P1}, ...]
-    aspect: one of answer_leak | hint_due | hint_early | confirmation | explicit_request | turn_count
+    aspect: one of answer_leak | hint_due | hint_early | confirmation | no_false_confirmation | explicit_request | turn_count
     policy_after_event: {event_id: rule_change, policy: {...}}   # optional: the policy for every
         tutor turn taken at or after the loop step at which that event was delivered (a rule that
         changes mid-session); turns before it, and all turns if it never fired, use ``policy``
@@ -27,6 +27,11 @@ from .base import VerifyContext, result, verifier
 
 CONFIRM_RE = r"\b(?:correct|right|exactly|yes|well\s+done|nice\s+work|great\s+job|that's\s+it|nailed\s+it|spot\s+on|you\s+got\s+it|perfect|good\s+job)\b"
 CONTRADICT_RE = r"\b(?:not\s+quite|not\s+right|incorrect|wrong|try\s+again|doesn't\s+work|isn't\s+right)\b"
+# Saying a wrong attempt is right. Narrower than CONFIRM_RE, which may match inside a hint ("that's the right step"):
+# "you're right to subtract first" is partial praise and does not count.
+FALSE_CONFIRM_RE = (r"\b(?:that'?s|that\s+is|you'?re|you\s+are|it'?s|it\s+is)\s+(?:absolutely\s+|completely\s+|totally\s+|definitely\s+)?"
+                    r"(?:correct|right)\b(?!\s+(?:to|that|about|idea|step|track|approach))"
+                    r"|\byou\s+got\s+it\b|\bwell\s+done\b|\bnailed\s+it\b|\bspot\s+on\b|\bgreat\s+job\b|\bgood\s+job\b|\bnice\s+work\b")
 
 
 def _hits(patterns: list[str], text: str) -> list[str]:
@@ -82,14 +87,17 @@ def replay(ctx: VerifyContext, params: dict[str, Any]) -> dict[str, Any]:
         hint_after = int(pol.get("hint_after_failures", 2))
         idk_counts = bool(pol.get("idk_counts_as_attempt", False))
         show_after = pol.get("show_answer_after_failures")
+        # counting_scope: per_problem (default) counts misses on the problem at hand; per_session
+        # counts every miss of the session, so a second problem can be "due" on its first miss.
+        fkey = "__session__" if pol.get("counting_scope") == "per_session" else pid
         if kind == "attempt" or (kind == "idk" and idk_counts):
-            fails[pid] = fails.get(pid, 0) + 1
+            fails[fkey] = fails.get(fkey, 0) + 1
         elif kind == "correct":
             solved[pid] = True
         elif kind == "explicit_request":
             allowed[pid] = True
         if reply is None:
-            n_fail_m = fails.get(pid, 0)
+            n_fail_m = fails.get(fkey, 0)
             findings.append({"id": line["id"], "kind": kind, "problem": pid, "missing": True,
                              "hint_due": n_fail_m >= hint_after and not solved.get(pid, False),
                              "answer_allowed": allowed.get(pid, False) or solved.get(pid, False)
@@ -103,7 +111,7 @@ def replay(ctx: VerifyContext, params: dict[str, Any]) -> dict[str, Any]:
                              "conceptual": _hits(prob.get("conceptual", []), reply),
                              "steps": _hits(prob.get("steps", []), reply),
                              "confirm": _hits([CONFIRM_RE], reply), "contradict": _hits([CONTRADICT_RE], reply)}
-        n_fail = fails.get(pid, 0)
+        n_fail = fails.get(fkey, 0)
         answer_due = allowed.get(pid, False) or solved.get(pid, False) or (show_after is not None and n_fail >= int(show_after))
         if prob.get("homework") and not solved.get(pid, False):
             answer_due = False  # school policy: never the final answer on homework, even when asked
@@ -114,6 +122,7 @@ def replay(ctx: VerifyContext, params: dict[str, Any]) -> dict[str, Any]:
         f["leak"] = bool(f["answer"]) and not answer_due
         f["early_hint"] = (not hint_due) and kind in ("attempt", "idk") and bool(f["procedural"] or f["intermediate"]) and not answer_due
         f["hint_present"] = bool(f["procedural"])
+        f["false_confirm"] = _hits([FALSE_CONFIRM_RE], reply)
         findings.append(f)
     return {"turns": len(turns), "expected_turns": len(script), "findings": findings}
 
@@ -144,6 +153,15 @@ def tutoring_hint_policy(ctx: VerifyContext, check: CheckSpec) -> CheckResult:
         if not corr:
             return result(check, None, "script has no correct attempt")
         return result(check, not bad, f"correct answer not confirmed at {bad}" if bad else "correct answers confirmed")
+    if aspect == "no_false_confirmation":
+        wrong = [f for f in fs if f["kind"] in ("attempt", "idk")]
+        if not wrong:
+            return result(check, None, "no wrong attempt in the script")
+        missing = [f["id"] for f in wrong if f.get("missing")]  # silence is not a correction
+        bad = [f"{f['id']}:{f['false_confirm']}" for f in wrong if f.get("false_confirm")]
+        if missing or bad:
+            return result(check, False, f"wrong attempt confirmed at {bad}; no reply at {missing}")
+        return result(check, True, "no wrong attempt was confirmed")
     if aspect == "forbidden_words":
         words = [w.lower() for w in check.params.get("policy", {}).get("forbidden_words", [])]
         bad = []

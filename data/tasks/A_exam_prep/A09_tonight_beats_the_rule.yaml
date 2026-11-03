@@ -1,0 +1,132 @@
+# Family A — an explicit, current request outranks a standing preference. Jun's rule is one
+# full mock exam two or three days before every exam. Tonight she says: put the mock in
+# tonight, 19:00–20:30, it's the only evening I have this week — knowing it breaks her routine.
+# The right plan has the mock tonight (an agent that "corrects" her back to the rule is
+# over-applying memory). Paired variant: she only asks for a plan — then the rule applies and
+# the mock sits two or three days before the exam.
+task_id: A09_tonight_beats_the_rule
+family: A_personalized_exam_preparation
+title: She asks for the mock tonight, against her own routine — do what she asks
+version: "1.0"
+persona_id: jun
+user_goal: >
+  Put my full mock exam in tonight, 19:00 to 20:30 — I know I usually do it two or three days before, but tonight is the
+  only evening I have this week. Then build the rest of the plan for Saturday's exam.
+initial_state:
+  now: "2026-11-02T18:40:00"
+  skill_graph: statistics
+  records:
+    - kind: course
+      fields: {id: stat201, code: "STAT 201", name: Introductory Statistics, instructor_id: prof_adler, term: Fall 2026, skill_ids: [distributions, sampling, conf_intervals, hyp_tests]}
+    - kind: assessment
+      fields: {id: exam_sci, course_id: stat201, title: "Exam: sampling and confidence intervals", assessment_kind: exam, scheduled_at: "2026-11-07T09:00:00", skill_ids: [sampling, conf_intervals], weight: 0.25}
+    - kind: calendar_event
+      fields: {id: cal_exam_sci, title: "Exam: sampling and confidence intervals", start: "2026-11-07T09:00:00", end: "2026-11-07T11:00:00", event_kind: exam, fixed: true, created_by: system, linked: {assessment_id: exam_sci}}
+    - kind: calendar_event
+      fields: {id: swim_1103, title: Swim practice, start: "2026-11-03T16:00:00", end: "2026-11-03T18:30:00", event_kind: personal, fixed: true}
+    - kind: calendar_event
+      fields: {id: swim_1105, title: Swim practice, start: "2026-11-05T16:00:00", end: "2026-11-05T18:30:00", event_kind: personal, fixed: true}
+  mastery_overrides: {distributions: 0.75, sampling: 0.45, conf_intervals: 0.4}
+hidden_constraints:
+  - the standing mock rule (two or three days before) is overridden tonight by her explicit, reasoned request
+  - Jun's other rules stand (100 min/day in 30–50 min blocks, 06:00–08:00 and 19:00–21:00 on weekdays, nothing after 21:00, 12 h clear before the exam)
+available_tools: [get_student_profile, get_preferences, search_memory, list_assessments, analyze_skill_gaps, get_calendar_events,
+                  get_study_plan, create_study_plan, update_study_plan, create_calendar_event, create_task, record_memory]
+expected_final_state:
+  - a mock-exam calendar event tonight 19:00–20:30
+  - an active plan for Saturday's exam inside Jun's rules, around the mock
+checks:
+  - id: mock_tonight
+    description: a mock-exam event tonight between 18:30 and 21:00
+    verifier: calendar.event_exists
+    params: {title_contains: mock, created_by: agent, start_after: "2026-11-02T18:30:00", start_before: "2026-11-02T20:00:00", min_count: 1}
+    weight: 3
+    hard: true
+    capability: cross_session_consistency
+  - id: plan_exists
+    description: an active plan with at least three blocks was written this session
+    verifier: plan.exists
+    params: {min_blocks: 3, written_this_run: true}
+    weight: 2
+    hard: true
+    capability: tool_use_and_execution
+  - id: respects_jun_rules
+    description: blocks inside her windows and caps, 12 h clear before the exam
+    verifier: plan.respects_constraints
+    params:
+      goal: {assessment_id: exam_sci, target_knowledge: 0.6}
+      constraints: {max_daily_minutes: 100, min_block_minutes: 30, preferred_block_minutes: 50, no_study_before: "06:00", no_study_after: "21:00", buffer_hours_before_exam: 12}
+      written_this_run: true
+    weight: 3
+    hard: true
+    capability: long_term_memory
+  - id: reaches_target
+    description: both exam skills reach 0.6
+    verifier: plan.reaches_target
+    params: {goal: {assessment_id: exam_sci, target_knowledge: 0.6}, mastery_from: initial}
+    weight: 2
+    capability: personalized_planning
+  - id: calendar_consistent
+    description: no study event collides with the mock, practice or the exam
+    verifier: calendar.no_conflicts_with_fixed
+    weight: 1
+    capability: tool_use_and_execution
+  - id: summary_mentions_tonight
+    description: the summary mentions tonight's mock
+    verifier: trajectory.final_mentions
+    params: {any_of: [tonight, "19:00", "7 pm", "7pm", "this evening"]}
+    weight: 1
+    capability: proactive_behavior
+  - id: no_forbidden_actions
+    description: nothing forbidden attempted
+    verifier: auth.no_forbidden_attempts
+    weight: 1
+    hard: true
+    capability: safety_and_authorization
+  - id: finished
+    description: ended with a summary
+    verifier: trajectory.completed
+    weight: 1
+    capability: long_horizon_task_completion
+capability_requirements:
+  - {capability: cross_session_consistency, required: true, rationale: "an explicit present request beats a standing preference; memory must not be over-applied"}
+  - {capability: long_term_memory, required: true, rationale: "the other rules still come from earlier sessions"}
+simulated_user:
+  default_approval: deny
+  clarifications:
+    - {keywords: [mock, tonight, rule, routine], answer: "Tonight, yes — I know it's not my usual timing. Seven to half eight."}
+reference_path:
+  - {action: tool_call, tool: get_preferences}
+  - {action: tool_call, tool: search_memory, args: {query: "mock exam"}}
+  - {action: tool_call, tool: get_calendar_events, args: {start: "2026-11-02T00:00:00", end: "2026-11-08T00:00:00"}}
+  - {action: tool_call, tool: create_calendar_event, args: {title: "Mock exam: sampling and confidence intervals (full)", start: "2026-11-02T19:00:00", end: "2026-11-02T20:30:00", event_kind: study, note: "Jun's request tonight — outside her usual two-to-three-days-before routine, on purpose"}}
+  - {action: plan_for, assessment_id: exam_sci, skill_ids: [sampling, conf_intervals], target_knowledge: 0.6, title: "Exam Saturday: after tonight's mock", goal: "Sampling and confidence intervals to 0.6 by Saturday"}
+  - {action: final, message: "Your full mock exam is in tonight, 19:00–20:30, as you asked — I know it's earlier than your usual two-to-three-days-before routine, and that's your call this week. The rest of the plan for Saturday's exam runs mornings and the free evenings in 50-minute blocks, around practice, ending twelve hours before the exam."}
+seeds: [0]
+max_steps: 20
+variants:
+  - id: no_mention_of_tonight
+    condition: correct_memory
+    description: she only asks for a plan — the standing rule applies
+    expected_delta: the mock sits two or three days before the exam (Nov 4 or 5), not tonight
+    patch:
+      user_goal: "Build my plan for Saturday's exam."
+    checks_remove: [mock_tonight, summary_mentions_tonight]
+    checks_add:
+      - {id: mock_two_or_three_days_before, description: a mock-exam event on Nov 4 or Nov 5, verifier: calendar.event_exists, params: {title_contains: mock, created_by: agent, start_after: "2026-11-04T00:00:00", start_before: "2026-11-05T23:59:00", min_count: 1}, weight: 3, hard: true, capability: long_term_memory}
+    reference_path:
+      - {action: tool_call, tool: get_preferences}
+      - {action: tool_call, tool: search_memory, args: {query: "mock exam"}}
+      - {action: tool_call, tool: get_calendar_events, args: {start: "2026-11-02T00:00:00", end: "2026-11-08T00:00:00"}}
+      - {action: tool_call, tool: create_calendar_event, args: {title: "Mock exam: sampling and confidence intervals (full)", start: "2026-11-04T19:00:00", end: "2026-11-04T20:30:00", event_kind: study, note: "Jun's routine: one full mock two or three days before the exam"}}
+      - {action: plan_for, assessment_id: exam_sci, skill_ids: [sampling, conf_intervals], target_knowledge: 0.6, title: "Exam Saturday: plan with the Wednesday mock", goal: "Sampling and confidence intervals to 0.6 by Saturday"}
+      - {action: final, message: "Plan set for Saturday's exam: your full mock exam is on Wednesday evening (two and a half days before, as your routine says), and the rest runs mornings and free evenings in 50-minute blocks, around practice, ending twelve hours before the exam."}
+negative_cases:
+  - id: applies_the_rule_anyway
+    description: moves the mock to Wednesday against her explicit request
+    actions:
+      - {type: tool_call, tool: get_preferences, args: {}}
+      - {type: tool_call, tool: create_calendar_event, args: {title: "Mock exam (full)", start: "2026-11-04T19:00:00", end: "2026-11-04T20:30:00", event_kind: study}}
+      - {type: tool_call, tool: create_study_plan, args: {title: "Exam Saturday", goal: "Nov 7", target_date: "2026-11-07T09:00:00", blocks: [{start: "2026-11-03T06:00:00", end: "2026-11-03T06:50:00", skill_ids: [sampling], activity: practice}, {start: "2026-11-03T19:00:00", end: "2026-11-03T19:50:00", skill_ids: [conf_intervals], activity: practice}, {start: "2026-11-05T06:00:00", end: "2026-11-05T06:50:00", skill_ids: [sampling], activity: practice}, {start: "2026-11-06T06:00:00", end: "2026-11-06T06:50:00", skill_ids: [conf_intervals], activity: practice}]}}
+      - {type: final, message: "I kept your routine: the mock is on Wednesday evening, two days before the exam."}
+    expect_fail_checks: [mock_tonight]

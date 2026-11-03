@@ -8,7 +8,7 @@ experiments/<name>.yaml::
     adapter: openai_compatible
     adapter_params: {base_url: http://127.0.0.1:11434/v1, max_tokens: 900}
     tasks: [all]            # or a list of task ids; or families: [D_multi_session_study_planning]
-    variants: [base]        # or [all]
+    variants: [base]        # or [all]; with `exclude_base: true`, every variant except the base rows
     seeds: [0]
     max_steps: 25
     conditions:             # each condition overrides RunConfig fields; the condition name is recorded;
@@ -21,6 +21,8 @@ experiments/<name>.yaml::
 from __future__ import annotations
 
 import json
+import subprocess
+import urllib.request
 from datetime import datetime
 from pathlib import Path
 from typing import Any
@@ -56,6 +58,8 @@ def plan_runs(exp: dict[str, Any], ds: Dataset) -> list[dict[str, Any]]:
         for tid in task_ids:
             t = ds.load_task(tid)
             vids = ["base", *[v.id for v in t.variants]] if wanted in (["all"], "all") else list(wanted)
+            if exp.get("exclude_base"):
+                vids = [v for v in vids if v != "base"]
             for vid in vids:
                 if vid != "base" and t.variant(vid) is None:
                     continue
@@ -67,6 +71,36 @@ def plan_runs(exp: dict[str, Any], ds: Dataset) -> list[dict[str, Any]]:
 def run_id_for(exp_name: str, r: dict[str, Any], model: str) -> str:
     m = model.replace("/", "_").replace(":", "-")
     return f"{exp_name}__{r['condition']}__{r['task_id']}__{r['variant_id']}__s{r['seed']}__{m}"
+
+
+def _git(*args: str) -> str | None:
+    try:
+        out = subprocess.run(["git", *args], capture_output=True, text=True, timeout=10, check=True)
+    except (OSError, subprocess.SubprocessError):
+        return None
+    return out.stdout.strip()
+
+
+def _ollama_digest(base_url: str | None, model: str) -> str | None:
+    """The model's content digest from an Ollama server, so "the same tag" can be told from "the same
+    weights". Best effort: any other server (or none) leaves it unknown and the sweep goes on."""
+    if not base_url:
+        return None
+    root = base_url.rstrip("/").removesuffix("/v1")
+    try:
+        with urllib.request.urlopen(f"{root}/api/tags", timeout=5) as resp:
+            tags = json.loads(resp.read().decode("utf-8"))
+    except (OSError, ValueError):
+        return None
+    return next((m.get("digest") for m in tags.get("models", []) if m.get("name") == model), None)
+
+
+def provenance(exp: dict[str, Any]) -> dict[str, Any]:
+    """What this invocation of the sweep ran with. A resumed sweep appends a second entry, so a run set
+    produced across a code change shows it."""
+    return {"started_at": datetime.now().isoformat(), "git_commit": _git("rev-parse", "HEAD"),
+            "git_dirty": bool(_git("status", "--porcelain")), "model": exp["model"],
+            "model_digest": _ollama_digest(exp.get("adapter_params", {}).get("base_url"), exp["model"])}
 
 
 def run_sweep(path: str | Path, *, out_root: str | Path, data_dir: str | None = None, dry_run: bool = False,
@@ -81,6 +115,8 @@ def run_sweep(path: str | Path, *, out_root: str | Path, data_dir: str | None = 
     manifest["experiment"] = exp
     manifest["planned"] = len(runs)
     manifest["updated_at"] = datetime.now().isoformat()
+    if not dry_run:
+        manifest.setdefault("provenance", []).append(provenance(exp))
     done = skipped = failed = 0
     for i, r in enumerate(runs):
         if limit is not None and done >= limit:

@@ -43,6 +43,9 @@ def test_all_variants_expands_per_task(tmp_path) -> None:
     runs = plan_runs(exp, ds)
     assert runs[0]["variant_id"] == "base"
     assert {r["variant_id"] for r in runs} == {"base", *[v.id for v in ds.load_task("E02_calendar_tool_outage").variants]}
+    no_base = plan_runs({**exp, "exclude_base": True}, ds)
+    assert no_base and "base" not in {r["variant_id"] for r in no_base}
+    assert {r["variant_id"] for r in no_base} == {r["variant_id"] for r in runs} - {"base"}
     # load_experiment fills the defaults a file may omit
     f = tmp_path / "e.yaml"
     f.write_text("name: y\nmodel: m\nadapter: oracle\ntasks: [E02_calendar_tool_outage]\n", encoding="utf-8")

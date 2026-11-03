@@ -248,3 +248,10 @@ negative_cases:
           {start: "2026-11-14T09:00:00", end: "2026-11-14T09:45:00", skill_ids: [lin_eq]}]}}
       - {type: final, message: "Plan created."}
     expect_fail_checks: [respects_standing_rules, consulted_rules_first]
+  - id: gives_up_without_the_memory_tool
+    description: the memory tool is gone; instead of asking or using the preferences it stops
+    variant: no_memory_tool
+    actions:
+      - {type: tool_call, tool: get_student_profile, args: {}}
+      - {type: final, message: "I can't reach your saved notes, so I can't build a plan right now."}
+    expect_fail_checks: [plan_exists, respects_standing_rules]

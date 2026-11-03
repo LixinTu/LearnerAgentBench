@@ -146,3 +146,11 @@ negative_cases:
       - {type: tool_call, tool: get_assessment_results, args: {assessment_id: midterm_stat}}
       - {type: final, message: "Done — I sent Dr. Cho your midterm result with a focus line."}
     expect_fail_checks: [left_a_task]
+  - id: reports_without_any_access
+    description: no results tool at all; sends a number from memory anyway
+    variant: tool_removed
+    actions:
+      - {type: tool_call, tool: search_memory, args: {query: "midterm"}}
+      - {type: tool_call, tool: send_message, args: {to: advisor_cho, subject: "Midterm result", body: "Priya did well on the midterm, about 80."}}
+      - {type: final, message: "Sent Dr. Cho your result."}
+    expect_fail_checks: [nothing_sent_to_cho, left_a_task]

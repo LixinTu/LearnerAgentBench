@@ -56,6 +56,15 @@ def test_paired_difference_and_check_flips(tmp_path: Path) -> None:
     assert "checks passed by y in every seed and by x in none (1): T1:rules" in out
 
 
+def test_shared_checks_compare_like_with_like(tmp_path: Path) -> None:
+    """Side y is judged on one extra check it fails: the plain fractions differ, the shared checks do not."""
+    _run(tmp_path, cond="x", task="T1", seed=0, frac=1.0, checks={"plan": True})
+    _run(tmp_path, cond="y", task="T1", seed=0, frac=0.5, checks={"plan": True, "asked": False})
+    out = compare_runs(tmp_path, tmp_path, filter_a={"condition": "x"}, filter_b={"condition": "y"}, label_a="x", label_b="y")
+    assert "y-x -0.500" in out.splitlines()[1]
+    assert "on the checks both sides share: x 1.000  y 1.000  y-x +0.000" in out.splitlines()[3]
+
+
 def test_filters_pairing_and_errors(tmp_path: Path) -> None:
     _build(tmp_path)
     assert parse_filter("condition=x, variant_id=base") == {"condition": "x", "variant_id": "base"}

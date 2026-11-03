@@ -54,6 +54,20 @@ def _mean(xs: list[float]) -> float:
     return sum(xs) / len(xs) if xs else float("nan")
 
 
+def _common_fracs(x: dict[str, Any], y: dict[str, Any]) -> tuple[float, float] | None:
+    """Score fractions of two runs restricted to the checks both were judged on. A variant may add or remove
+    checks, and then the plain fractions do not compare like with like."""
+    cx = {c["check_id"]: c for c in x.get("checks", []) if c.get("passed") is not None}
+    cy = {c["check_id"]: c for c in y.get("checks", []) if c.get("passed") is not None}
+    ids = set(cx) & set(cy)
+    if not ids:
+        return None
+    def frac(cs: dict[str, dict[str, Any]]) -> float:
+        total = sum(float(cs[k].get("weight", 1.0)) for k in ids)
+        return sum(float(cs[k].get("weight", 1.0)) for k in ids if cs[k]["passed"]) / total if total else 0.0
+    return frac(cx), frac(cy)
+
+
 def compare_runs(root_a: str | Path, root_b: str | Path, *, filter_a: Filter | None = None, filter_b: Filter | None = None,
                  pair_on: str = "task_id,seed", label_a: str = "A", label_b: str = "B") -> str:
     keys = tuple(k.strip() for k in pair_on.split(",") if k.strip())
@@ -86,6 +100,16 @@ def compare_runs(root_a: str | Path, root_b: str | Path, *, filter_a: Filter | N
         deltas.append(fb - fa)
         rows.append((task, len(pairs), fa, fb, fb - fa, sa, sb, ha, hb, ca, cb, ia, ib))
 
+    shared: dict[str, list[tuple[float, float]]] = defaultdict(list)
+    for task, pairs in per_task.items():
+        for x, y in pairs:
+            if (f := _common_fracs(x, y)) is not None:
+                shared[task].append(f)
+    shared_a = {t: _mean([a for a, _ in fs]) for t, fs in shared.items()}
+    shared_b = {t: _mean([b for _, b in fs]) for t, fs in shared.items()}
+    shared_d = [shared_b[t] - shared_a[t] for t in shared]
+    clo, chi = bootstrap_ci(shared_d)
+
     lo, hi = bootstrap_ci(deltas)
     better = sum(1 for d in deltas if d > 0.005)
     worse = sum(1 for d in deltas if d < -0.005)
@@ -98,6 +122,8 @@ def compare_runs(root_a: str | Path, root_b: str | Path, *, filter_a: Filter | N
              f"hard failures per run: {_mean([r[7] for r in rows]):.2f} → {_mean([r[8] for r in rows]):.2f}   "
              f"tool calls: {_mean([r[9] for r in rows]):.1f} → {_mean([r[10] for r in rows]):.1f}   "
              f"invalid calls: {_mean([r[11] for r in rows]):.1f} → {_mean([r[12] for r in rows]):.1f}",
+             f"on the checks both sides share: {label_a} {_mean(list(shared_a.values())):.3f}  {label_b} {_mean(list(shared_b.values())):.3f}  "
+             f"{label_b}-{label_a} {_mean(shared_d):+.3f} [95% CI {clo:+.3f}, {chi:+.3f}]",
              "",
              f"{'task':46s} {'n':>2s} {label_a:>6s} {label_b:>6s} {'delta':>7s} {'hard':>9s} {'calls':>11s} {'invalid':>9s}"]
     for task, n, fa, fb, d, _sa, _sb, ha, hb, ca, cb, ia, ib in rows:

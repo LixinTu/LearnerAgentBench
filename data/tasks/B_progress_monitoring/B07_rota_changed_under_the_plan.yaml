@@ -194,3 +194,12 @@ negative_cases:
       - {type: tool_call, tool: update_study_plan, args: {rationale: "moved the morning blocks off the shift", replace_blocks: [{start: "2026-11-02T19:00:00", end: "2026-11-02T19:30:00", skill_ids: [terminology], activity: flashcards}, {start: "2026-11-02T19:40:00", end: "2026-11-02T20:10:00", skill_ids: [cell_structure], activity: practice}, {start: "2026-11-04T19:00:00", end: "2026-11-04T19:30:00", skill_ids: [membranes], activity: practice}, {start: "2026-11-04T19:40:00", end: "2026-11-04T20:10:00", skill_ids: [cell_structure], activity: practice}, {start: "2026-11-06T08:00:00", end: "2026-11-06T08:30:00", skill_ids: [cell_structure], activity: practice}, {start: "2026-11-06T08:40:00", end: "2026-11-06T09:10:00", skill_ids: [membranes], activity: practice}, {start: "2026-11-07T09:00:00", end: "2026-11-07T09:30:00", skill_ids: [membranes], activity: practice}, {start: "2026-11-07T09:40:00", end: "2026-11-07T10:10:00", skill_ids: [cell_structure], activity: practice}, {start: "2026-11-09T19:00:00", end: "2026-11-09T19:30:00", skill_ids: [membranes], activity: practice}, {start: "2026-11-09T19:40:00", end: "2026-11-09T20:10:00", skill_ids: [cell_structure], activity: practice}]}}
       - {type: final, message: "The new shift clashed with Wednesday morning, so I moved those blocks to Wednesday evening after the shift."}
     expect_fail_checks: [wednesday_cleared]
+  - id: reads_early_and_never_looks_again
+    description: reads the calendar before the rota change, confirms the plan and leaves the Wednesday blocks in place
+    variant: shift_added_mid_session
+    actions:
+      - {type: tool_call, tool: get_calendar_events, args: {start: "2026-11-02T00:00:00", end: "2026-11-12T00:00:00"}}
+      - {type: tool_call, tool: get_study_plan, args: {}}
+      - {type: tool_call, tool: get_preferences, args: {}}
+      - {type: final, message: "I checked your calendar: you're on track, keep the plan."}
+    expect_fail_checks: [plan_after_rota_change, wednesday_cleared, plan_rewritten]

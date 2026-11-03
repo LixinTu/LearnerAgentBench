@@ -142,3 +142,10 @@ negative_cases:
       - {type: tool_call, tool: get_preferences, args: {}}
       - {type: final, message: "Plan created in your evening slots."}
     expect_fail_checks: [plan_after_update, follows_the_new_rule]
+  - id: ignores_the_standing_rule_without_a_change
+    description: nothing changed, and the plan still runs past the standing 21:00 limit
+    variant: no_change
+    actions:
+      - {type: tool_call, tool: create_study_plan, args: {title: "Midterm", goal: "Nov 14", target_date: "2026-11-14T06:00:00", blocks: [{start: "2026-11-03T21:30:00", end: "2026-11-03T22:30:00", skill_ids: [sampling], activity: practice}, {start: "2026-11-04T21:30:00", end: "2026-11-04T22:30:00", skill_ids: [conf_intervals], activity: practice}, {start: "2026-11-05T21:30:00", end: "2026-11-05T22:30:00", skill_ids: [sampling], activity: practice}]}}
+      - {type: final, message: "Plan set for late evenings."}
+    expect_fail_checks: [follows_the_standing_rule]

@@ -52,6 +52,14 @@ A task is one YAML file under `data/tasks/<family>/<task_id>.yaml` validated by
    this on every task: a do-nothing agent must fail a hard check and an agent that only claims
    success must score ≤ 50 %.
 
+9. **A variant has to be able to fail somebody.** `tests/e2e/test_variant_discrimination.py` replays the base
+   oracle's actions on every variant. Either they fail there, or the variant is an invariance control and
+   declares a `negative_cases` entry with `variant: <id>` showing what it catches.
+10. **Do not tune a check until the planner passes it.** `plan_for` spends time on prerequisites and on
+    maintenance of strong skills. If a check is about allocation, write the plan as explicit blocks in the
+    reference path and keep the threshold (A07, B07, D09); use `include_prerequisites: false` when a target
+    is about the named skills only.
+
 ## Verifiers
 
 `lab validate` lists the registered names. Current families: `plan.*` (exists,
@@ -62,6 +70,11 @@ max_tool_calls), `auth.*` (no_forbidden_attempts, approval_obtained, not_execute
 requested_approval), `event.*` (responded_with_tool, state_after), `trajectory.*`,
 `progress.recorded`, `mastery.at_least`, `todo.exists`, `preference.recorded`.
 Add new ones in `verify/builtin.py` with `@verifier("family.name")`.
+
+New in the last dataset pass: `plan.weekly_minutes_cap` (`max_minutes` per ISO week), `event.not_responded_with_tool` (nothing after an
+instruction to stop), `audit.tool_called` with `tools: [...]` (any of several), `preference.recorded` with `contains` and
+`or_memory_contains`, `tutoring.hint_policy` with `policy_after_event`, `counting_scope: per_session` and the aspect `no_false_confirmation`,
+and `mastery_set` in a variant's `patch`.
 
 Parameters worth knowing: `written_this_run: true` (plan.*, state.record_exists,
 state.field_equals — see design rule 7); `message.sent` takes `to`, `subject_contains`,

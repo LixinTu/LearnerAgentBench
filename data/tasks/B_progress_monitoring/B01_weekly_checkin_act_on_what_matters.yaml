@@ -189,3 +189,10 @@ negative_cases:
       - {type: tool_call, tool: create_task, args: {title: "Turn in Homework 4", linked_assignment_id: hw4}}
       - {type: final, message: "I told Dr. Kim you'll come to office hours and added a task for Homework 4."}
     expect_fail_checks: [plan_covers_word_problems, plan_covers_systems_after_result]
+  - id: quiet_week_nothing_to_do
+    description: with no new result the agent sees nothing urgent and ignores the overdue homework it can read
+    variant: no_new_result
+    actions:
+      - {type: tool_call, tool: get_assessment_results, args: {}}
+      - {type: final, message: "No new results this week, so nothing needs to change."}
+    expect_fail_checks: [overdue_homework_task]

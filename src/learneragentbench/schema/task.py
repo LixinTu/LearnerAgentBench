@@ -50,6 +50,7 @@ class StatePatch(LABModel):
     records_add: list[dict[str, Any]] = Field(default_factory=list)
     records_update: list[dict[str, Any]] = Field(default_factory=list)
     records_remove: list[str] = Field(default_factory=list)
+    mastery_set: dict[str, float] = Field(default_factory=dict, description="Set the hidden mastery of these skills, so a counterfactual result and the LMS estimate agree.")
     events_add: list[ScheduledEvent] = Field(default_factory=list)
     events_remove: list[str] = Field(default_factory=list)
     history_remove_sessions: list[str] = Field(default_factory=list)

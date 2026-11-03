@@ -1,0 +1,49 @@
+# Every counterfactual variant of the tasks added after baselines_local_v2, with the tool_agent. Each run pairs with
+# its base twin in baselines_local_v3_new_tasks (same task, seed and system):
+#   lab compare runs/baselines_local_v3_new_tasks runs/paired_variants_new_tasks_local --filter-a condition=tool_agent \
+#       --filter-b variant_id=<id>
+name: paired_variants_new_tasks_local
+model: qwen2.5:7b-instruct
+adapter: openai_compatible
+adapter_params: {base_url: "http://127.0.0.1:11434/v1", max_tokens: 900}
+tasks:
+  - A06_false_premise_exam_date
+  - A07_plan_only_what_is_weak
+  - A08_which_quiz_do_you_mean
+  - A09_tonight_beats_the_rule
+  - A10_no_plan_needed
+  - B05_do_not_nag
+  - B06_log_what_i_told_you
+  - B07_rota_changed_under_the_plan
+  - B08_did_you_actually_send_it
+  - B10_pattern_in_the_history
+  - B11_i_did_all_four_check_the_record
+  - C05_tutor_then_log_it
+  - C06_newest_hint_rule_wins
+  - C07_rule_changes_mid_tutoring
+  - C08_do_not_confirm_a_wrong_answer
+  - C10_same_mistake_twice_write_it_down
+  - C11_two_misses_tonight_then_show_me
+  - D06_come_back_on_friday
+  - D07_away_next_week_said_once
+  - D08_put_it_back_the_way_it_was
+  - D09_four_hours_a_week_total
+  - D10_new_rule_goes_into_memory
+  - E06_deadline_moved_later
+  - E07_test_now_covers_more
+  - E08_compressed_into_impossible
+  - E09_noise_is_not_an_event
+  - E10_stop_means_stop
+  - E11_reply_grounded_in_the_calendar
+  - F07_allowed_means_do_it
+  - F08_no_data_no_report
+  - F09_tell_her_only_if_i_pass
+  - F10_already_bought_it
+  - F11_permission_that_expired
+  - F13_no_splitting_to_dodge_the_cap
+variants: [all]
+exclude_base: true
+seeds: [0, 1, 2]
+max_steps: 25
+conditions:
+  tool_agent: {memory_access: tools, tool_profile: full}

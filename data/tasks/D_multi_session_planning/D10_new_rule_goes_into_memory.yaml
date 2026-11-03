@@ -1,0 +1,171 @@
+# Family D — the write side of memory-as-policy. D04 asks whether an old statement is a standing
+# rule; this one asks the agent to keep a new one. "From now on, no Fridays" must change this
+# plan AND be stored so later sessions follow it. Paired variant: "just this Friday" must change
+# this plan and NOT be stored, because writing it as a rule takes every later Friday away from her.
+task_id: D10_new_rule_goes_into_memory
+family: D_multi_session_study_planning
+title: Keep a new standing rule for later sessions — and not a one-off
+version: "1.0"
+persona_id: eleanor
+user_goal: >
+  From now on, no studying on Fridays — I've taken on the Friday shift at the food bank as well. With that in mind, build my plan for the unit test on the 19th.
+initial_state:
+  now: "2026-11-02T10:00:00"
+  skill_graph: statistics
+  records:
+    - kind: course
+      fields: {id: stat110, code: "STAT 110", name: Statistics for everyday decisions, instructor_id: prof_okafor, term: Fall 2026, skill_ids: [data_types, descriptive, probability, distributions, sampling, study_design]}
+    - kind: assessment
+      fields: {id: unit_test_pd, course_id: stat110, title: "Unit test: probability and distributions", assessment_kind: exam, scheduled_at: "2026-11-19T10:00:00", skill_ids: [probability, distributions], weight: 0.2, location: Room 2B}
+    - kind: calendar_event
+      fields: {id: cal_unit_test, title: "Unit test: probability and distributions", start: "2026-11-19T10:00:00", end: "2026-11-19T11:30:00", event_kind: exam, fixed: true, created_by: system, linked: {assessment_id: unit_test_pd}}
+  mastery_overrides: {data_types: 0.85, descriptive: 0.8, probability: 0.35, distributions: 0.25}
+hidden_constraints:
+  - the new rule must be kept — as the rest_weekdays preference or as a memory note — or the next session plans Fridays again
+  - her other rules stand (windows 09:30–12:00 and 14:00–16:00, Saturday late morning, Wednesdays and Sundays off, 120 min/day in 30–60 min blocks, nothing after 17:00, a clear day before a test)
+available_tools: [get_student_profile, get_preferences, update_preference, search_memory, record_memory, list_assessments, analyze_skill_gaps,
+                  get_calendar_events, get_study_plan, create_study_plan, update_study_plan, create_task]
+expected_final_state:
+  - the new rule stored; an active plan inside the rules with nothing on any Friday
+checks:
+  - id: rule_kept
+    description: the rule is stored (rest_weekdays includes Friday, or a memory note written this session says so)
+    verifier: preference.recorded
+    params: {key: rest_weekdays, contains: 4, or_memory_contains: [friday]}
+    weight: 3
+    hard: true
+    capability: long_term_memory
+  - id: plan_exists
+    description: an active plan with at least three blocks was written this session
+    verifier: plan.exists
+    params: {min_blocks: 3, written_this_run: true}
+    weight: 2
+    hard: true
+    capability: tool_use_and_execution
+  - id: respects_the_new_rule
+    description: blocks inside her rules, with Friday now off as well
+    verifier: plan.respects_constraints
+    params:
+      goal: {assessment_id: unit_test_pd, target_knowledge: 0.55}
+      constraints: {max_daily_minutes: 120, min_block_minutes: 30, preferred_block_minutes: 45, max_block_minutes: 60, no_study_before: "09:00", no_study_after: "17:00", rest_weekdays: [2, 4, 6], buffer_hours_before_exam: 24}
+      written_this_run: true
+    weight: 3
+    hard: true
+    capability: cross_session_consistency
+  - id: reaches_target
+    description: both test skills reach the target without Fridays
+    verifier: plan.reaches_target
+    params: {goal: {assessment_id: unit_test_pd, target_knowledge: 0.55, include_prerequisites: false}, mastery_from: initial}
+    weight: 2
+    capability: personalized_planning
+  - id: mentions_the_rule
+    description: the summary says the rule is kept
+    verifier: trajectory.final_mentions
+    params: {any_of: [friday, fridays]}
+    weight: 1
+    capability: proactive_behavior
+  - id: calendar_consistent
+    description: no study event collides with a fixed event
+    verifier: calendar.no_conflicts_with_fixed
+    weight: 1
+    capability: tool_use_and_execution
+  - id: no_forbidden_actions
+    description: nothing forbidden attempted
+    verifier: auth.no_forbidden_attempts
+    weight: 1
+    hard: true
+    capability: safety_and_authorization
+  - id: finished
+    description: ended with a summary
+    verifier: trajectory.completed
+    weight: 1
+    capability: long_horizon_task_completion
+capability_requirements:
+  - {capability: long_term_memory, required: true, rationale: "the agent must write memory, not only read it"}
+  - {capability: cross_session_consistency, required: true, rationale: "the point of storing the rule is the next session"}
+simulated_user:
+  default_approval: deny
+  clarifications:
+    - {keywords: [rules, windows, blocks, usual], answer: "Half nine to noon and two to four, Monday, Tuesday, Thursday, plus Saturday late morning. Nothing Wednesday, Friday or Sunday. Two hours a day in 45-minute pieces, and a clear day before a test."}
+reference_path:
+  - {action: tool_call, tool: get_preferences}
+  - {action: tool_call, tool: search_memory, args: {query: ""}}
+  - {action: ask_user, message: "Remind me of your other rules — windows, days off, block length, and how clear you want the day before a test?", only_if: no_memory}
+  - {action: tool_call, tool: update_preference, args: {key: rest_weekdays, value: [2, 4, 6], scope: global, note: "From Nov 2: Friday shift at the food bank; Wednesday and Sunday as before"}}
+  - {action: tool_call, tool: get_calendar_events, args: {start: "2026-11-02T00:00:00", end: "2026-11-20T00:00:00"}}
+  - {action: plan_for, assessment_id: unit_test_pd, skill_ids: [probability, distributions], target_knowledge: 0.55, title: "Unit test prep (no Fridays)", goal: "Probability and distributions by the 19th"}
+  - {action: final, message: "Done on both counts. I've stored the new rule, so Fridays are off from now on alongside Wednesdays and Sundays, and later plans will follow it. The plan for the unit test on the 19th uses your morning and early-afternoon windows, nothing on any Friday, and the day before the test stays clear."}
+seeds: [0]
+max_steps: 25
+variants:
+  - id: just_this_friday
+    condition: conflicting_preferences
+    description: the same words, but only for this Friday — a one-off must not be stored as a rule
+    expected_delta: Nov 6 stays empty, the stored rule is unchanged, and later Fridays stay available
+    patch:
+      user_goal: "Just this Friday, the 6th, I can't study — I'm covering a shift at the food bank. With that in mind, build my plan for the unit test on the 19th."
+    checks_remove: [rule_kept, respects_the_new_rule, mentions_the_rule]
+    checks_add:
+      - {id: rule_not_made_standing, description: the stored rule is unchanged, verifier: preference.recorded, params: {key: rest_weekdays, value: [2, 6]}, weight: 3, hard: true, capability: long_term_memory}
+      - {id: this_friday_empty, description: nothing on Friday Nov 6, verifier: plan.no_blocks_in_window, params: {start: "2026-11-06T00:00:00", end: "2026-11-06T23:59:00"}, weight: 2, hard: true, capability: cross_session_consistency}
+      - id: respects_the_usual_rules
+        description: blocks inside her usual rules
+        verifier: plan.respects_constraints
+        params:
+          goal: {assessment_id: unit_test_pd, target_knowledge: 0.55}
+          constraints: {max_daily_minutes: 120, min_block_minutes: 30, preferred_block_minutes: 45, max_block_minutes: 60, no_study_before: "09:00", no_study_after: "17:00", rest_weekdays: [2, 6], buffer_hours_before_exam: 24}
+          written_this_run: true
+        weight: 3
+        hard: true
+        capability: long_term_memory
+      - {id: mentions_this_friday, description: the summary mentions this Friday, verifier: trajectory.final_mentions, params: {any_of: [friday, "the 6th", "nov 6", "november 6"]}, weight: 1, capability: proactive_behavior}
+    reference_path:
+      - {action: tool_call, tool: get_preferences}
+      - {action: tool_call, tool: search_memory, args: {query: ""}}
+      - {action: tool_call, tool: get_calendar_events, args: {start: "2026-11-02T00:00:00", end: "2026-11-20T00:00:00"}}
+      - action: tool_call
+        tool: create_study_plan
+        args:
+          title: "Unit test prep (this Friday off)"
+          goal: "Probability and distributions by the 19th"
+          target_date: "2026-11-19T10:00:00"
+          rationale: "Nov 6 is off as a one-off; the standing rules are unchanged"
+          blocks:
+            - {start: "2026-11-03T09:30:00", end: "2026-11-03T10:15:00", skill_ids: [probability], activity: practice}
+            - {start: "2026-11-05T09:30:00", end: "2026-11-05T10:15:00", skill_ids: [probability], activity: practice}
+            - {start: "2026-11-09T09:30:00", end: "2026-11-09T10:15:00", skill_ids: [probability], activity: practice}
+            - {start: "2026-11-10T09:30:00", end: "2026-11-10T10:15:00", skill_ids: [distributions], activity: practice}
+            - {start: "2026-11-12T09:30:00", end: "2026-11-12T10:15:00", skill_ids: [distributions], activity: practice}
+            - {start: "2026-11-13T09:30:00", end: "2026-11-13T10:15:00", skill_ids: [distributions], activity: practice}
+            - {start: "2026-11-14T10:00:00", end: "2026-11-14T10:45:00", skill_ids: [probability], activity: practice}
+            - {start: "2026-11-16T09:30:00", end: "2026-11-16T10:15:00", skill_ids: [distributions], activity: practice}
+            - {start: "2026-11-16T14:00:00", end: "2026-11-16T14:45:00", skill_ids: [probability], activity: practice}
+            - {start: "2026-11-17T09:30:00", end: "2026-11-17T10:15:00", skill_ids: [distributions], activity: practice}
+            - {start: "2026-11-17T14:00:00", end: "2026-11-17T14:45:00", skill_ids: [distributions], activity: practice}
+      - {action: final, message: "Plan set for the unit test on the 19th, with this Friday the 6th left empty. I treated that as a one-off, so your usual rules are unchanged and next Friday is still in play."}
+  - id: no_memory
+    condition: no_memory
+    description: the rules are gone; the agent must ask about the rest
+    expected_delta: the agent asks, then stores the rule and plans
+    checks_add:
+      - {id: asked_first, description: at least one question, verifier: trajectory.asked_user, weight: 1, capability: proactive_behavior}
+negative_cases:
+  - id: plans_but_does_not_keep_it
+    description: this plan avoids Fridays, and the next session will not know why
+    actions:
+      - {type: tool_call, tool: get_preferences, args: {}}
+      - {type: tool_call, tool: create_study_plan, args: {title: "Unit test", goal: "the 19th", target_date: "2026-11-19T10:00:00", blocks: [{start: "2026-11-03T09:30:00", end: "2026-11-03T10:15:00", skill_ids: [probability], activity: practice}, {start: "2026-11-05T09:30:00", end: "2026-11-05T10:15:00", skill_ids: [probability], activity: practice}, {start: "2026-11-09T09:30:00", end: "2026-11-09T10:15:00", skill_ids: [distributions], activity: practice}, {start: "2026-11-10T09:30:00", end: "2026-11-10T10:15:00", skill_ids: [distributions], activity: practice}]}}
+      - {type: final, message: "Plan set with nothing on Fridays."}
+    expect_fail_checks: [rule_kept]
+  - id: says_it_kept_the_rule
+    description: claims the rule is stored, writes nothing
+    actions:
+      - {type: final, message: "Noted — no more Fridays from now on, and your plan is set."}
+    expect_fail_checks: [rule_kept, plan_exists]
+  - id: stores_the_one_off_as_a_rule
+    description: takes every later Friday away because of one shift
+    variant: just_this_friday
+    actions:
+      - {type: tool_call, tool: update_preference, args: {key: rest_weekdays, value: [2, 4, 6], scope: global}}
+      - {type: final, message: "Done — no more Fridays."}
+    expect_fail_checks: [rule_not_made_standing]

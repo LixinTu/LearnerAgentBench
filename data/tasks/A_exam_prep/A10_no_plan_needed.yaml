@@ -1,0 +1,143 @@
+# Family A — over-planning. Noor asks whether a low-stakes quiz needs any study time; she only
+# needs a pass and the record says she is far above it. The right answer is "no", with the
+# evidence, and nothing written: a plan here costs her hours she told us she does not have.
+# Paired variant: the same question with a bad last result and low mastery — now a plan is right.
+task_id: A10_no_plan_needed
+family: A_personalized_exam_preparation
+title: She needs a pass and is well above it — say so instead of building a plan
+version: "1.0"
+persona_id: noor
+user_goal: >
+  Do I need to put any study time into Thursday's descriptive-stats quiz? All I need is a pass, 60 %, and I'm swamped with the biochem final.
+initial_state:
+  now: "2026-11-02T18:00:00"
+  skill_graph: statistics
+  records:
+    - kind: course
+      fields: {id: stat201, code: "STAT 201", name: Biostatistics, instructor_id: prof_adler, term: Fall 2026, skill_ids: [data_types, descriptive, sampling, conf_intervals]}
+    - kind: assessment
+      fields: {id: quiz_desc, course_id: stat201, title: "Quiz: descriptive statistics", assessment_kind: quiz, scheduled_at: "2026-11-05T09:00:00", skill_ids: [descriptive, data_types], weight: 0.05}
+    - kind: calendar_event
+      fields: {id: cal_quiz_desc, title: "Quiz: descriptive statistics", start: "2026-11-05T09:00:00", end: "2026-11-05T09:30:00", event_kind: exam, fixed: true, created_by: system, linked: {assessment_id: quiz_desc}}
+    - kind: assessment
+      fields: {id: hw_desc, course_id: stat201, title: "Graded problem set: descriptive statistics", assessment_kind: homework, scheduled_at: "2026-10-28T23:59:00", skill_ids: [descriptive, data_types], weight: 0.02}
+    - kind: assessment_result
+      fields: {id: res_hw_desc, assessment_id: hw_desc, taken_at: "2026-10-28T23:59:00", posted_at: "2026-10-30T12:00:00", per_skill: {descriptive: 0.94, data_types: 0.96}, score: 95, max_score: 100, feedback: "Excellent; nothing to fix."}
+  mastery_overrides: {descriptive: 0.95, data_types: 0.97}
+hidden_constraints:
+  - the bar she states is 60 %; the last graded work on these skills is 95 and the estimate is above the bar
+  - she says she has no time to spare, so an unnecessary plan is a cost, not a safety margin
+available_tools: [get_student_profile, get_preferences, search_memory, get_assessment_results, list_assessments, analyze_skill_gaps,
+                  get_calendar_events, get_study_plan, create_study_plan, update_study_plan, create_calendar_event, create_task, record_memory]
+expected_final_state:
+  - no plan and no study event written
+  - a plain answer that no study time is needed, with the evidence
+checks:
+  - id: checked_the_evidence
+    description: the results or the skill estimate were read before answering
+    verifier: audit.tool_called
+    params: {tools: [get_assessment_results, analyze_skill_gaps], min_count: 1, ok: true}
+    weight: 3
+    hard: true
+    capability: proactive_behavior
+  - id: answered_no_need
+    description: the summary says plainly that no study time is needed
+    verifier: trajectory.final_mentions
+    params: {any_of: ["no need", "don't need", "do not need", "not needed", "needn't", "no study time", "no extra", "skip", "well above", "already above", "without studying", "safe to"]}
+    weight: 3
+    hard: true
+    capability: educational_decision_making
+  - id: named_the_evidence
+    description: the summary gives the evidence
+    verifier: trajectory.final_mentions
+    params: {any_of: ["95", "94", "96", "problem set", "last graded"]}
+    weight: 1
+    capability: proactive_behavior
+  - id: no_plan_written
+    description: no plan written by the agent
+    verifier: state.record_absent
+    params: {kind: study_plan, where: {created_by: agent}}
+    weight: 2
+    hard: true
+    capability: educational_decision_making
+  - id: no_study_event
+    description: no study event put on her calendar
+    verifier: state.record_absent
+    params: {kind: calendar_event, where: {event_kind: study, created_by: agent}}
+    weight: 1
+    capability: educational_decision_making
+  - id: no_forbidden_actions
+    description: nothing forbidden attempted
+    verifier: auth.no_forbidden_attempts
+    weight: 1
+    hard: true
+    capability: safety_and_authorization
+  - id: finished
+    description: ended with a summary
+    verifier: trajectory.completed
+    weight: 1
+    capability: long_horizon_task_completion
+capability_requirements:
+  - {capability: educational_decision_making, required: true, rationale: "knowing when no plan is the right plan"}
+  - {capability: proactive_behavior, required: true, rationale: "the answer must rest on the record, not on reassurance"}
+simulated_user:
+  default_approval: deny
+  clarifications:
+    - {keywords: [pass, bar, target, need], answer: "A pass is 60. That's all I need on this one."}
+reference_path:
+  - {action: tool_call, tool: get_preferences}
+  - {action: tool_call, tool: get_assessment_results, args: {course_id: stat201}}
+  - {action: tool_call, tool: analyze_skill_gaps, args: {skill_ids: [descriptive, data_types], target: 0.6}}
+  - {action: final, message: "No need — you can skip it. Your last graded work on these skills was 95, and the estimate is well above the 60 % you need, so I haven't written a plan or put anything on your calendar. Spend the time on biochem."}
+seeds: [0]
+max_steps: 15
+variants:
+  - id: actually_behind
+    condition: new_assessment_result
+    description: the same question with a bad last result and low mastery — now a plan is right
+    expected_delta: the answer flips; a plan inside her rules before Thursday's quiz, and the summary says why
+    patch:
+      mastery_set: {descriptive: 0.3, data_types: 0.55}
+      records_update:
+        - {kind: assessment_result, id: res_hw_desc, fields: {per_skill: {descriptive: 0.42, data_types: 0.6}, score: 48, feedback: "Measures of spread confused; several blanks."}}
+    checks_remove: [answered_no_need, named_the_evidence, no_plan_written, no_study_event]
+    checks_add:
+      - {id: plan_written, description: an active plan was written this session, verifier: plan.exists, params: {min_blocks: 2, written_this_run: true}, weight: 3, hard: true, capability: tool_use_and_execution}
+      - {id: time_on_descriptive, description: at least 60 minutes on descriptive statistics, verifier: plan.minutes_on_skill, params: {skill_id: descriptive, min_minutes: 60, written_this_run: true}, weight: 2, capability: educational_decision_making}
+      - id: respects_noor_rules
+        description: blocks inside her windows and caps, ten hours clear before the quiz
+        verifier: plan.respects_constraints
+        params:
+          goal: {assessment_id: quiz_desc, target_knowledge: 0.6}
+          constraints: {max_daily_minutes: 180, min_block_minutes: 45, preferred_block_minutes: 60, no_study_after: "22:00", buffer_hours_before_exam: 10}
+          written_this_run: true
+        weight: 2
+        hard: true
+        capability: long_term_memory
+      - {id: says_why, description: the summary gives the bad result, verifier: trajectory.final_mentions, params: {any_of: ["48", "42", behind, below]}, weight: 1, capability: proactive_behavior}
+    reference_path:
+      - {action: tool_call, tool: get_preferences}
+      - {action: tool_call, tool: get_assessment_results, args: {course_id: stat201}}
+      - {action: tool_call, tool: analyze_skill_gaps, args: {skill_ids: [descriptive, data_types], target: 0.6}}
+      - {action: plan_for, assessment_id: quiz_desc, skill_ids: [descriptive, data_types], target_knowledge: 0.6, title: "Descriptive-stats quiz: what it takes to pass", goal: "60 % on Thursday"}
+      - {action: final, message: "Yes, this one needs time: your last graded work was 48 and the estimate is below the 60 % you need. I set hour-long blocks on descriptive statistics in your evenings and early mornings, ending ten hours before the quiz."}
+negative_cases:
+  - id: builds_a_plan_anyway
+    description: over-plans for a quiz she is far above
+    actions:
+      - {type: tool_call, tool: get_assessment_results, args: {course_id: stat201}}
+      - {type: tool_call, tool: create_study_plan, args: {title: "Quiz prep", goal: "Quiz", target_date: "2026-11-05T09:00:00", blocks: [{start: "2026-11-03T18:00:00", end: "2026-11-03T19:00:00", skill_ids: [descriptive], activity: practice}, {start: "2026-11-04T18:00:00", end: "2026-11-04T19:00:00", skill_ids: [descriptive], activity: practice}]}}
+      - {type: final, message: "To be safe I set two hours of review."}
+    expect_fail_checks: [no_plan_written, no_study_event, answered_no_need]
+  - id: reassures_without_looking
+    description: says no without reading anything
+    actions:
+      - {type: final, message: "No need, you'll be fine — skip it."}
+    expect_fail_checks: [checked_the_evidence, named_the_evidence]
+  - id: still_says_no_when_behind
+    description: the record has flipped; repeats the reassurance and writes nothing
+    variant: actually_behind
+    actions:
+      - {type: tool_call, tool: get_assessment_results, args: {course_id: stat201}}
+      - {type: final, message: "No need — skip it, a pass is easy."}
+    expect_fail_checks: [plan_written]

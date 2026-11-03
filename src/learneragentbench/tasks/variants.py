@@ -118,6 +118,12 @@ def apply_patch(world: World, patch: StatePatch, *, condition: CounterfactualCon
         rec = world.require(cls, upd["id"])
         world.patch(rec, upd["fields"])
         log.append(f"updated {upd['kind']}/{upd['id']}")
+    for sid, val in patch.mastery_set.items():
+        mastery = world.mastery()
+        if sid not in mastery:
+            raise NotFoundError(f"variant patch sets mastery of {sid!r}, which is not in this world's skill graph")
+        world.update(mastery[sid].model_copy(update={"mastery": float(val)}))
+        log.append(f"set mastery {sid}={val}")
     for i, seed in enumerate(patch.records_add):
         cls = RECORD_TYPES[seed["kind"]]
         fields = dict(seed["fields"])

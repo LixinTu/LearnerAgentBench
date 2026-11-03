@@ -147,7 +147,7 @@ reference_path:
   - {action: tool_call, tool: search_learning_history, args: {since: "2026-11-02T00:00:00"}}
   - {action: tool_call, tool: get_calendar_events, args: {start: "2026-11-06T00:00:00", end: "2026-11-12T00:00:00"}}
   - {action: plan_for, assessment_id: quiz_dist, skill_ids: [distributions, probability], target_knowledge: 0.5, update_existing: true, title: "Distributions quiz: after Friday's check-in", goal: "Catch up the skipped distributions block before the quiz"}
-  - {action: final, message: "Friday check-in done. Monday and Tuesday are in the history; Wednesday was skipped, so distributions is behind — the remaining blocks (tonight and Saturday morning) go to distributions first. Monday's work trip is kept clear, and nothing sits inside the two clear days before Wednesday's quiz."}
+  - {action: final, message: "Friday check-in done. Monday and Tuesday are in the history; Wednesday was skipped, so distributions is behind — I rebuilt tonight and Saturday morning, with distributions back in. Monday's work trip is kept clear, and nothing sits inside the two clear days before Wednesday's quiz."}
 seeds: [0]
 max_steps: 25
 variants:

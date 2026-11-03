@@ -39,7 +39,7 @@ hidden_constraints:
 available_tools: [get_student_profile, get_preferences, search_memory, get_assessment_results, list_assessments, analyze_skill_gaps,
                   get_calendar_events, get_study_plan, create_study_plan, update_study_plan, create_task, record_memory]
 expected_final_state:
-  - an active plan written this session that puts at least 150 minutes each on hypothesis tests and regression and at most two hours of maintenance on sampling and on confidence intervals
+  - an active plan written this session that puts at least 150 minutes each on hypothesis tests and regression and at most 90 minutes of maintenance on sampling and on confidence intervals
   - the summary says confidence intervals are fine per the mock
 checks:
   - id: plan_exists
@@ -73,21 +73,21 @@ checks:
     weight: 2
     capability: educational_decision_making
   - id: confidence_intervals_capped
-    description: at most 120 minutes on confidence intervals — maintenance only (the mock says 85 %)
+    description: at most 90 minutes on confidence intervals — maintenance only (the mock says 85 %)
     verifier: plan.minutes_on_skill
-    params: {skill_id: conf_intervals, max_minutes: 120, written_this_run: true}
+    params: {skill_id: conf_intervals, max_minutes: 90, written_this_run: true}
     weight: 2
     capability: educational_decision_making
   - id: sampling_capped
-    description: at most 120 minutes on sampling — maintenance only (the mock says 90 %)
+    description: at most 90 minutes on sampling — maintenance only (the mock says 90 %)
     verifier: plan.minutes_on_skill
-    params: {skill_id: sampling, max_minutes: 120, written_this_run: true}
+    params: {skill_id: sampling, max_minutes: 90, written_this_run: true}
     weight: 1
     capability: educational_decision_making
   - id: reaches_target
-    description: every final-exam skill reaches 0.7
+    description: the two weak skills reach 0.7 by the final
     verifier: plan.reaches_target
-    params: {goal: {assessment_id: final_stat, target_knowledge: 0.7}, mastery_from: initial}
+    params: {goal: {assessment_id: final_stat, skill_ids: [hyp_tests, regression], target_knowledge: 0.7, include_prerequisites: false}, mastery_from: initial}
     weight: 2
     capability: personalized_planning
   - id: read_the_mock
@@ -99,7 +99,7 @@ checks:
   - id: told_her_the_evidence
     description: the summary says confidence intervals are fine per the mock
     verifier: trajectory.final_mentions
-    params: {any_of: ["85", "confidence intervals are strong", "confidence intervals are fine", "confidence intervals are solid", "confidence intervals look", "no longer", "not your weak", "isn't your weak", "mock says", "mock shows", "according to the mock", "the mock"]}
+    params: {any_of: ["85", "confidence intervals are strong", "confidence intervals are fine", "confidence intervals are solid", "confidence intervals look", "no longer", "not your weak", "isn't your weak", "out of date", "mock says", "mock shows", "according to the mock"]}
     weight: 1
     capability: proactive_behavior
   - id: calendar_consistent
@@ -132,7 +132,7 @@ reference_path:
   - {action: tool_call, tool: analyze_skill_gaps, args: {skill_ids: [sampling, conf_intervals, hyp_tests, regression], target: 0.7}}
   - {action: tool_call, tool: list_assessments, args: {upcoming_only: true}}
   - {action: tool_call, tool: get_calendar_events, args: {start: "2026-11-02T00:00:00", end: "2026-11-19T00:00:00"}}
-  - {action: plan_for, assessment_id: final_stat, skill_ids: [hyp_tests, regression, sampling, conf_intervals], target_knowledge: 0.7, title: "STAT 201 final: hypothesis tests and regression first", goal: "Every final-exam skill at 0.7 with the time where the gaps are"}
+  - {action: tool_call, tool: create_study_plan, args: {title: "STAT 201 final: hypothesis tests and regression first", goal: "The time goes where the mock says the gaps are", target_date: "2026-11-18T09:00:00", rationale: "mock: hypothesis tests 35 %, regression 30 %, intervals 85 %, sampling 90 %", blocks: [{start: "2026-11-03T18:00:00", end: "2026-11-03T19:00:00", skill_ids: [hyp_tests], activity: practice}, {start: "2026-11-03T19:15:00", end: "2026-11-03T20:15:00", skill_ids: [regression], activity: practice}, {start: "2026-11-04T18:00:00", end: "2026-11-04T19:00:00", skill_ids: [hyp_tests], activity: practice}, {start: "2026-11-04T19:15:00", end: "2026-11-04T20:15:00", skill_ids: [regression], activity: practice}, {start: "2026-11-07T09:00:00", end: "2026-11-07T10:00:00", skill_ids: [hyp_tests], activity: practice}, {start: "2026-11-07T10:15:00", end: "2026-11-07T11:15:00", skill_ids: [regression], activity: practice}, {start: "2026-11-10T18:00:00", end: "2026-11-10T19:00:00", skill_ids: [conf_intervals], activity: practice}, {start: "2026-11-10T19:15:00", end: "2026-11-10T20:15:00", skill_ids: [sampling], activity: practice}, {start: "2026-11-14T09:00:00", end: "2026-11-14T10:00:00", skill_ids: [hyp_tests], activity: practice}, {start: "2026-11-14T10:15:00", end: "2026-11-14T11:15:00", skill_ids: [regression], activity: practice}]}}
   - {action: final, message: "Your mock from yesterday says confidence intervals are fine now — 85 %, and sampling 90 % — so the October worry is out of date; the gaps are hypothesis tests (35 %: wrong test chosen three times) and regression (30 %: residual plots). The plan spends its hour-long blocks there, keeps the strong skills to a short review, works around the Thursday lab, and ends ten hours before the final."}
 seeds: [0]
 max_steps: 25
@@ -142,9 +142,9 @@ variants:
     description: the mock agrees with her — confidence intervals 40 %
     expected_delta: confidence intervals must get at least two hours; the cap on them is gone
     patch:
+      mastery_set: {conf_intervals: 0.4}
       records_update:
         - {kind: assessment_result, id: res_mock_stat, fields: {per_skill: {sampling: 0.9, conf_intervals: 0.4, hyp_tests: 0.35, regression: 0.3}, score: 49, feedback: "Sampling strong; confidence intervals, hypothesis tests and regression weak — critical values mixed up, wrong test chosen, residual plots misread."}}
-      records_add: []
     checks_remove: [confidence_intervals_capped, told_her_the_evidence]
     checks_add:
       - {id: confidence_intervals_get_time, description: at least 120 minutes on confidence intervals, verifier: plan.minutes_on_skill, params: {skill_id: conf_intervals, min_minutes: 120, written_this_run: true}, weight: 2, hard: true, capability: educational_decision_making}
@@ -155,7 +155,7 @@ variants:
       - {action: tool_call, tool: get_assessment_results, args: {course_id: stat201}}
       - {action: tool_call, tool: analyze_skill_gaps, args: {skill_ids: [sampling, conf_intervals, hyp_tests, regression], target: 0.7}}
       - {action: tool_call, tool: get_calendar_events, args: {start: "2026-11-02T00:00:00", end: "2026-11-19T00:00:00"}}
-      - {action: plan_for, assessment_id: final_stat, skill_ids: [hyp_tests, regression, conf_intervals, sampling], target_knowledge: 0.7, title: "STAT 201 final: intervals, tests and regression", goal: "Every final-exam skill at 0.7"}
+      - {action: tool_call, tool: create_study_plan, args: {title: "STAT 201 final: intervals, tests and regression", goal: "The time goes to the three weak skills", target_date: "2026-11-18T09:00:00", rationale: "mock: intervals 40 %, hypothesis tests 35 %, regression 30 %, sampling 90 %", blocks: [{start: "2026-11-03T18:00:00", end: "2026-11-03T19:00:00", skill_ids: [hyp_tests], activity: practice}, {start: "2026-11-03T19:15:00", end: "2026-11-03T20:15:00", skill_ids: [regression], activity: practice}, {start: "2026-11-04T18:00:00", end: "2026-11-04T19:00:00", skill_ids: [hyp_tests], activity: practice}, {start: "2026-11-04T19:15:00", end: "2026-11-04T20:15:00", skill_ids: [regression], activity: practice}, {start: "2026-11-07T09:00:00", end: "2026-11-07T10:00:00", skill_ids: [hyp_tests], activity: practice}, {start: "2026-11-07T10:15:00", end: "2026-11-07T11:15:00", skill_ids: [regression], activity: practice}, {start: "2026-11-09T18:00:00", end: "2026-11-09T19:00:00", skill_ids: [conf_intervals], activity: practice}, {start: "2026-11-09T19:15:00", end: "2026-11-09T20:15:00", skill_ids: [conf_intervals], activity: practice}, {start: "2026-11-10T18:00:00", end: "2026-11-10T19:00:00", skill_ids: [conf_intervals], activity: practice}, {start: "2026-11-10T19:15:00", end: "2026-11-10T20:15:00", skill_ids: [sampling], activity: practice}, {start: "2026-11-14T09:00:00", end: "2026-11-14T10:00:00", skill_ids: [hyp_tests], activity: practice}, {start: "2026-11-14T10:15:00", end: "2026-11-14T11:15:00", skill_ids: [regression], activity: practice}]}}
       - {action: final, message: "You're right about the intervals — the mock confirms it: confidence intervals 40 %, hypothesis tests 35 %, regression 30 %; sampling is strong at 90 %. The plan splits its hour-long blocks across the three weak skills, works around the Thursday lab, and ends ten hours before the final."}
   - id: no_mock_result
     condition: outdated_memory
@@ -172,7 +172,7 @@ variants:
       - {action: tool_call, tool: search_memory, args: {query: "weak confidence intervals"}}
       - {action: tool_call, tool: analyze_skill_gaps, args: {skill_ids: [sampling, conf_intervals, hyp_tests, regression], target: 0.7}}
       - {action: tool_call, tool: get_calendar_events, args: {start: "2026-11-02T00:00:00", end: "2026-11-19T00:00:00"}}
-      - {action: plan_for, assessment_id: final_stat, skill_ids: [hyp_tests, regression, sampling, conf_intervals], target_knowledge: 0.7, title: "STAT 201 final: hypothesis tests and regression first", goal: "Every final-exam skill at 0.7 with the time where the gaps are"}
+      - {action: tool_call, tool: create_study_plan, args: {title: "STAT 201 final: hypothesis tests and regression first", goal: "The time goes where the estimate says the gaps are", target_date: "2026-11-18T09:00:00", rationale: "LMS estimate: hypothesis tests and regression are the gaps", blocks: [{start: "2026-11-03T18:00:00", end: "2026-11-03T19:00:00", skill_ids: [hyp_tests], activity: practice}, {start: "2026-11-03T19:15:00", end: "2026-11-03T20:15:00", skill_ids: [regression], activity: practice}, {start: "2026-11-04T18:00:00", end: "2026-11-04T19:00:00", skill_ids: [hyp_tests], activity: practice}, {start: "2026-11-04T19:15:00", end: "2026-11-04T20:15:00", skill_ids: [regression], activity: practice}, {start: "2026-11-07T09:00:00", end: "2026-11-07T10:00:00", skill_ids: [hyp_tests], activity: practice}, {start: "2026-11-07T10:15:00", end: "2026-11-07T11:15:00", skill_ids: [regression], activity: practice}, {start: "2026-11-10T18:00:00", end: "2026-11-10T19:00:00", skill_ids: [conf_intervals], activity: practice}, {start: "2026-11-10T19:15:00", end: "2026-11-10T20:15:00", skill_ids: [sampling], activity: practice}, {start: "2026-11-14T09:00:00", end: "2026-11-14T10:00:00", skill_ids: [hyp_tests], activity: practice}, {start: "2026-11-14T10:15:00", end: "2026-11-14T11:15:00", skill_ids: [regression], activity: practice}]}}
       - {action: final, message: "The course's own estimate puts your confidence intervals well above target and the gaps at hypothesis tests and regression, so I planned the hour-long blocks there with a short review of intervals and sampling; the plan works around the Thursday lab and ends ten hours before the final."}
 negative_cases:
   - id: plans_from_the_belief
@@ -182,3 +182,11 @@ negative_cases:
       - {type: tool_call, tool: create_study_plan, args: {title: "Intervals", goal: "Fix confidence intervals", target_date: "2026-11-18T09:00:00", blocks: [{start: "2026-11-03T18:00:00", end: "2026-11-03T19:00:00", skill_ids: [conf_intervals], activity: practice}, {start: "2026-11-04T18:00:00", end: "2026-11-04T19:00:00", skill_ids: [conf_intervals], activity: practice}, {start: "2026-11-05T18:00:00", end: "2026-11-05T19:00:00", skill_ids: [conf_intervals], activity: practice}, {start: "2026-11-06T18:00:00", end: "2026-11-06T19:00:00", skill_ids: [sampling], activity: practice}]}}
       - {type: final, message: "Plan set: four evenings on confidence intervals and sampling, as you asked."}
     expect_fail_checks: [confidence_intervals_capped, hypothesis_tests_get_time, regression_gets_time]
+  - id: trusts_the_belief_without_a_mock
+    description: no mock exists and the estimate contradicts her; still plans around confidence intervals
+    variant: no_mock_result
+    actions:
+      - {type: tool_call, tool: get_preferences, args: {}}
+      - {type: tool_call, tool: create_study_plan, args: {title: "Intervals", goal: "Fix confidence intervals", target_date: "2026-11-18T09:00:00", blocks: [{start: "2026-11-03T18:00:00", end: "2026-11-03T19:00:00", skill_ids: [conf_intervals], activity: practice}, {start: "2026-11-04T18:00:00", end: "2026-11-04T19:00:00", skill_ids: [conf_intervals], activity: practice}, {start: "2026-11-05T18:00:00", end: "2026-11-05T19:00:00", skill_ids: [conf_intervals], activity: practice}, {start: "2026-11-06T18:00:00", end: "2026-11-06T19:00:00", skill_ids: [conf_intervals], activity: practice}]}}
+      - {type: final, message: "Plan set around confidence intervals, as you said."}
+    expect_fail_checks: [confidence_intervals_capped, hypothesis_tests_get_time, read_the_estimate]
