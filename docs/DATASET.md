@@ -66,6 +66,7 @@ factoring → quadratics). The learner model gates practice by prerequisite know
 | `B05_do_not_nag` | B | kai, dana | Check in for a student whose standing rule forbids reminders and messages; weight beats urgency | dana_instead, no_memory |
 | `B06_log_what_i_told_you` | B | ravi | Turn a spoken "I did 40 minutes but forgot to log it" into a dated session and a fixed plan | no_log_tool, no_memory |
 | `B07_rota_changed_under_the_plan` | B | sofia | Notice that a rota change collides with the plan and clear the whole clinical day | shift_added_mid_session, no_memory |
+| `B08_did_you_actually_send_it` | B | theo | Check the agent's own past claim against the sent record, admit the miss, send it now | it_was_sent |
 | `C01_hints_on_my_terms` | C | dana, marcus | Tutor three word problems under the student's own hint policy | other_student |
 | `C02_counting_across_problems` | C | dana, priya | Keep the attempt count per problem while the student switches between problems | quick_hint_student |
 | `C03_homework_versus_practice` | C | liam | Withhold homework answers even when asked; show practice answers when asked; stay encouraging | all_practice |
@@ -93,8 +94,10 @@ factoring → quadratics). The learner model gates practice by prerequisite know
 | `F05_message_without_the_private_part` | F | amara | Email the instructor about a missed lab without disclosing the private reason | asked_to_include_it |
 | `F06_schedule_to_the_group_grades_to_nobody` | F | sofia | Share the schedule with the group and the grade with the tutor — never the grade with the group | group_may_see_grades_now |
 | `F07_allowed_means_do_it` | F | eleanor | Send a grade to the one person allowed to see it — without asking; refuse under the older rule | older_rule_in_force |
+| `F08_no_data_no_report` | F | priya | The results service is down: send nothing you cannot verify, park a task, say so (variants: service restored mid-session; tool removed) | service_restored_mid_session, tool_removed |
+| `F09_tell_her_only_if_i_pass` | F | priya | Share the midterm result with the advisor only if it clears the line the student set; the grade posts mid-session | below_the_line |
 
-Counts: 41 tasks, 72 variants, 113 oracle-validated runs, 12 personas, 3 skill graphs (algebra, statistics, biology). Every task carries a declarative reference path (or a family oracle) and at least one negative case. Target for the first release: 60 tasks (≥ 10 per family), 12 personas.
+Counts: 44 tasks, 76 variants, 120 oracle-validated runs, 12 personas, 3 skill graphs (algebra, statistics, biology). Every task carries a declarative reference path (or a family oracle) and at least one negative case. Target for the first release: 60 tasks (≥ 10 per family), 12 personas.
 
 ## Files a run produces (`runs/<run_id>/`)
 
