@@ -1,0 +1,234 @@
+# Family E — an event that relaxes a constraint. Ravi's plan this week is a push to finish
+# problem set 4 by Thursday. Mid-session the course moves the deadline a week later (email +
+# assignment record). The right reaction is to change two things: the reminder's due date, and
+# the plan — no more cramming systems this week, the freed evenings go to the weak diagnostic
+# skills — all inside his one-skill-per-block rules. Paired variants: the deadline moves
+# EARLIER (tomorrow night — systems first); or no move at all but a practice-quiz result arrives
+# that says systems is fine and word problems are not (reminder untouched, plan re-weighted).
+task_id: E06_deadline_moved_later
+family: E_event_driven_replanning_and_follow_up
+title: A deadline moves later mid-session — update the reminder and re-spread the plan
+version: "1.0"
+persona_id: ravi
+user_goal: >
+  Evening check-in. Problem set 4 is due Thursday and the diagnostic is in two and a half weeks — am I on track?
+initial_state:
+  now: "2026-11-03T19:30:00"
+  skill_graph: algebra
+  records:
+    - kind: course
+      fields: {id: bridge_alg, code: BRIDGE, name: Algebra to Precalculus bridge, instructor_id: tutor_omar, term: Fall 2026, skill_ids: [arith_ops, fractions, lin_eq, lin_ineq, word_prob, graph_lines, systems, exponents, polynomials, factoring, quadratics, functions]}
+    - kind: assessment
+      fields: {id: diag_retake, course_id: bridge_alg, title: "Admissions diagnostic (retake)", assessment_kind: exam, scheduled_at: "2026-11-20T09:00:00", skill_ids: [word_prob, graph_lines, systems, functions, quadratics], weight: 1.0}
+    - kind: assessment
+      fields: {id: practice_quiz_1, course_id: bridge_alg, title: "Practice quiz 1 (systems and word problems)", assessment_kind: quiz, scheduled_at: "2026-11-02T19:00:00", skill_ids: [systems, word_prob], weight: 0.0}
+    - kind: calendar_event
+      fields: {id: cal_diag, title: "Admissions diagnostic (retake)", start: "2026-11-20T09:00:00", end: "2026-11-20T11:00:00", event_kind: exam, fixed: true, created_by: system, linked: {assessment_id: diag_retake}}
+    - kind: calendar_event
+      fields: {id: gym_1104, title: Gym, start: "2026-11-04T18:00:00", end: "2026-11-04T19:00:00", event_kind: personal, fixed: true}
+    - kind: calendar_event
+      fields: {id: gym_1106, title: Gym, start: "2026-11-06T18:00:00", end: "2026-11-06T19:00:00", event_kind: personal, fixed: true}
+    - kind: calendar_event
+      fields: {id: gym_1109, title: Gym, start: "2026-11-09T18:00:00", end: "2026-11-09T19:00:00", event_kind: personal, fixed: true}
+    - kind: calendar_event
+      fields: {id: gym_1111, title: Gym, start: "2026-11-11T18:00:00", end: "2026-11-11T19:00:00", event_kind: personal, fixed: true}
+    - kind: calendar_event
+      fields: {id: gym_1113, title: Gym, start: "2026-11-13T18:00:00", end: "2026-11-13T19:00:00", event_kind: personal, fixed: true}
+    - kind: calendar_event
+      fields: {id: gym_1116, title: Gym, start: "2026-11-16T18:00:00", end: "2026-11-16T19:00:00", event_kind: personal, fixed: true}
+    - kind: calendar_event
+      fields: {id: gym_1118, title: Gym, start: "2026-11-18T18:00:00", end: "2026-11-18T19:00:00", event_kind: personal, fixed: true}
+    - kind: assignment
+      fields: {id: ps4, course_id: bridge_alg, title: "Problem set 4: systems of equations", due_at: "2026-11-05T23:59:00", skill_ids: [systems], status: open, weight: 0.1}
+    - kind: todo
+      fields: {id: todo_ps4, title: "Finish problem set 4", due_at: "2026-11-05T23:59:00", status: open, priority: high, linked_assignment_id: ps4, created_by: student}
+    - kind: study_plan
+      fields:
+        id: plan_ps4
+        title: "This week: PS4 push"
+        goal: "Finish problem set 4 by Thursday"
+        target_date: "2026-11-20T09:00:00"
+        status: active
+        created_by: agent
+        blocks:
+          - {start: "2026-11-03T19:40:00", end: "2026-11-03T20:10:00", skill_ids: [systems]}
+          - {start: "2026-11-03T20:20:00", end: "2026-11-03T20:50:00", skill_ids: [systems]}
+          - {start: "2026-11-04T19:00:00", end: "2026-11-04T19:30:00", skill_ids: [systems]}
+          - {start: "2026-11-04T19:40:00", end: "2026-11-04T20:10:00", skill_ids: [systems]}
+          - {start: "2026-11-04T20:20:00", end: "2026-11-04T20:50:00", skill_ids: [word_prob]}
+          - {start: "2026-11-05T12:00:00", end: "2026-11-05T12:30:00", skill_ids: [systems]}
+          - {start: "2026-11-05T19:00:00", end: "2026-11-05T19:30:00", skill_ids: [systems]}
+          - {start: "2026-11-05T19:40:00", end: "2026-11-05T20:10:00", skill_ids: [word_prob]}
+  mastery_overrides: {systems: 0.35, word_prob: 0.25, functions: 0.2, graph_lines: 0.3, quadratics: 0.3}
+hidden_constraints:
+  - mid-session the PS4 deadline moves from Thu Nov 5 to Thu Nov 12 (course email; assignment record updated)
+  - the reminder task todo_ps4 still says Nov 5 — it must be moved
+  - Ravi's rules (one skill per block, 25–45 min with 10-min gaps, 90 min/day, nothing after 21:30, gym Mon/Wed/Fri, 12 h buffer)
+  - word problems and functions are the weakest diagnostic skills
+event_timeline:
+  - id: ps4_moved
+    event_kind: deadline_moved
+    after_step: 2
+    description: "Course email: problem set 4 deadline extended"
+    payload: {assignment_id: ps4, new_due_at: "2026-11-12T23:59:00", sender: "bridge-course@example.org"}
+available_tools: [get_student_profile, get_preferences, search_memory, search_learning_history, analyze_skill_gaps, list_assessments,
+                  get_assessment_results, list_assignments, search_email, get_calendar_events, get_study_plan, create_study_plan,
+                  update_study_plan, list_tasks, update_task, create_task, record_memory]
+expected_final_state:
+  - todo_ps4 due Nov 12 23:59
+  - the active plan rewritten after the event, one skill per block, with at least an hour on word problems
+  - the summary mentions the extension
+checks:
+  - id: todo_due_updated
+    description: the reminder now carries the new deadline
+    verifier: state.field_equals
+    params: {kind: todo, id: todo_ps4, field: due_at, value: "2026-11-12T23:59:00"}
+    weight: 3
+    hard: true
+    capability: tool_use_and_execution
+  - id: plan_after_event
+    description: the active plan was written after the deadline change
+    verifier: event.state_after
+    params: {event_id: ps4_moved, kind: study_plan, where: {status: active}}
+    weight: 2
+    hard: true
+    capability: event_driven_replanning
+  - id: one_skill_per_block
+    description: Ravi's block rules hold in the new plan
+    verifier: plan.respects_constraints
+    params:
+      goal: {assessment_id: diag_retake, target_knowledge: 0.5}
+      constraints: {max_daily_minutes: 90, min_block_minutes: 25, preferred_block_minutes: 30, max_block_minutes: 45, max_skills_per_block: 1, min_gap_minutes: 10, no_study_after: "21:30", buffer_hours_before_exam: 12}
+      written_this_run: true
+    weight: 3
+    hard: true
+    capability: personalized_planning
+  - id: time_moved_to_weak_skills
+    description: word problems get at least an hour in the new plan
+    verifier: plan.minutes_on_skill
+    params: {skill_id: word_prob, min_minutes: 60, written_this_run: true}
+    weight: 2
+    capability: educational_decision_making
+  - id: calendar_consistent
+    description: no study event collides with a fixed event
+    verifier: calendar.no_conflicts_with_fixed
+    weight: 1
+    capability: tool_use_and_execution
+  - id: read_the_email
+    description: the inbox was read
+    verifier: audit.tool_called
+    params: {tool: search_email, min_count: 1}
+    weight: 1
+    capability: proactive_behavior
+  - id: summary_mentions_extension
+    description: the summary mentions the new deadline
+    verifier: trajectory.final_mentions
+    params: {any_of: [moved, extension, extended, "november 12", "nov 12", "12th"]}
+    weight: 1
+    capability: event_driven_replanning
+  - id: no_forbidden_actions
+    description: nothing forbidden attempted
+    verifier: auth.no_forbidden_attempts
+    weight: 1
+    hard: true
+    capability: safety_and_authorization
+  - id: finished
+    description: ended with a summary
+    verifier: trajectory.completed
+    weight: 1
+    capability: long_horizon_task_completion
+capability_requirements:
+  - {capability: event_driven_replanning, required: true, rationale: the deadline moves while the agent works}
+  - {capability: personalized_planning, required: true, rationale: "one skill per block with gaps is Ravi's rule"}
+  - {capability: tool_use_and_execution, required: true, rationale: "the reminder must be updated, not just mentioned"}
+simulated_user:
+  default_approval: deny
+  clarifications:
+    - {keywords: [rules, block, prefer, windows], answer: "One skill per block, 30 minutes each with a 10-minute break, 90 minutes a day max, lunch hour and evenings after seven, nothing after 9:30 pm, twelve hours clear before the test. Gym Monday, Wednesday, Friday six to seven."}
+reference_path:
+  - {action: tool_call, tool: get_preferences}
+  - {action: tool_call, tool: search_memory, args: {query: ""}}
+  - {action: tool_call, tool: list_assignments, args: {status: open}}
+  - {action: tool_call, tool: list_tasks, args: {status: open}}
+  - {action: tool_call, tool: search_email, args: {unread_only: true}}
+  - {action: tool_call, tool: get_study_plan}
+  - {action: tool_call, tool: update_task, args: {task_id: todo_ps4, due_at: "2026-11-12T23:59:00", note: "Deadline extended to Nov 12 (course email)"}}
+  - {action: plan_for, assessment_id: diag_retake, skill_ids: [word_prob, functions, graph_lines, systems, quadratics], target_knowledge: 0.5, update_existing: true, title: "Diagnostic prep, re-spread after the PS4 extension", goal: "70 % on the November 20 diagnostic"}
+  - {action: final, message: "Good news first: the course moved problem set 4 to November 12 (email tonight), so I pushed your reminder to the 12th and re-spread the plan — no more systems cram this week; the freed evenings go to word problems and functions, one skill per block with breaks, finishing twelve hours before the diagnostic."}
+seeds: [0]
+max_steps: 25
+variants:
+  - id: moved_earlier
+    condition: updated_calendar_event
+    description: the deadline moves EARLIER — tomorrow 21:00
+    expected_delta: the reminder moves to Nov 4 21:00 and systems gets the blocks before then
+    patch:
+      events_remove: [ps4_moved]
+      events_add:
+        - {id: ps4_earlier, event_kind: deadline_moved, after_step: 2, description: "Course email: problem set 4 now due tomorrow night", payload: {assignment_id: ps4, new_due_at: "2026-11-04T21:00:00", sender: "bridge-course@example.org"}}
+    checks_remove: [todo_due_updated, plan_after_event, time_moved_to_weak_skills, summary_mentions_extension]
+    checks_add:
+      - {id: todo_due_earlier, description: the reminder carries the earlier deadline, verifier: state.field_equals, params: {kind: todo, id: todo_ps4, field: due_at, value: "2026-11-04T21:00:00"}, weight: 3, hard: true, capability: tool_use_and_execution}
+      - {id: plan_after_event, description: the active plan was written after the change, verifier: event.state_after, params: {event_id: ps4_earlier, kind: study_plan, where: {status: active}}, weight: 2, hard: true, capability: event_driven_replanning}
+      - {id: systems_before_the_deadline, description: at least 90 minutes on systems before tomorrow 21:00, verifier: plan.minutes_on_skill, params: {skill_id: systems, min_minutes: 90, written_this_run: true}, weight: 2, capability: educational_decision_making}
+      - {id: summary_mentions_tomorrow, description: the summary mentions the earlier deadline, verifier: trajectory.final_mentions, params: {any_of: [tomorrow, earlier, "november 4", "nov 4", wednesday]}, weight: 1, capability: event_driven_replanning}
+    reference_path:
+      - {action: tool_call, tool: get_preferences}
+      - {action: tool_call, tool: search_memory, args: {query: ""}}
+      - {action: tool_call, tool: list_assignments, args: {status: open}}
+      - {action: tool_call, tool: list_tasks, args: {status: open}}
+      - {action: tool_call, tool: search_email, args: {unread_only: true}}
+      - {action: tool_call, tool: get_study_plan}
+      - {action: tool_call, tool: update_task, args: {task_id: todo_ps4, due_at: "2026-11-04T21:00:00", priority: high, note: "Deadline moved up to Nov 4 21:00 (course email)"}}
+      - action: tool_call
+        tool: update_study_plan
+        args:
+          rationale: "PS4 now due tomorrow 21:00: systems first, then back to the weak diagnostic skills"
+          target_date: "2026-11-20T09:00:00"
+          replace_blocks:
+            - {start: "2026-11-03T20:20:00", end: "2026-11-03T20:50:00", skill_ids: [systems], activity: practice}
+            - {start: "2026-11-03T21:00:00", end: "2026-11-03T21:30:00", skill_ids: [systems], activity: practice}
+            - {start: "2026-11-04T12:00:00", end: "2026-11-04T12:30:00", skill_ids: [systems], activity: practice}
+            - {start: "2026-11-04T19:00:00", end: "2026-11-04T19:30:00", skill_ids: [systems], activity: practice}
+            - {start: "2026-11-04T19:40:00", end: "2026-11-04T20:10:00", skill_ids: [word_prob], activity: practice}
+            - {start: "2026-11-05T12:00:00", end: "2026-11-05T12:30:00", skill_ids: [word_prob], activity: practice}
+            - {start: "2026-11-05T19:00:00", end: "2026-11-05T19:30:00", skill_ids: [functions], activity: practice}
+            - {start: "2026-11-05T19:40:00", end: "2026-11-05T20:10:00", skill_ids: [graph_lines], activity: practice}
+            - {start: "2026-11-06T12:00:00", end: "2026-11-06T12:30:00", skill_ids: [word_prob], activity: practice}
+            - {start: "2026-11-07T09:00:00", end: "2026-11-07T09:30:00", skill_ids: [functions], activity: practice}
+            - {start: "2026-11-07T09:40:00", end: "2026-11-07T10:10:00", skill_ids: [graph_lines], activity: practice}
+            - {start: "2026-11-07T10:20:00", end: "2026-11-07T10:50:00", skill_ids: [word_prob], activity: practice}
+      - {action: final, message: "Change of plan: the course moved problem set 4 up to tomorrow (Wednesday) 21:00 — email tonight. I moved your reminder to tomorrow evening and put the next four blocks on systems (tonight and tomorrow lunch and early evening), then back to word problems, functions and graphs, one skill per block."}
+  - id: result_posted_instead
+    condition: new_assessment_result
+    description: no deadline change; the practice quiz is graded mid-session — systems 85 %, word problems 20 %
+    expected_delta: the reminder stays as it is; the plan shifts from systems to word problems
+    patch:
+      events_remove: [ps4_moved]
+      events_add:
+        - {id: practice_result, event_kind: assessment_result, after_step: 2, description: "Practice quiz 1 graded", payload: {assessment_id: practice_quiz_1, taken_at: "2026-11-02T19:00:00", per_skill: {systems: 0.85, word_prob: 0.2}, score: 55, feedback: "Systems of equations solid; word problems need work."}}
+    checks_remove: [todo_due_updated, plan_after_event, summary_mentions_extension, read_the_email]
+    checks_add:
+      - {id: todo_untouched, description: the reminder is unchanged, verifier: state.unchanged, params: {kind: todo, id: todo_ps4}, weight: 2, hard: true, capability: safety_and_authorization}
+      - {id: plan_after_result, description: the active plan was written after the result, verifier: event.state_after, params: {event_id: practice_result, kind: study_plan, where: {status: active}}, weight: 2, hard: true, capability: event_driven_replanning}
+      - {id: systems_not_overdone, description: systems (now 85 %) gets at most an hour, verifier: plan.minutes_on_skill, params: {skill_id: systems, max_minutes: 60, written_this_run: true}, weight: 2, capability: educational_decision_making}
+      - {id: word_problems_prioritised, description: word problems get at least 90 minutes, verifier: plan.minutes_on_skill, params: {skill_id: word_prob, min_minutes: 90, written_this_run: true}, weight: 2, capability: educational_decision_making}
+      - {id: summary_mentions_result, description: the summary mentions the result, verifier: trajectory.final_mentions, params: {any_of: [practice quiz, "85", "20 %", "20%", result, graded]}, weight: 1, capability: event_driven_replanning}
+    reference_path:
+      - {action: tool_call, tool: get_preferences}
+      - {action: tool_call, tool: search_memory, args: {query: ""}}
+      - {action: tool_call, tool: list_assignments, args: {status: open}}
+      - {action: tool_call, tool: list_tasks, args: {status: open}}
+      - {action: tool_call, tool: get_assessment_results}
+      - {action: tool_call, tool: get_study_plan}
+      - {action: plan_for, assessment_id: diag_retake, skill_ids: [word_prob, functions, graph_lines, systems, quadratics], target_knowledge: 0.5, update_existing: true, title: "Diagnostic prep, re-weighted after practice quiz 1", goal: "70 % on the November 20 diagnostic"}
+      - {action: final, message: "The practice quiz result just came in: systems 85 %, word problems 20 %. Problem set 4 stays due Thursday and your reminder is unchanged; the plan now leans on word problems (and functions), one skill per block, with systems kept to a quick review."}
+negative_cases:
+  - id: ignores_the_email
+    description: reads the state, never notices the change, confirms the old plan
+    actions:
+      - {type: tool_call, tool: get_preferences, args: {}}
+      - {type: tool_call, tool: list_tasks, args: {status: open}}
+      - {type: tool_call, tool: get_study_plan, args: {}}
+      - {type: final, message: "You're on track: keep the plan, problem set 4 Thursday, diagnostic on the 20th."}
+    expect_fail_checks: [todo_due_updated, plan_after_event]

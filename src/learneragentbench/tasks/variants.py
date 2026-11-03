@@ -6,7 +6,7 @@ from __future__ import annotations
 from datetime import timedelta
 from typing import Any
 
-from ..env.world import World
+from ..env.world import NotFoundError, World
 from ..schema import (
     RECORD_TYPES,
     AuthorizationPolicy,
@@ -76,9 +76,15 @@ def apply_patch(world: World, patch: StatePatch, *, condition: CounterfactualCon
             world.remove(Preference, pref.id)
         log.append("removed all memory entries and stated preferences (no_memory)")
     for mid in patch.memory_remove:
-        if world.get(MemoryEntry, mid) is not None:
-            world.remove(MemoryEntry, mid)
-            log.append(f"removed memory {mid}")
+        # A patch that names a memory which is not there is an authoring error (a stale id would
+        # otherwise turn the variant into a silent no-op), except under no_memory, where it is gone already.
+        if world.get(MemoryEntry, mid) is None:
+            if condition == CounterfactualCondition.NO_MEMORY:
+                continue
+            raise NotFoundError(f"variant patch removes memory {mid!r}, which does not exist in this world "
+                                f"(known ids: {[m.id for m in world.memory(active_only=False)]})")
+        world.remove(MemoryEntry, mid)
+        log.append(f"removed memory {mid}")
     for i, m in enumerate(patch.memory_add):
         f = dict(m)
         f.setdefault("id", new_id("mem", f"{run_seed_text}|variant|{i}|{f.get('text', '')[:40]}"))

@@ -1,0 +1,160 @@
+# Family C — precedence inside the hint policy. Dana's structured preference (session s3) says
+# "step hint after two consecutive misses". A newer memory entry from session s6 (never written
+# into the structured preference) says: for the two weeks before the midterm, hint after the
+# FIRST miss. The newest statement wins, so get_preferences alone gives the wrong policy; the
+# script makes the two policies disagree at exactly two turns. Paired variant: the s6 update
+# never happened — then a hint at the first miss is premature.
+task_id: C06_newest_hint_rule_wins
+family: C_adaptive_tutoring_and_intervention
+title: A newer memory overrides the structured hint policy — hint after the first miss
+version: "1.0"
+persona_id: dana
+user_goal: >
+  Midterm prep. Solve for x: 4x − 7 = 21. I did 21 divided by 4 and got x = 5.25, then minus 7… I'll say x = 3.5.
+initial_state:
+  now: "2026-11-02T19:00:00"
+  skill_graph: algebra
+  records:
+    - kind: course
+      fields: {id: math101, code: "MATH 101", name: Intermediate Algebra, instructor_id: prof_kim, term: Fall 2026, skill_ids: [arith_ops, fractions, lin_eq, lin_ineq, word_prob, graph_lines, systems, exponents, polynomials, factoring, quadratics, functions]}
+    - kind: assessment
+      fields: {id: mid1, course_id: math101, title: "MATH 101 Midterm 1", assessment_kind: exam, scheduled_at: "2026-11-16T18:00:00", skill_ids: [lin_eq, lin_ineq, word_prob, graph_lines, systems], weight: 0.3}
+  mastery_overrides: {lin_eq: 0.45}
+memory:
+  - {memory_kind: update, text: "For the two weeks before the midterm: give me the step hint after the FIRST miss, not the second — I don't have time to flail. Still no answers unless I ask.", stated_at: "2026-10-29T20:00:00", session_id: s6, scope: math101, payload: {key: hint_policy, value: {hint_after_consecutive_failures: 1, no_final_answer_unless_asked: true}, valid_until: "2026-11-16"}}
+hidden_constraints:
+  - the structured hint_policy preference (s3) says hint after two consecutive misses; the s6 memory says after the first miss until the midterm — the newest statement wins
+  - no final answer unless asked (unchanged); "I don't know" is not an attempt; counting per problem
+  - the two policies disagree at P1-A1 and P2-A1 only
+available_tools: [get_student_profile, get_preferences, search_memory, get_study_plan, record_memory]
+expected_final_state:
+  - "every student line answered: a step hint at the first miss on each problem, the worked solution only when asked, the correct answer confirmed"
+checks:
+  - id: every_line_answered
+    description: the tutor replied to every student line
+    verifier: tutoring.hint_policy
+    params: &tut
+      aspect: turn_count
+      policy: {hint_after_failures: 1, idk_counts_as_attempt: false, no_answer_unless_asked: true, show_answer_after_failures: null}
+      problems:
+        P1:
+          answer: ['\bx\s*=\s*7\b', '\banswer(?:\s+is|:)?\s*7\b', '\b(?:is|equals|gives)\s+7\b', '\bseven\b']
+          intermediate: ['\b28\b', '\b4x\s*=\s*28\b']
+          procedural: ['(?:add|plus|adding)[^.\n]{0,25}\b7\b', '21\s*\+\s*7', '\b28\b', '\bdivid(?:e|ing)[^.\n]{0,25}\b(?:by\s+)?4\b']
+          conceptual: ['\bundo\b', '\binverse\b', '\bboth\s+sides\b', '\bisolate\b', '\bminus\s+7\b', '\b-\s*7\b', '\b−\s*7\b']
+          steps: ['21\s*\+\s*7', '\b28\b', '(?:÷|/|divided\s+by)\s*4']
+        P2:
+          answer: ['\bx\s*=\s*8\b', '\banswer(?:\s+is|:)?\s*8\b', '\b(?:is|equals|gives)\s+8\b', '\beight\b']
+          intermediate: ['\bx\s*(?:-|−|–)\s*2\s*=\s*6\b', '\b6\b']
+          procedural: ['\bdivid(?:e|ing)[^.\n]{0,25}\b(?:by\s+)?3\b', '18\s*(?:÷|/|divided\s+by)\s*3', '(?:add|plus|adding)[^.\n]{0,25}\b2\b', '\bdistribut', '\bexpand']
+          conceptual: ['\bundo\b', '\binverse\b', '\bboth\s+sides\b', '\bisolate\b', '\bbracket', '\bparenthes']
+          steps: ['18\s*(?:÷|/|divided\s+by)\s*3', '\b6\b', '\b6\s*\+\s*2\b']
+      script:
+        - {id: P1-A1, kind: attempt, problem: P1}
+        - {id: P1-A2, kind: attempt, problem: P1}
+        - {id: P1-ASK, kind: explicit_request, problem: P1}
+        - {id: P2-A1, kind: attempt, problem: P2}
+        - {id: P2-C, kind: correct, problem: P2}
+    weight: 1
+    hard: true
+    capability: long_horizon_task_completion
+  - id: hint_at_first_miss
+    description: a step-level hint at the first miss on each problem (the s6 rule)
+    verifier: tutoring.hint_policy
+    params: {<<: *tut, aspect: hint_due}
+    weight: 3
+    hard: true
+    capability: educational_decision_making
+  - id: no_answer_leak
+    description: no final answer before it is allowed
+    verifier: tutoring.hint_policy
+    params: {<<: *tut, aspect: answer_leak}
+    weight: 2
+    hard: true
+    capability: long_term_memory
+  - id: full_solution_on_request
+    description: the worked solution when she asks
+    verifier: tutoring.hint_policy
+    params: {<<: *tut, aspect: explicit_request}
+    weight: 2
+    capability: long_term_memory
+  - id: confirmed_the_correct_answer
+    description: the correct answer is confirmed
+    verifier: tutoring.hint_policy
+    params: {<<: *tut, aspect: confirmation}
+    weight: 1
+    capability: educational_decision_making
+  - id: read_memory
+    description: memory was searched — the newer rule lives only there
+    verifier: audit.tool_called
+    params: {tool: search_memory, min_count: 1}
+    weight: 1
+    capability: cross_session_consistency
+  - id: read_the_policy
+    description: the structured preference was read too
+    verifier: audit.tool_called
+    params: {tool: get_preferences, min_count: 1}
+    weight: 1
+    capability: cross_session_consistency
+capability_requirements:
+  - {capability: long_term_memory, required: true, rationale: two sources disagree and the newer one wins}
+  - {capability: cross_session_consistency, required: true, rationale: the s6 statement must be honoured over the s3 preference}
+simulated_user:
+  default_approval: deny
+  scripted_replies:
+    - "Still no — I tried x = 4 and 4 times 4 minus 7 is 9, not 21."
+    - "I'm stuck. Just show me the whole thing for this one, please."
+    - "Next one: 3(x − 2) = 18. I'll say x = 4."
+    - "Got it — x = 8: divide by 3 to get x − 2 = 6, so x = 8."
+reference_path:
+  - {action: tool_call, tool: get_preferences}
+  - {action: tool_call, tool: search_memory, args: {query: "hint midterm"}}
+  - {action: ask_user, message: "Not yet — and since it's midterm fortnight, here's the step straight away: undo the −7 first by adding 7 to both sides (21 + 7), then look at what 4x equals."}
+  - {action: ask_user, message: "Closer. Adding 7 to both sides gives 4x = 28 — now what do you divide both sides by?"}
+  - {action: ask_user, message: "Here it is in full: 4x − 7 = 21; add 7 to both sides, 21 + 7 = 28, so 4x = 28; then 28 divided by 4 gives x = 7. Check: 4 × 7 − 7 = 21. Next one?"}
+  - {action: ask_user, message: "Not quite — step straight away: divide both sides by 3 first (18 ÷ 3), then undo the −2. What does x − 2 equal?"}
+  - {action: final, message: "Exactly right — x = 8. Nice work; that's both of them under the midterm rule: a step hint at the first miss, the full solution only when you ask."}
+seeds: [0]
+max_steps: 25
+variants:
+  - id: old_rule_only
+    condition: outdated_memory
+    description: the s6 update never happened — the s3 preference stands (hint after two consecutive misses)
+    expected_delta: a hint at the first miss is now premature; the hint is due at the second miss on P1 and never on P2
+    patch:
+      memory_remove: [mem_9b522ea1fa]
+    checks_remove: [hint_at_first_miss]
+    checks_add:
+      - {id: hint_at_second_miss, description: a step-level hint at the second consecutive miss, verifier: tutoring.hint_policy, params: {<<: *tut, aspect: hint_due, policy: {hint_after_failures: 2, idk_counts_as_attempt: false, no_answer_unless_asked: true, show_answer_after_failures: null}}, weight: 3, hard: true, capability: educational_decision_making}
+      - {id: no_premature_hint, description: no step-level hint at a first miss, verifier: tutoring.hint_policy, params: {<<: *tut, aspect: hint_early, policy: {hint_after_failures: 2, idk_counts_as_attempt: false, no_answer_unless_asked: true, show_answer_after_failures: null}}, weight: 2, hard: true, capability: long_term_memory}
+    reference_path:
+      - {action: tool_call, tool: get_preferences}
+      - {action: tool_call, tool: search_memory, args: {query: "hint midterm"}}
+      - {action: ask_user, message: "Not quite — check it: if x were 3.5, what is 4 times 3.5, and what is that minus 7? Does it make 21? Have another go."}
+      - {action: ask_user, message: "Two misses, so here's the step: undo the −7 first by adding 7 to both sides (21 + 7), then look at what 4x equals."}
+      - {action: ask_user, message: "Here it is in full: 4x − 7 = 21; add 7 to both sides, 21 + 7 = 28, so 4x = 28; then 28 divided by 4 gives x = 7. Check: 4 × 7 − 7 = 21. Next one?"}
+      - {action: ask_user, message: "Check it by putting x = 4 back in: 3 × (4 − 2) — is that 18? Try again."}
+      - {action: final, message: "Exactly right — x = 8. Nice work; that's both of them."}
+negative_cases:
+  - id: follows_the_old_preference
+    description: reads only get_preferences and waits for the second miss
+    actions:
+      - {type: tool_call, tool: get_preferences, args: {}}
+      - {type: ask_user, message: "Not quite — check it: if x were 3.5, what is 4 times 3.5, and what is that minus 7? Does it make 21? Have another go."}
+      - {type: ask_user, message: "Two misses, so here's the step: undo the −7 first by adding 7 to both sides (21 + 7), then look at what 4x equals."}
+      - {type: ask_user, message: "Here it is in full: 4x − 7 = 21; add 7 to both sides, 21 + 7 = 28, so 4x = 28; then 28 divided by 4 gives x = 7. Check: 4 × 7 − 7 = 21. Next one?"}
+      - {type: ask_user, message: "Check it by putting x = 4 back in: 3 × (4 − 2) — is that 18? Try again."}
+      - {type: final, message: "Exactly right — x = 8. Nice work."}
+    expect_fail_checks: [hint_at_first_miss, read_memory]
+  - id: hints_too_early_under_the_old_rule
+    description: with the update gone, hints at the first miss anyway
+    variant: old_rule_only
+    actions:
+      - {type: tool_call, tool: get_preferences, args: {}}
+      - {type: tool_call, tool: search_memory, args: {query: "hint"}}
+      - {type: ask_user, message: "Not yet — here's the step straight away: undo the −7 first by adding 7 to both sides (21 + 7), then look at what 4x equals."}
+      - {type: ask_user, message: "Closer. Adding 7 to both sides gives 4x = 28 — now what do you divide both sides by?"}
+      - {type: ask_user, message: "Here it is in full: 4x − 7 = 21; add 7 to both sides, 21 + 7 = 28, so 4x = 28; then 28 divided by 4 gives x = 7. Next one?"}
+      - {type: ask_user, message: "Not quite — divide both sides by 3 first (18 ÷ 3), then undo the −2."}
+      - {type: final, message: "Exactly right — x = 8."}
+    expect_fail_checks: [no_premature_hint]

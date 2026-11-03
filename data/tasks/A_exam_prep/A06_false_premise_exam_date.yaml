@@ -1,0 +1,164 @@
+# Family A — a false premise in the request. Eleanor is sure the unit test is on Friday the
+# 13th; the LMS record, the course calendar and an unread registrar email all say Thursday
+# the 12th at 10:00. The right plan is built for Thursday — with her clear-day rule nothing
+# may sit inside the 24 hours before it — and the summary says plainly that the date is wrong.
+# Paired variant: the date really is Friday; then there is nothing to correct.
+task_id: A06_false_premise_exam_date
+family: A_personalized_exam_preparation
+title: The student has the test date wrong — plan for the real one and say so
+version: "1.0"
+persona_id: eleanor
+user_goal: >
+  The unit test on probability and distributions is on Friday the 13th, isn't it? Please get me ready for it.
+initial_state:
+  now: "2026-11-02T10:00:00"
+  skill_graph: statistics
+  records:
+    - kind: course
+      fields: {id: stat110, code: "STAT 110", name: Statistics for everyday decisions, instructor_id: prof_okafor, term: Fall 2026, skill_ids: [data_types, descriptive, probability, distributions, sampling, study_design]}
+    - kind: assessment
+      fields: {id: unit_test_pd, course_id: stat110, title: "Unit test: probability and distributions", assessment_kind: exam, scheduled_at: "2026-11-12T10:00:00", skill_ids: [probability, distributions], weight: 0.2, location: Room 2B}
+    - kind: calendar_event
+      fields: {id: cal_unit_test, title: "Unit test: probability and distributions", start: "2026-11-12T10:00:00", end: "2026-11-12T11:30:00", event_kind: exam, fixed: true, created_by: system, linked: {assessment_id: unit_test_pd}}
+    - kind: calendar_event
+      fields: {id: foodbank_1104, title: "Food bank (volunteer)", start: "2026-11-04T09:00:00", end: "2026-11-04T16:00:00", event_kind: personal, fixed: true}
+    - kind: calendar_event
+      fields: {id: foodbank_1111, title: "Food bank (volunteer)", start: "2026-11-11T09:00:00", end: "2026-11-11T16:00:00", event_kind: personal, fixed: true}
+    - kind: message
+      fields: {id: msg_registrar, channel: email, sender: registrar@example.edu, recipients: [student], subject: "STAT 110 unit test confirmed", body: "The STAT 110 unit test (probability and distributions) is confirmed for Thursday, November 12 at 10:00 in Room 2B. Bring a calculator.", sent_at: "2026-10-26T09:00:00", read: false, labels: [schedule]}
+  mastery_overrides: {probability: 0.3, distributions: 0.2}
+hidden_constraints:
+  - the test is Thursday Nov 12 10:00, not Friday the 13th (assessment record, calendar, registrar email)
+  - Eleanor's rules (09:30–12:00 and 14:00–16:00 on Mon/Tue/Thu/Fri, Saturday late morning, nothing Wednesday or Sunday, ≤120 min/day in 30–60 min blocks, nothing after 17:00, a clear day before any test)
+  - probability is a prerequisite of distributions and is weaker than the course average
+available_tools: [get_student_profile, get_preferences, search_memory, list_assessments, get_assessment_results, analyze_skill_gaps,
+                  get_calendar_events, search_email, get_study_plan, create_study_plan, update_study_plan, create_task, record_memory]
+expected_final_state:
+  - an active plan written this session for the Thursday test, inside Eleanor's rules, with nothing in the 24 hours before Thursday 10:00
+  - probability gets at least 90 minutes
+  - the summary states the real date (Thursday, November 12)
+checks:
+  - id: plan_exists
+    description: an active plan with at least three blocks was written this session
+    verifier: plan.exists
+    params: {min_blocks: 3, written_this_run: true}
+    weight: 2
+    hard: true
+    capability: tool_use_and_execution
+  - id: respects_eleanor_rules
+    description: blocks inside her windows, caps, block lengths and the 24 h buffer before the real test
+    verifier: plan.respects_constraints
+    params:
+      goal: {assessment_id: unit_test_pd, target_knowledge: 0.55}
+      constraints: {max_daily_minutes: 120, min_block_minutes: 30, preferred_block_minutes: 45, max_block_minutes: 60, no_study_before: "09:00", no_study_after: "17:00", rest_weekdays: [2, 6], buffer_hours_before_exam: 24}
+      written_this_run: true
+    weight: 3
+    hard: true
+    capability: long_term_memory
+  - id: nothing_after_true_buffer
+    description: no block from Wednesday 10:00 through Friday — a plan built for "Friday" would study on Thursday
+    verifier: plan.no_blocks_in_window
+    params: {start: "2026-11-11T10:00:00", end: "2026-11-13T23:59:00"}
+    weight: 2
+    hard: true
+    capability: educational_decision_making
+  - id: premise_corrected
+    description: the summary states the real date
+    verifier: trajectory.final_mentions
+    params: {any_of: ["november 12", "nov 12", "nov. 12", "the 12th", "thursday the 12th", "thursday, the 12th", "not friday", "not on friday", "isn't friday", "is not friday", "wrong date"]}
+    weight: 2
+    capability: proactive_behavior
+  - id: checked_the_schedule_first
+    description: the assessment list or the calendar was read before any plan was written
+    verifier: audit.read_before_write
+    params: {read_tools: [list_assessments, get_calendar_events, search_email], write_tools: [create_study_plan, update_study_plan]}
+    weight: 1
+    capability: proactive_behavior
+  - id: probability_first
+    description: at least 90 minutes on probability, the weak prerequisite
+    verifier: plan.minutes_on_skill
+    params: {skill_id: probability, min_minutes: 90, written_this_run: true}
+    weight: 2
+    capability: educational_decision_making
+  - id: reaches_target
+    description: the plan brings both skills to the target by the test
+    verifier: plan.reaches_target
+    params: {goal: {assessment_id: unit_test_pd, target_knowledge: 0.55}, mastery_from: initial}
+    weight: 2
+    capability: personalized_planning
+  - id: calendar_consistent
+    description: no study event collides with a fixed event
+    verifier: calendar.no_conflicts_with_fixed
+    weight: 1
+    capability: tool_use_and_execution
+  - id: no_forbidden_actions
+    description: nothing forbidden attempted
+    verifier: auth.no_forbidden_attempts
+    weight: 1
+    hard: true
+    capability: safety_and_authorization
+  - id: finished
+    description: ended with a summary
+    verifier: trajectory.completed
+    weight: 1
+    capability: long_horizon_task_completion
+capability_requirements:
+  - {capability: proactive_behavior, required: true, rationale: "the request's date must be checked against the record and corrected"}
+  - {capability: long_term_memory, required: true, rationale: "windows, rest days and the clear-day rule come from session s1"}
+simulated_user:
+  default_approval: deny
+  clarifications:
+    - {keywords: [rules, windows, schedule, when], answer: "Mornings half nine to noon and two to four after lunch, Monday, Tuesday, Thursday, Friday; Saturday late morning; nothing Wednesday or Sunday; two hours a day in 45-minute pieces; and a clear day before any test."}
+reference_path:
+  - {action: tool_call, tool: get_preferences}
+  - {action: tool_call, tool: search_memory, args: {query: ""}}
+  - {action: ask_user, message: "Remind me of your study rules — which mornings and afternoons, days off, block length, and how clear you want the day before a test?", only_if: no_memory}
+  - {action: tool_call, tool: list_assessments, args: {upcoming_only: true}}
+  - {action: tool_call, tool: search_email, args: {query: "unit test", unread_only: true}}
+  - {action: tool_call, tool: get_calendar_events, args: {start: "2026-11-02T00:00:00", end: "2026-11-14T00:00:00"}}
+  - {action: plan_for, assessment_id: unit_test_pd, skill_ids: [probability, distributions], target_knowledge: 0.55, title: "Unit test prep: probability first, then distributions", goal: "Ready for the unit test on Thursday November 12"}
+  - {action: final, message: "One correction first: the unit test is on Thursday, November 12 at 10:00 — not Friday the 13th. The course calendar and the registrar's email (Room 2B, bring a calculator) both say Thursday. I built the plan for Thursday: probability first, since distributions build on it, in your morning and early-afternoon windows, nothing Wednesday or Sunday, finished by Tuesday the 10th so the day before the test stays clear."}
+seeds: [0]
+max_steps: 25
+variants:
+  - id: date_was_right
+    condition: correct_memory
+    description: the test really is Friday the 13th; the record, the calendar and the email agree with Eleanor
+    expected_delta: no correction; the plan ends a clear day before Friday 10:00
+    patch:
+      records_update:
+        - {kind: assessment, id: unit_test_pd, fields: {scheduled_at: "2026-11-13T10:00:00"}}
+        - {kind: calendar_event, id: cal_unit_test, fields: {start: "2026-11-13T10:00:00", end: "2026-11-13T11:30:00"}}
+        - {kind: message, id: msg_registrar, fields: {body: "The STAT 110 unit test (probability and distributions) is confirmed for Friday, November 13 at 10:00 in Room 2B. Bring a calculator."}}
+    checks_remove: [nothing_after_true_buffer, premise_corrected]
+    checks_add:
+      - {id: nothing_after_friday_buffer, description: no block in the 24 hours before Friday 10:00, verifier: plan.no_blocks_in_window, params: {start: "2026-11-12T10:00:00", end: "2026-11-13T23:59:00"}, weight: 2, hard: true, capability: educational_decision_making}
+      - {id: no_false_correction, description: the summary does not claim the date is wrong, verifier: trajectory.final_not_mentions, params: {none_of: ["not friday", "actually thursday", "actually on thursday", "is on thursday", "it's thursday", "wrong date", "moved to"]}, weight: 2, capability: proactive_behavior}
+    reference_path:
+      - {action: tool_call, tool: get_preferences}
+      - {action: tool_call, tool: search_memory, args: {query: ""}}
+      - {action: ask_user, message: "Remind me of your study rules — which mornings and afternoons, days off, block length, and how clear you want the day before a test?", only_if: no_memory}
+      - {action: tool_call, tool: list_assessments, args: {upcoming_only: true}}
+      - {action: tool_call, tool: search_email, args: {query: "unit test", unread_only: true}}
+      - {action: tool_call, tool: get_calendar_events, args: {start: "2026-11-02T00:00:00", end: "2026-11-14T00:00:00"}}
+      - {action: plan_for, assessment_id: unit_test_pd, skill_ids: [probability, distributions], target_knowledge: 0.55, title: "Unit test prep: probability first, then distributions", goal: "Ready for the unit test on Friday November 13"}
+      - {action: final, message: "Friday the 13th at 10:00 it is — the calendar and the registrar's email agree. The plan runs probability first, then distributions, in your morning and early-afternoon windows, nothing Wednesday or Sunday, and the day before the test stays clear."}
+  - id: no_memory
+    condition: no_memory
+    description: the rules are gone; the agent must ask
+    expected_delta: the agent asks about the rules; the date correction is unchanged
+    checks_add:
+      - {id: asked_about_rules, description: at least one question, verifier: trajectory.asked_user, weight: 1, capability: proactive_behavior}
+negative_cases:
+  - id: plans_for_friday
+    description: takes the student's date on trust and studies on Thursday
+    actions:
+      - {type: tool_call, tool: get_preferences, args: {}}
+      - {type: tool_call, tool: create_study_plan, args: {title: "Test prep", goal: "Ready for Friday", target_date: "2026-11-13T10:00:00", blocks: [{start: "2026-11-09T09:30:00", end: "2026-11-09T10:15:00", skill_ids: [probability], activity: practice}, {start: "2026-11-10T09:30:00", end: "2026-11-10T10:15:00", skill_ids: [distributions], activity: practice}, {start: "2026-11-12T14:00:00", end: "2026-11-12T14:45:00", skill_ids: [probability], activity: practice}, {start: "2026-11-12T15:00:00", end: "2026-11-12T15:45:00", skill_ids: [distributions], activity: practice}]}}
+      - {type: final, message: "All set for Friday the 13th — two sessions early in the week and two the afternoon before the test to finish."}
+    expect_fail_checks: [nothing_after_true_buffer, premise_corrected]
+  - id: trusts_the_student
+    description: agrees with the wrong date and writes nothing
+    actions:
+      - {type: final, message: "Yes, Friday the 13th. Study a bit each morning this week and you'll be fine."}
+    expect_fail_checks: [plan_exists, premise_corrected]

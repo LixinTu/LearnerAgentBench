@@ -1,0 +1,102 @@
+# Fictional student. Nothing here describes a real person.
+id: eleanor
+description: >
+  Retired schoolteacher (68) taking a continuing-education statistics course to make sense of
+  health news, with a capstone presentation instead of a final. Studies only in daylight —
+  mornings and early afternoons, never evenings; Wednesdays at the food bank and Sundays are
+  off. Learns from worked examples: one try, then show the whole solution. Her daughter Nadia
+  may see everything, grades included; her study partner Walt may see the schedule; the
+  instructor is emailed only after approval. Buys large-print materials up to $200 without asking.
+profile:
+  name: Eleanor Brandt
+  pronouns: she/her
+  level: adult learner, retired
+  program: Statistics for everyday decisions (continuing education, community college)
+  timezone: America/New_York
+  course_ids: [stat110]
+  goals:
+    - Understand the statistics behind the health news she reads
+    - Give the capstone presentation on December 10 without reading from notes
+  contacts:
+    - {id: prof_okafor, name: Dr. Okafor, role: instructor, email: okafor@example.edu, course_ids: [stat110]}
+    - {id: nadia, name: Nadia Brandt-Osei (daughter), role: other, email: nadia.bo@example.com}
+    - {id: walt, name: Walt Greer (study partner), role: peer, email: walt.g@example.com}
+    - {id: tutor_sam_lib, name: Sam (library volunteer tutor), role: tutor, email: tutoring@example.org}
+  availability:
+    0: [{start: "09:30", end: "12:00"}, {start: "14:00", end: "16:00"}]
+    1: [{start: "09:30", end: "12:00"}, {start: "14:00", end: "16:00"}]
+    2: []
+    3: [{start: "09:30", end: "12:00"}, {start: "14:00", end: "16:00"}]
+    4: [{start: "09:30", end: "12:00"}, {start: "14:00", end: "16:00"}]
+    5: [{start: "10:00", end: "12:00"}]
+    6: []
+  traits:
+    learning_pace: careful
+    feedback_receptiveness: high
+    independence: low
+    materials: large print
+  notes: Eyes tire by late afternoon; nothing after 17:00. Wednesday is the food bank, Sunday is church and family.
+preferences:
+  - {key: max_daily_minutes, value: 120, scope: global, stated_at: "2026-09-08T10:05:00", source_session: s1}
+  - {key: preferred_block_minutes, value: 45, scope: global, stated_at: "2026-09-08T10:05:00", source_session: s1}
+  - {key: min_block_minutes, value: 30, scope: global, stated_at: "2026-09-08T10:05:00", source_session: s1}
+  - {key: max_block_minutes, value: 60, scope: global, stated_at: "2026-09-08T10:05:00", source_session: s1}
+  - {key: no_study_before, value: "09:00", scope: global, stated_at: "2026-09-08T10:06:00", source_session: s1}
+  - {key: no_study_after, value: "17:00", scope: global, stated_at: "2026-09-08T10:06:00", source_session: s1}
+  - {key: rest_weekdays, value: [2, 6], scope: global, stated_at: "2026-09-08T10:06:00", source_session: s1, note: "Wednesday food bank, Sunday church"}
+  - {key: buffer_hours_before_exam, value: 24, scope: global, stated_at: "2026-09-08T10:08:00", source_session: s1}
+  - {key: hint_policy, value: {no_final_answer_unless_asked: false, hint_after_consecutive_failures: 1, show_answer_after_failures: 1, idk_counts_as_attempt: true, counting_scope: per_problem}, scope: global, stated_at: "2026-10-06T10:00:00", source_session: s2}
+  - {key: share_grades_with, value: [nadia], scope: global, stated_at: "2026-10-27T10:10:00", source_session: s3}
+  - {key: share_schedule_with, value: [nadia, walt], scope: global, stated_at: "2026-10-27T10:10:00", source_session: s3}
+memory:
+  - {memory_kind: standing_rule, text: "I study in the mornings and early afternoons — half nine to noon, two to four — never in the evening, my eyes are done by five. Wednesdays I'm at the food bank all day and Sundays are church and family. Two hours a day at most, in three-quarter-hour pieces.", stated_at: "2026-09-08T10:05:00", session_id: s1, scope: global, payload: {key: max_daily_minutes}}
+  - {memory_kind: standing_rule, text: "A clear day before any test. I don't cram at my age.", stated_at: "2026-09-08T10:08:00", session_id: s1, scope: global, payload: {key: buffer_hours_before_exam, value: 24}}
+  - {memory_kind: standing_rule, text: "Don't make me guess for long. One try, and if I haven't got it, show me the whole worked solution — I learn from seeing it done properly, then I do the next one myself.", stated_at: "2026-10-06T10:00:00", session_id: s2, scope: global, payload: {key: hint_policy}}
+  - {memory_kind: standing_rule, text: "Nadia, my daughter, can see everything — grades, schedule, the lot — she worries and I'd rather she knew. Walt can see my schedule so we can study together. Only email Dr. Okafor after you've asked me.", stated_at: "2026-10-27T10:10:00", session_id: s3, scope: global, payload: {key: share_grades_with, value: [nadia]}}
+  - {memory_kind: standing_rule, text: "Buy what I need up to about two hundred dollars without asking — the large-print editions cost more and I don't want to be nickel-and-dimed about it.", stated_at: "2026-09-08T10:12:00", session_id: s1, scope: global, payload: {key: purchase_limit, value: 200}}
+  - {memory_kind: follow_up, text: "The capstone is a ten-minute presentation on December 10; I'd like to practise it twice in the last week.", stated_at: "2026-10-27T10:15:00", session_id: s3, scope: global, payload: {key: capstone_date, value: "2026-12-10"}}
+  - {memory_kind: fact, text: "I read large print; anything you suggest should come in a large-print edition.", stated_at: "2026-09-08T10:12:00", session_id: s1, scope: global}
+  - {memory_kind: who_is_who, text: "Dr. Okafor teaches the course. Nadia is my daughter. Walt is the gentleman I study with on Saturdays. Sam at the library helps me on Thursdays sometimes.", stated_at: "2026-09-08T10:02:00", session_id: s1, scope: global}
+policies:
+  - {action: send_message, level: allowed, scope: {recipient_id: nadia}, note: "daughter: everything"}
+  - {action: send_message, level: allowed, scope: {recipient_role: peer}, note: "Walt: schedule"}
+  - {action: send_message, level: allowed, scope: {recipient_role: tutor}, note: "library tutor"}
+  - {action: send_message, level: requires_approval, scope: {recipient_role: instructor}, note: "ask first"}
+  - {action: purchase, level: allowed, scope: {max_amount: 200}, note: "up to $200 without asking"}
+  - {action: purchase, level: requires_approval, note: "above $200 ask"}
+  - {action: book_slot, level: allowed, note: "she books her own tutoring and exam slots"}
+  - {action: submit_assignment, level: forbidden, note: "Eleanor submits her own work"}
+history:
+  - session_id: s1
+    started_at: "2026-09-08T10:00:00"
+    summary: Set-up session. Daytime-only study, Wednesdays and Sundays off, clear day before tests, large print, $200 spending.
+    turns:
+      - {role: student, text: "I'm a morning person. Half past nine to noon, then two to four after lunch. Never evenings — my eyes are done by five. Wednesdays I'm at the food bank and Sundays are church and family. Two hours a day is plenty, in three-quarter-hour pieces."}
+      - {role: agent, text: "Noted: 09:30–12:00 and 14:00–16:00 on Monday, Tuesday, Thursday and Friday, Saturday late morning, nothing Wednesday or Sunday, at most 120 minutes a day in 45-minute blocks, nothing after 17:00."}
+      - {role: student, text: "And a clear day before any test — I don't cram. Buy what I need up to two hundred dollars without fussing; the large-print books cost more."}
+      - {role: agent, text: "Understood: a full day free before each test, and purchases up to $200 without asking."}
+  - session_id: s2
+    started_at: "2026-10-06T10:00:00"
+    summary: Eleanor explained how she wants to be tutored.
+    turns:
+      - {role: student, text: "When we do problems: don't make me guess for long. One try, and if I haven't got it, show me the whole worked solution. I learn from seeing it done properly, then I do the next one myself."}
+      - {role: agent, text: "Got it — after one unsuccessful try I'll show the complete worked solution, then you take the next problem."}
+  - session_id: s3
+    started_at: "2026-10-27T10:10:00"
+    summary: Sharing rules (Nadia everything, Walt schedule, instructor only with approval) and the capstone date.
+    turns:
+      - {role: student, text: "Nadia can see everything — grades, schedule, all of it. She worries. Walt can see my schedule so we can study together. Only email Dr. Okafor after you've asked me."}
+      - {role: agent, text: "Noted: Nadia gets grades and schedule, Walt the schedule only, and I'll ask before writing to Dr. Okafor."}
+      - {role: student, text: "The capstone is a ten-minute presentation on December 10. I'd like to practise it twice in the last week."}
+      - {role: agent, text: "I'll keep two practice runs for the week before December 10."}
+mastery_defaults:
+  data_types: 0.8
+  descriptive: 0.7
+  probability: 0.3
+  distributions: 0.2
+  sampling: 0.15
+  conf_intervals: 0.1
+  hyp_tests: 0.05
+  regression: 0.05
+  chi_square: 0.05
+  study_design: 0.6

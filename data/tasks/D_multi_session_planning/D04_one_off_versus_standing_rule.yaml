@@ -112,7 +112,7 @@ variants:
     description: the same words were a standing rule ("from now on, no Saturdays — I work at my cousin's shop")
     expected_delta: Saturday must be empty; the target drops to what weekdays allow (0.6)
     patch:
-      memory_remove: [mem_4cc2a2b0c4]
+      memory_remove: [mem_c2d1e788ea]
       memory_add:
         - {memory_kind: standing_rule, text: "From now on, no study on Saturdays — I'm working at my cousin's shop every Saturday this term.", stated_at: "2026-10-18T20:00:00", session_id: s3, scope: global, payload: {key: rest_weekdays, value: [5, 6]}}
       preference_set:
@@ -135,6 +135,19 @@ variants:
       - {action: tool_call, tool: search_memory, args: {query: ""}}
       - {action: plan_for, assessment_id: mid1, target_knowledge: 0.6, title: "Plan for MATH 101 Midterm 1 (no Saturdays)"}
       - {action: final, message: "Plan set on weekday evenings only — no Saturdays, as you asked for this term — finished the day before the exam."}
+  - id: one_off_is_current
+    condition: correct_memory
+    description: the same one-off is dated this week ("the week of Nov 2", said Nov 1) and the wedding is on the calendar
+    expected_delta: Saturday Nov 7 stays empty; the standing rules are unchanged, so later Saturdays may be used
+    patch:
+      memory_replace:
+        - {id: mem_c2d1e788ea, text: "Just this week (the week of Nov 2) skip Saturday — I'm away at my cousin's wedding.", stated_at: "2026-11-01T20:00:00", session_id: s4, payload: {key: skip_saturday, valid_until: "2026-11-08"}}
+      records_add:
+        - {kind: calendar_event, fields: {id: wedding_1107, title: "Cousin's wedding (away)", start: "2026-11-07T08:00:00", end: "2026-11-07T23:00:00", event_kind: personal, fixed: true}}
+    checks_remove: [saturday_used, reaches_target]
+    checks_add:
+      - {id: reaches_target_without_nov_7, description: the midterm skills reach 0.6 without the wedding Saturday, verifier: plan.reaches_target, params: {goal: {assessment_id: mid1, target_knowledge: 0.6}, mastery_from: initial}, weight: 2, capability: educational_decision_making}
+      - {id: saturday_7_empty, description: nothing on Saturday Nov 7 — the dated one-off applies this week, verifier: plan.no_blocks_in_window, params: {start: "2026-11-07T00:00:00", end: "2026-11-08T00:00:00"}, weight: 2, hard: true, capability: cross_session_consistency}
 negative_cases:
   - id: treats_one_off_as_standing
     description: avoids Saturdays because of the expired one-off and therefore falls short
