@@ -9,7 +9,8 @@
     lab resume RUN_DIR --model M --adapter A [...]
     lab reverify RUN_DIR
     lab show RUN_DIR
-    lab summarize RUNS_ROOT
+    lab summarize RUNS_ROOT [--group-by condition,family]
+    lab compare RUNS_A RUNS_B [--filter-a k=v,...] [--filter-b k=v,...] [--pair-on task_id,seed]
     lab coverage [--write docs/COVERAGE.md]
     lab sweep experiments/<name>.yaml [--out runs] [--dry-run] [--limit N]
 """
@@ -153,6 +154,17 @@ def cmd_summarize(a: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_compare(a: argparse.Namespace) -> int:
+    from ..analysis import compare_runs, parse_filter
+    try:
+        print(compare_runs(a.runs_a, a.runs_b, filter_a=parse_filter(a.filter_a), filter_b=parse_filter(a.filter_b),
+                           pair_on=a.pair_on, label_a=a.label_a, label_b=a.label_b))
+    except ValueError as exc:
+        print(f"compare: {exc}", file=sys.stderr)
+        return 2
+    return 0
+
+
 def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(prog="lab", description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--data-dir", default=None, help="dataset root (default: the package's data/)")
@@ -209,6 +221,16 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("runs_root")
     p.add_argument("--group-by", default="model,variant_id")
     p.set_defaults(fn=cmd_summarize)
+
+    p = sub.add_parser("compare", help="paired comparison of two run sets (same tasks and seeds)")
+    p.add_argument("runs_a")
+    p.add_argument("runs_b")
+    p.add_argument("--filter-a", default=None, help="k=v[,k=v] on verdict/sidecar fields, e.g. condition=tool_agent,variant_id=base")
+    p.add_argument("--filter-b", default=None)
+    p.add_argument("--pair-on", default="task_id,seed")
+    p.add_argument("--label-a", default="A")
+    p.add_argument("--label-b", default="B")
+    p.set_defaults(fn=cmd_compare)
 
     p = sub.add_parser("sweep")
     p.add_argument("experiment", help="experiments/<name>.yaml")

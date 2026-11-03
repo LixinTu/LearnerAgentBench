@@ -11,7 +11,8 @@ experiments/<name>.yaml::
     variants: [base]        # or [all]
     seeds: [0]
     max_steps: 25
-    conditions:             # each condition overrides RunConfig fields; the condition name is recorded
+    conditions:             # each condition overrides RunConfig fields; the condition name is recorded;
+                            # a condition may restrict its own `variants: [...]` (not a RunConfig field)
       chatbot:             {memory_access: none,  tool_profile: none}
       memory_assistant:    {memory_access: full,  tool_profile: none}
       tool_agent:          {memory_access: tools, tool_profile: full}
@@ -48,10 +49,13 @@ def plan_runs(exp: dict[str, Any], ds: Dataset) -> list[dict[str, Any]]:
     else:
         task_ids = list(exp["tasks"])
     runs = []
-    for cond, overrides in exp["conditions"].items():
+    for cond, spec in exp["conditions"].items():
+        # A condition may name its own `variants`; every other key is a RunConfig override.
+        overrides = {k: v for k, v in spec.items() if k != "variants"}
+        wanted = spec.get("variants", exp["variants"])
         for tid in task_ids:
             t = ds.load_task(tid)
-            vids = ["base", *[v.id for v in t.variants]] if exp["variants"] in (["all"], "all") else list(exp["variants"])
+            vids = ["base", *[v.id for v in t.variants]] if wanted in (["all"], "all") else list(wanted)
             for vid in vids:
                 if vid != "base" and t.variant(vid) is None:
                     continue

@@ -1,12 +1,16 @@
-# Tool-access ablation: full tools vs read-only tools vs the task's missing_tool_access variants.
+# Tool-access ablation. (1) read_only: the tool_agent of baselines_local_v2 with every writing tool
+# removed — can it still recommend the right thing, and does it claim to have acted? (2) full tools
+# on the variants that take one tool away (no_memory_tool, no_booking_tool, never_restored).
+# The full-tools base rows live in baselines_local_v2 (condition tool_agent); pair with
+#   lab compare runs/baselines_local_v2 runs/tool_ablation_local \
+#       --filter-a condition=tool_agent --filter-b condition=read_only
 name: tool_ablation_local
 model: qwen2.5:7b-instruct
 adapter: openai_compatible
 adapter_params: {base_url: "http://127.0.0.1:11434/v1", max_tokens: 900}
 tasks: [all]
-variants: [base, no_memory_tool, no_booking_tool, never_restored]
-seeds: [0]
+seeds: [0, 1, 2]
 max_steps: 25
 conditions:
-  full_tools:  {memory_access: tools, tool_profile: full}
-  read_only:   {memory_access: tools, tool_profile: read_only}
+  read_only:   {memory_access: tools, tool_profile: read_only, variants: [base]}
+  full_tools:  {memory_access: tools, tool_profile: full, variants: [no_memory_tool, no_booking_tool, never_restored]}

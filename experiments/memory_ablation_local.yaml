@@ -1,11 +1,17 @@
-# Memory ablation: the same tool-using agent with memory only via tools vs. memory notes in the prompt vs. no memory at all (variant no_memory removes it from the world).
+# Memory ablation. The same two acting systems as baselines_local_v2 (memory through tools /
+# memory notes in the prompt) on the `no_memory` variant, which strips the student's memory from the
+# world. The base rows are NOT re-run here: pair each run with its baselines_local_v2 twin
+# (tool_agent / full_agent, same task and seed) —
+#   lab compare runs/baselines_local_v2 runs/memory_ablation_local \
+#       --filter-a condition=tool_agent --filter-b condition=memory_via_tools
+# Three seeds because single runs of the same configuration differ by up to half the score range.
 name: memory_ablation_local
 model: qwen2.5:7b-instruct
 adapter: openai_compatible
 adapter_params: {base_url: "http://127.0.0.1:11434/v1", max_tokens: 900}
 tasks: [all]
-variants: [base, no_memory]
-seeds: [0]
+variants: [no_memory]
+seeds: [0, 1, 2]
 max_steps: 25
 conditions:
   memory_via_tools:  {memory_access: tools, tool_profile: full}
