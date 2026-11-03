@@ -357,6 +357,19 @@ def event_responded(ctx: VerifyContext, check: CheckSpec) -> CheckResult:
     return result(check, bool(rows), f"{len(rows)} call(s) to {p['tool']} after the event")
 
 
+@verifier("event.not_responded_with_tool")
+def event_not_responded(ctx: VerifyContext, check: CheckSpec) -> CheckResult:
+    """After event ``event_id`` was applied, the agent made NO successful call to ``tool`` (optionally
+    narrowed by ``args_contains``) — for events that tell the agent to stop. An event that never fired
+    is a pass: nothing could have followed it."""
+    p = check.params
+    at = ctx.event_applied_at(p["event_id"])
+    if at is None:
+        return result(check, True, f"event {p['event_id']} never fired; nothing after it")
+    rows = [r for r in ctx.audit(p["tool"], ok=True) if r.virtual_time >= at and _contains(r.args, p.get("args_contains", {}))]
+    return result(check, not rows, f"{len(rows)} call(s) to {p['tool']} after the event" if rows else f"no {p['tool']} after the event")
+
+
 @verifier("event.state_after")
 def event_state_after(ctx: VerifyContext, check: CheckSpec) -> CheckResult:
     """A record matching ``where`` exists and was created/updated after the event."""

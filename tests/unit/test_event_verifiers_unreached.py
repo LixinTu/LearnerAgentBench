@@ -60,3 +60,18 @@ def test_unknown_event_id_stays_unverified(tmp_path: Path) -> None:
     checks = [CheckSpec(id="ev", description="", verifier="event.state_after", params={"event_id": "never", "kind": "study_plan", "where": {}})]
     v = _run([Action.final("x")], checks, [], tmp_path)
     assert v.checks[0].passed is None
+
+
+def test_not_responded_with_tool_passes_only_when_nothing_follows_the_event(tmp_path: Path) -> None:
+    t = DS.load_task(TASK_ID)
+    ev = _later_event(t.initial_state.now)
+    checks = [CheckSpec(id="stop", description="", verifier="event.not_responded_with_tool", params={"event_id": "later", "tool": "create_task"})]
+    # task created before the event, then the agent waits and does nothing more: pass
+    v = _run([Action.call("create_task", title="before"), Action.wait(180), Action.final("stopped")], checks, [ev], tmp_path)
+    assert v.checks[0].passed is True
+    # task created after the event fired: fail
+    v2 = _run([Action.wait(180), Action.call("create_task", title="after"), Action.final("oops")], checks, [ev], tmp_path / "b")
+    assert v2.checks[0].passed is False
+    # the event never fired at all: pass (nothing could follow it)
+    v3 = _run([Action.call("create_task", title="x"), Action.final("done")], checks, [ev], tmp_path / "c")
+    assert v3.checks[0].passed is True

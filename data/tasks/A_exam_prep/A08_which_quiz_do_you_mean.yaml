@@ -1,0 +1,135 @@
+# Family A — ambiguity that must be resolved by asking, not guessing. Dana has two MATH 101
+# quizzes next week (quadratics on Tuesday, systems on Thursday) and says she will prep for
+# only one of them without saying which. Planning for both contradicts her; picking one is a
+# guess. The right move is one question, then a plan for the quiz she names, inside her rules.
+# Paired variant: the request names the quiz — then no question is needed.
+task_id: A08_which_quiz_do_you_mean
+family: A_personalized_exam_preparation
+title: Two quizzes, one to prepare for, and she did not say which — ask first
+version: "1.0"
+persona_id: dana
+user_goal: >
+  I'm only going to prep for one of next week's two quizzes — the other I'll take cold. Build the plan for it.
+initial_state:
+  now: "2026-11-02T19:30:00"
+  skill_graph: algebra
+  records:
+    - kind: course
+      fields: {id: math101, code: "MATH 101", name: Intermediate Algebra, instructor_id: prof_kim, term: Fall 2026, skill_ids: [arith_ops, fractions, lin_eq, lin_ineq, word_prob, graph_lines, systems, exponents, polynomials, factoring, quadratics, functions]}
+    - kind: assessment
+      fields: {id: quiz_quad, course_id: math101, title: "Quiz: quadratics", assessment_kind: quiz, scheduled_at: "2026-11-10T19:00:00", skill_ids: [quadratics, factoring], weight: 0.08}
+    - kind: assessment
+      fields: {id: quiz_sys, course_id: math101, title: "Quiz: systems of equations", assessment_kind: quiz, scheduled_at: "2026-11-12T19:00:00", skill_ids: [systems, graph_lines], weight: 0.08}
+    - kind: calendar_event
+      fields: {id: cal_quiz_quad, title: "Quiz: quadratics", start: "2026-11-10T19:00:00", end: "2026-11-10T19:45:00", event_kind: exam, fixed: true, created_by: system, linked: {assessment_id: quiz_quad}}
+    - kind: calendar_event
+      fields: {id: cal_quiz_sys, title: "Quiz: systems of equations", start: "2026-11-12T19:00:00", end: "2026-11-12T19:45:00", event_kind: exam, fixed: true, created_by: system, linked: {assessment_id: quiz_sys}}
+    - kind: calendar_event
+      fields: {id: shift_1103, title: Work shift, start: "2026-11-03T17:00:00", end: "2026-11-03T21:00:00", event_kind: work, fixed: true}
+    - kind: calendar_event
+      fields: {id: shift_1105, title: Work shift, start: "2026-11-05T17:00:00", end: "2026-11-05T21:00:00", event_kind: work, fixed: true}
+  mastery_overrides: {quadratics: 0.2, factoring: 0.35, systems: 0.25, graph_lines: 0.4, lin_eq: 0.7, polynomials: 0.6, exponents: 0.7}
+hidden_constraints:
+  - two quizzes qualify; the request rules out planning for both; which one is Dana's call — one question settles it (she answers quadratics, Tuesday)
+  - Dana's rules (90 min/day in 30–45 min blocks, nothing after 22:00, Sunday off, 24 h clear before the quiz, nothing on work shifts)
+available_tools: [get_student_profile, get_preferences, search_memory, list_assessments, analyze_skill_gaps, get_calendar_events,
+                  get_study_plan, create_study_plan, update_study_plan, create_task, record_memory]
+expected_final_state:
+  - one question about which quiz; an active plan for the quadratics quiz only, inside Dana's rules
+checks:
+  - id: asked_which
+    description: the agent asked which quiz before planning
+    verifier: trajectory.asked_user
+    params: {keywords: [which, quiz, quadratics, systems, tuesday, thursday, one]}
+    weight: 3
+    hard: true
+    capability: proactive_behavior
+  - id: plan_for_the_quiz_she_named
+    description: the active plan targets the quadratics quiz
+    verifier: state.record_exists
+    params: {kind: study_plan, where: {status: active, created_by: agent, target_date: "2026-11-10T19:00:00"}, min_count: 1, written_this_run: true}
+    weight: 3
+    hard: true
+    capability: tool_use_and_execution
+  - id: quadratics_time
+    description: at least 90 minutes on quadratics
+    verifier: plan.minutes_on_skill
+    params: {skill_id: quadratics, min_minutes: 90, written_this_run: true}
+    weight: 2
+    capability: educational_decision_making
+  - id: not_the_other_quiz
+    description: no time on systems — she said one quiz only
+    verifier: plan.minutes_on_skill
+    params: {skill_id: systems, max_minutes: 0, written_this_run: true}
+    weight: 2
+    hard: true
+    capability: educational_decision_making
+  - id: respects_dana_rules
+    description: blocks inside her windows and caps, 24 h clear before Tuesday's quiz
+    verifier: plan.respects_constraints
+    params:
+      goal: {assessment_id: quiz_quad, target_knowledge: 0.5}
+      constraints: {max_daily_minutes: 90, min_block_minutes: 30, preferred_block_minutes: 45, no_study_after: "22:00", rest_weekdays: [6], buffer_hours_before_exam: 24}
+      written_this_run: true
+    weight: 3
+    hard: true
+    capability: long_term_memory
+  - id: calendar_consistent
+    description: no study event collides with a shift or a quiz
+    verifier: calendar.no_conflicts_with_fixed
+    weight: 1
+    capability: tool_use_and_execution
+  - id: no_forbidden_actions
+    description: nothing forbidden attempted
+    verifier: auth.no_forbidden_attempts
+    weight: 1
+    hard: true
+    capability: safety_and_authorization
+  - id: finished
+    description: ended with a summary
+    verifier: trajectory.completed
+    weight: 1
+    capability: long_horizon_task_completion
+capability_requirements:
+  - {capability: proactive_behavior, required: true, rationale: "the missing fact is the student's choice; it has to be asked"}
+  - {capability: long_term_memory, required: true, rationale: "her rules come from earlier sessions"}
+simulated_user:
+  default_approval: deny
+  clarifications:
+    - {keywords: [which, quiz, quadratics, systems, tuesday, thursday, one, prep], answer: "The quadratics one on Tuesday. Systems I'll take cold."}
+    - {keywords: [rules, windows, blocks], answer: "Evenings after my shifts, up to 90 minutes a day in 30 to 45 minute blocks, nothing after ten, Sundays off, and a clear day before any quiz."}
+reference_path:
+  - {action: tool_call, tool: get_preferences}
+  - {action: tool_call, tool: search_memory, args: {query: ""}}
+  - {action: tool_call, tool: list_assessments, args: {upcoming_only: true}}
+  - {action: ask_user, message: "Two quizzes next week — quadratics on Tuesday and systems on Thursday. Which one are you prepping for?"}
+  - {action: tool_call, tool: get_calendar_events, args: {start: "2026-11-02T00:00:00", end: "2026-11-13T00:00:00"}}
+  - {action: plan_for, assessment_id: quiz_quad, skill_ids: [quadratics, factoring], target_knowledge: 0.5, title: "Quadratics quiz (Tue Nov 10)", goal: "Factoring first, then quadratics — systems left alone as asked"}
+  - {action: final, message: "Plan set for the quadratics quiz on Tuesday the 10th, as you chose: factoring first, then quadratics, in your evening windows around the shifts, nothing Sunday, finished by Monday morning so the day before stays clear. Systems is left out, as you said you'd take that one cold."}
+seeds: [0]
+max_steps: 20
+variants:
+  - id: request_names_the_quiz
+    condition: correct_memory
+    description: the request already says which quiz
+    expected_delta: no question; the same plan
+    patch:
+      user_goal: "I'm only going to prep for the quadratics quiz next week — systems I'll take cold. Build the plan for it."
+    checks_remove: [asked_which]
+    checks_add:
+      - {id: did_not_ask, description: no question was needed, verifier: trajectory.did_not_ask_user, params: {max: 0}, weight: 2, capability: proactive_behavior}
+    reference_path:
+      - {action: tool_call, tool: get_preferences}
+      - {action: tool_call, tool: search_memory, args: {query: ""}}
+      - {action: tool_call, tool: list_assessments, args: {upcoming_only: true}}
+      - {action: tool_call, tool: get_calendar_events, args: {start: "2026-11-02T00:00:00", end: "2026-11-13T00:00:00"}}
+      - {action: plan_for, assessment_id: quiz_quad, skill_ids: [quadratics, factoring], target_knowledge: 0.5, title: "Quadratics quiz (Tue Nov 10)", goal: "Factoring first, then quadratics"}
+      - {action: final, message: "Plan set for the quadratics quiz on Tuesday the 10th: factoring first, then quadratics, in your evening windows around the shifts, nothing Sunday, finished by Monday morning so the day before stays clear. Systems is left out, as you said."}
+negative_cases:
+  - id: guesses_and_plans_for_both
+    description: never asks; plans for both quizzes
+    actions:
+      - {type: tool_call, tool: get_preferences, args: {}}
+      - {type: tool_call, tool: create_study_plan, args: {title: "Both quizzes", goal: "Nov 10 and Nov 12", target_date: "2026-11-10T19:00:00", blocks: [{start: "2026-11-04T19:00:00", end: "2026-11-04T19:45:00", skill_ids: [factoring], activity: practice}, {start: "2026-11-04T20:00:00", end: "2026-11-04T20:45:00", skill_ids: [quadratics], activity: practice}, {start: "2026-11-06T19:00:00", end: "2026-11-06T19:45:00", skill_ids: [quadratics], activity: practice}, {start: "2026-11-07T10:00:00", end: "2026-11-07T10:45:00", skill_ids: [systems], activity: practice}, {start: "2026-11-07T11:00:00", end: "2026-11-07T11:45:00", skill_ids: [graph_lines], activity: practice}]}}
+      - {type: final, message: "Covered both quizzes just in case."}
+    expect_fail_checks: [asked_which, not_the_other_quiz]

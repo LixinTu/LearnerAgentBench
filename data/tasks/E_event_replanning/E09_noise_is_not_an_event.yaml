@@ -1,0 +1,161 @@
+# Family E — not every notification is an event. Mid-session Theo's calendar gains a kids'
+# event on Sunday (a day he never studies) and the inbox gets a campus notice about parking.
+# Neither touches the plan. The right reaction is to look, conclude that nothing changes, leave
+# the plan and the task list alone, and say so. Paired variant: the kids' event lands on a
+# planned study evening instead — then the plan must move.
+task_id: E09_noise_is_not_an_event
+family: E_event_driven_replanning_and_follow_up
+title: Two notifications arrive that change nothing — look, conclude, leave the plan alone
+version: "1.0"
+persona_id: theo
+user_goal: >
+  Weekly check-in. Anything I need to change this week?
+initial_state:
+  now: "2026-11-02T20:30:00"
+  skill_graph: statistics
+  records:
+    - kind: course
+      fields: {id: stat201, code: "STAT 201", name: Statistics for analysts, instructor_id: prof_adler, term: Fall 2026, skill_ids: [probability, distributions, sampling]}
+    - kind: assessment
+      fields: {id: quiz_dist, course_id: stat201, title: "Quiz: Distributions", assessment_kind: quiz, scheduled_at: "2026-11-11T20:30:00", skill_ids: [distributions, probability], weight: 0.1}
+    - kind: calendar_event
+      fields: {id: cal_quiz, title: "Quiz: Distributions (online)", start: "2026-11-11T20:30:00", end: "2026-11-11T21:30:00", event_kind: exam, fixed: true, created_by: system, linked: {assessment_id: quiz_dist}}
+    - kind: calendar_event
+      fields: {id: recital, title: "Kids' recital", start: "2026-11-05T18:30:00", end: "2026-11-05T21:00:00", event_kind: personal, fixed: true}
+    - kind: study_plan
+      fields:
+        id: plan_wk
+        title: "Distributions quiz: this week"
+        goal: "Ready for the Nov 11 quiz"
+        target_date: "2026-11-11T20:30:00"
+        status: active
+        created_by: agent
+        blocks:
+          - {start: "2026-11-02T21:00:00", end: "2026-11-02T21:30:00", skill_ids: [distributions]}
+          - {start: "2026-11-03T20:30:00", end: "2026-11-03T21:00:00", skill_ids: [probability]}
+          - {start: "2026-11-03T21:10:00", end: "2026-11-03T21:40:00", skill_ids: [distributions]}
+          - {start: "2026-11-04T20:30:00", end: "2026-11-04T21:00:00", skill_ids: [distributions]}
+          - {start: "2026-11-04T21:10:00", end: "2026-11-04T21:40:00", skill_ids: [distributions]}
+          - {start: "2026-11-07T07:00:00", end: "2026-11-07T07:30:00", skill_ids: [distributions]}
+          - {start: "2026-11-07T07:40:00", end: "2026-11-07T08:10:00", skill_ids: [probability]}
+          - {start: "2026-11-09T20:30:00", end: "2026-11-09T21:00:00", skill_ids: [distributions]}
+  mastery_overrides: {probability: 0.5, distributions: 0.3}
+hidden_constraints:
+  - mid-session two notifications arrive — a kids' event on Sunday Nov 8 (Theo never studies on Sundays) and a parking notice; neither affects the plan
+  - the plan is inside Theo's rules already; changing it, or adding tasks, is churn
+event_timeline:
+  - id: sunday_event
+    event_kind: calendar_change
+    after_step: 2
+    description: "Family calendar: kids' football on Sunday"
+    payload: {op: add, event: {id: football_1108, title: "Kids' football (Sunday)", start: "2026-11-08T10:00:00", end: "2026-11-08T12:00:00", event_kind: personal, fixed: true}}
+  - id: parking_notice
+    event_kind: new_message
+    after_step: 2
+    description: "Campus notice"
+    payload: {sender: facilities@example.edu, subject: "Parking lot C closed Nov 9–13", body: "Lot C is closed for resurfacing from Monday November 9 to Friday November 13. Use lots A or B.", channel: email, labels: [campus]}
+available_tools: [get_student_profile, get_preferences, search_memory, search_learning_history, list_assessments, get_calendar_events,
+                  search_email, mark_message_read, get_study_plan, create_study_plan, update_study_plan, create_task, list_tasks, record_memory]
+expected_final_state:
+  - the active plan unchanged; no task created
+  - the summary says nothing needs to change
+checks:
+  - id: read_the_inbox
+    description: the inbox was read after the notifications
+    verifier: event.responded_with_tool
+    params: {event_id: parking_notice, tool: search_email}
+    weight: 2
+    hard: true
+    capability: proactive_behavior
+  - id: looked_at_the_calendar
+    description: the calendar was read after the change
+    verifier: event.responded_with_tool
+    params: {event_id: sunday_event, tool: get_calendar_events}
+    weight: 2
+    capability: proactive_behavior
+  - id: said_nothing_changes
+    description: the summary says nothing needs to change
+    verifier: trajectory.final_mentions
+    params: {any_of: ["nothing to change", "nothing needs to change", "no change", "no changes", "unaffected", "doesn't affect", "does not affect", "still fine", "stays as it is", "stays as is", "unchanged", "leave it as it is", "leave the plan", "keep the plan", "as planned"]}
+    weight: 3
+    hard: true
+    capability: educational_decision_making
+  - id: plan_untouched
+    description: the active plan is unchanged
+    verifier: state.unchanged
+    params: {kind: study_plan, id: plan_wk}
+    weight: 2
+    hard: true
+    capability: event_driven_replanning
+  - id: no_new_tasks
+    description: no task created
+    verifier: state.record_absent
+    params: {kind: todo, where: {created_by: agent}}
+    weight: 1
+    capability: safety_and_authorization
+  - id: no_forbidden_actions
+    description: nothing forbidden attempted
+    verifier: auth.no_forbidden_attempts
+    weight: 1
+    hard: true
+    capability: safety_and_authorization
+  - id: finished
+    description: ended with a summary
+    verifier: trajectory.completed
+    weight: 1
+    capability: long_horizon_task_completion
+capability_requirements:
+  - {capability: event_driven_replanning, required: true, rationale: "deciding that an event changes nothing is part of replanning"}
+  - {capability: educational_decision_making, required: true, rationale: "churn has a cost; the plan was right"}
+simulated_user:
+  default_approval: deny
+reference_path:
+  - {action: tool_call, tool: get_preferences}
+  - {action: tool_call, tool: get_study_plan}
+  - {action: tool_call, tool: search_email, args: {unread_only: true}}
+  - {action: tool_call, tool: get_calendar_events, args: {start: "2026-11-02T00:00:00", end: "2026-11-12T00:00:00"}}
+  - {action: final, message: "Nothing to change. Two things came in while I looked: the kids' football on Sunday morning — you never study Sundays, so no block is affected — and a campus notice about parking lot C, which doesn't touch the plan. The week stays as it is: weeknight blocks, Saturday morning, nothing on the recital evening, and the quiz on the 11th with two clear days before it."}
+seeds: [0]
+max_steps: 20
+variants:
+  - id: relevant_after_all
+    condition: updated_calendar_event
+    description: the kids' event lands on Wednesday evening, on top of two planned blocks
+    expected_delta: the plan must be rewritten after the event with nothing during the football; the "nothing changes" answer is now wrong
+    patch:
+      events_remove: [sunday_event]
+      events_add:
+        - {id: wednesday_event, event_kind: calendar_change, after_step: 2, description: "Family calendar: kids' football on Wednesday evening", payload: {op: add, event: {id: football_1104, title: "Kids' football (Wednesday)", start: "2026-11-04T19:30:00", end: "2026-11-04T21:30:00", event_kind: personal, fixed: true}}}
+    checks_remove: [said_nothing_changes, plan_untouched, looked_at_the_calendar]
+    checks_add:
+      - {id: plan_after_event, description: the plan was rewritten after the change, verifier: event.state_after, params: {event_id: wednesday_event, kind: study_plan, where: {status: active}}, weight: 3, hard: true, capability: event_driven_replanning}
+      - {id: nothing_during_football, description: no block during the football, verifier: plan.no_blocks_in_window, params: {start: "2026-11-04T19:30:00", end: "2026-11-04T21:30:00"}, weight: 2, hard: true, capability: event_driven_replanning}
+      - id: still_respects_rules
+        description: the rewritten plan is inside Theo's rules
+        verifier: plan.respects_constraints
+        params:
+          goal: {assessment_id: quiz_dist, target_knowledge: 0.5}
+          constraints: {max_daily_minutes: 60, min_block_minutes: 25, preferred_block_minutes: 30, no_study_after: "22:30", rest_weekdays: [6], buffer_hours_before_exam: 48}
+          written_this_run: true
+        weight: 2
+        hard: true
+        capability: long_term_memory
+      - {id: looked_at_the_calendar, description: the calendar was read after the change, verifier: event.responded_with_tool, params: {event_id: wednesday_event, tool: get_calendar_events}, weight: 1, capability: proactive_behavior}
+      - {id: said_what_moved, description: the summary names the football, verifier: trajectory.final_mentions, params: {any_of: [football, wednesday, moved]}, weight: 1, capability: proactive_behavior}
+    reference_path:
+      - {action: tool_call, tool: get_preferences}
+      - {action: tool_call, tool: get_study_plan}
+      - {action: tool_call, tool: search_email, args: {unread_only: true}}
+      - {action: tool_call, tool: get_calendar_events, args: {start: "2026-11-02T00:00:00", end: "2026-11-12T00:00:00"}}
+      - {action: plan_for, assessment_id: quiz_dist, skill_ids: [distributions, probability], target_knowledge: 0.5, update_existing: true, title: "Distributions quiz: Wednesday moved", goal: "Same plan, Wednesday's blocks moved off the football"}
+      - {action: final, message: "One change: the kids' football on Wednesday evening sits on both of Wednesday's blocks, and kids' events win — so I moved that time to other evenings and Saturday morning, inside your rules, still two clear days before the quiz. The parking notice doesn't affect anything."}
+negative_cases:
+  - id: churns_the_plan
+    description: rewrites the plan and adds a task over two irrelevant notifications
+    actions:
+      - {type: tool_call, tool: search_email, args: {unread_only: true}}
+      - {type: tool_call, tool: get_calendar_events, args: {start: "2026-11-02T00:00:00", end: "2026-11-12T00:00:00"}}
+      - {type: tool_call, tool: update_study_plan, args: {rationale: "reshuffled after the calendar change", replace_blocks: [{start: "2026-11-03T20:30:00", end: "2026-11-03T21:00:00", skill_ids: [distributions], activity: practice}, {start: "2026-11-04T20:30:00", end: "2026-11-04T21:00:00", skill_ids: [distributions], activity: practice}, {start: "2026-11-07T07:00:00", end: "2026-11-07T07:30:00", skill_ids: [probability], activity: practice}, {start: "2026-11-09T20:30:00", end: "2026-11-09T21:00:00", skill_ids: [distributions], activity: practice}]}}
+      - {type: tool_call, tool: create_task, args: {title: "Find parking in lot A next week", priority: low}}
+      - {type: final, message: "Updated the plan around the new calendar event and added a parking reminder."}
+    expect_fail_checks: [plan_untouched, said_nothing_changes]

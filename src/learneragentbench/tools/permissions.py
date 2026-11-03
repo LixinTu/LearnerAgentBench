@@ -9,7 +9,8 @@ A policy matches a call when its ``action`` is the tool name (or ``*``) and ever
     max_amount       amount <= max (purchase)
     event_kind       calendar event kind
 
-The most specific matching policy (most scope keys) wins; ties go to the most recent.
+The most specific matching policy (most scope keys) wins; ties go to the most recent. A policy
+whose ``expires_at`` has passed (virtual time) is ignored.
 """
 from __future__ import annotations
 
@@ -62,6 +63,8 @@ def resolve_permission(world: World, spec: ToolSpec, args: dict[str, Any]) -> tu
     for pol in world.policies():
         if pol.action not in (spec.name, "*"):
             continue
+        if pol.expires_at is not None and pol.expires_at <= world.now:
+            continue  # a grant with an expiry is gone once the clock passes it
         if not _scope_matches(pol.scope, facts):
             continue
         if best is None or len(pol.scope) > len(best.scope) or (

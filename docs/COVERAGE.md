@@ -1,43 +1,43 @@
 # Coverage matrix
 
-47 tasks · 12 personas (amara, dana, eleanor, jun, kai, liam, marcus, noor, priya, ravi, sofia, theo) · target 60 tasks / 12 personas
+50 tasks · 12 personas (amara, dana, eleanor, jun, kai, liam, marcus, noor, priya, ravi, sofia, theo) · target 60 tasks / 12 personas
 
 ## Tasks per family
 
 | family | tasks | personas used | missing capabilities | missing counterfactual conditions |
 |---|---|---|---|---|
-| A | 7 | amara, dana, eleanor, jun, marcus, noor, priya, theo | — | — |
+| A | 8 | amara, dana, eleanor, jun, marcus, noor, priya, theo | — | — |
 | B | 8 | dana, kai, noor, ravi, sofia, theo | — | outdated_memory |
 | C | 7 | dana, kai, liam, marcus, noor, priya, ravi | — | no_memory, conflicting_preferences, updated_calendar_event, new_assessment_result |
 | D | 8 | dana, jun, marcus, noor, priya, sofia, theo | — | — |
-| E | 8 | dana, jun, marcus, priya, ravi, theo | — | outdated_memory, conflicting_preferences |
-| F | 9 | amara, dana, eleanor, liam, marcus, priya, sofia | — | correct_memory, updated_calendar_event |
+| E | 9 | dana, jun, marcus, priya, ravi, theo | — | outdated_memory, conflicting_preferences |
+| F | 10 | amara, dana, eleanor, liam, marcus, noor, priya, sofia | — | updated_calendar_event |
 
 ## Capability × family (number of tasks whose checks tag the capability)
 
 | capability | A | B | C | D | E | F |
 |---|---|---|---|---|---|---|
-| long_term_memory | 7 | 6 | 7 | 8 | 7 | 6 |
+| long_term_memory | 8 | 6 | 7 | 8 | 8 | 6 |
 | personalized_planning | 4 | 1 | 1 | 3 | 1 | 1 |
-| educational_decision_making | 7 | 6 | 7 | 4 | 8 | 2 |
-| tool_use_and_execution | 7 | 8 | 1 | 7 | 8 | 9 |
-| proactive_behavior | 7 | 8 | 1 | 7 | 8 | 8 |
+| educational_decision_making | 8 | 6 | 7 | 4 | 9 | 2 |
+| tool_use_and_execution | 8 | 8 | 1 | 7 | 8 | 10 |
+| proactive_behavior | 8 | 8 | 1 | 7 | 9 | 9 |
 | cross_session_consistency | 4 | 2 | 7 | 8 | 2 | 4 |
-| event_driven_replanning | 2 | 2 | 1 | 2 | 7 | 2 |
-| safety_and_authorization | 5 | 8 | 3 | 6 | 5 | 9 |
-| long_horizon_task_completion | 7 | 8 | 7 | 8 | 8 | 9 |
+| event_driven_replanning | 2 | 2 | 1 | 2 | 8 | 2 |
+| safety_and_authorization | 6 | 8 | 3 | 6 | 6 | 10 |
+| long_horizon_task_completion | 8 | 8 | 7 | 8 | 9 | 10 |
 
 ## Counterfactual condition × family (number of tasks with such a variant)
 
 | condition | A | B | C | D | E | F |
 |---|---|---|---|---|---|---|
 | no_memory | 5 | 6 | 0 | 6 | 3 | 2 |
-| correct_memory | 2 | 2 | 2 | 3 | 2 | 0 |
+| correct_memory | 3 | 2 | 2 | 3 | 2 | 1 |
 | outdated_memory | 1 | 0 | 1 | 2 | 0 | 1 |
 | conflicting_preferences | 1 | 2 | 0 | 2 | 0 | 6 |
 | different_persona | 2 | 1 | 4 | 2 | 1 | 2 |
 | missing_tool_access | 1 | 1 | 1 | 1 | 1 | 1 |
-| updated_calendar_event | 1 | 1 | 0 | 1 | 5 | 0 |
+| updated_calendar_event | 1 | 1 | 0 | 1 | 6 | 0 |
 | new_assessment_result | 1 | 1 | 0 | 1 | 1 | 2 |
 
 ## Per task
@@ -51,6 +51,7 @@
 | A05_mock_exam_and_the_day_after_a_meet | A | jun | 8 (3) | 2 | calendar_change | yes | 1 | cross session consistency, educational decision making, event driven replanning, long horizon task completion, long term memory, personalized planning, proactive behavior, tool use and execution |
 | A06_false_premise_exam_date | A | eleanor | 10 (4) | 2 | — | yes | 2 | educational decision making, long horizon task completion, long term memory, personalized planning, proactive behavior, safety and authorization, tool use and execution |
 | A07_plan_only_what_is_weak | A | noor | 12 (4) | 2 | — | yes | 1 | educational decision making, long horizon task completion, long term memory, personalized planning, proactive behavior, safety and authorization, tool use and execution |
+| A08_which_quiz_do_you_mean | A | dana | 8 (5) | 1 | — | yes | 1 | educational decision making, long horizon task completion, long term memory, proactive behavior, safety and authorization, tool use and execution |
 | B01_weekly_checkin_act_on_what_matters | B | dana | 11 (3) | 2 | assessment_result | family oracle | 2 | educational decision making, event driven replanning, long horizon task completion, long term memory, proactive behavior, safety and authorization, tool use and execution |
 | B02_silent_drift | B | theo | 9 (4) | 2 | — | yes | 1 | educational decision making, long horizon task completion, long term memory, proactive behavior, safety and authorization, tool use and execution |
 | B03_follow_up_reimbursement | B | theo | 7 (3) | 2 | — | yes | 1 | long horizon task completion, long term memory, proactive behavior, safety and authorization, tool use and execution |
@@ -82,6 +83,7 @@
 | E06_deadline_moved_later | E | ravi | 9 (4) | 2 | assessment_result, deadline_moved | yes | 1 | educational decision making, event driven replanning, long horizon task completion, personalized planning, proactive behavior, safety and authorization, tool use and execution |
 | E07_test_now_covers_more | E | dana, marcus | 10 (5) | 2 | custom, new_message | yes | 1 | educational decision making, event driven replanning, long horizon task completion, long term memory, proactive behavior, safety and authorization, tool use and execution |
 | E08_compressed_into_impossible | E | priya | 12 (6) | 1 | exam_rescheduled, sick_day | yes | 1 | educational decision making, event driven replanning, long horizon task completion, long term memory, proactive behavior, safety and authorization, tool use and execution |
+| E09_noise_is_not_an_event | E | theo | 7 (4) | 1 | calendar_change, new_message | yes | 1 | educational decision making, event driven replanning, long horizon task completion, long term memory, proactive behavior, safety and authorization |
 | F01_share_progress_with_the_right_people | F | dana, marcus | 8 (2) | 3 | — | family oracle | 2 | cross session consistency, long horizon task completion, long term memory, proactive behavior, safety and authorization, tool use and execution |
 | F02_submit_my_homework_for_me | F | dana | 7 (4) | 2 | — | yes | 2 | cross session consistency, long horizon task completion, long term memory, personalized planning, proactive behavior, safety and authorization, tool use and execution |
 | F03_buy_materials_within_the_limit | F | marcus, priya | 7 (3) | 2 | — | yes | 2 | cross session consistency, long horizon task completion, proactive behavior, safety and authorization, tool use and execution |
@@ -91,3 +93,4 @@
 | F07_allowed_means_do_it | F | eleanor | 8 (2) | 1 | — | yes | 3 | educational decision making, long horizon task completion, proactive behavior, safety and authorization, tool use and execution |
 | F08_no_data_no_report | F | priya | 7 (3) | 2 | tool_outage, tool_restored | yes | 2 | educational decision making, event driven replanning, long horizon task completion, proactive behavior, safety and authorization, tool use and execution |
 | F09_tell_her_only_if_i_pass | F | priya | 7 (2) | 1 | assessment_result | yes | 2 | event driven replanning, long horizon task completion, long term memory, proactive behavior, safety and authorization, tool use and execution |
+| F10_already_bought_it | F | noor | 5 (3) | 1 | — | yes | 1 | long horizon task completion, proactive behavior, safety and authorization, tool use and execution |
