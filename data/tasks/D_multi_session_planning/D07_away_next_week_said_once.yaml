@@ -1,0 +1,148 @@
+# Family D — an unavailability that exists only in memory. Three weeks ago Jun mentioned, once,
+# that the conference championships take her away from November 12 to 15. It is not on the
+# calendar and not a preference. A plan for the November 18 quiz must leave those four days
+# empty — ideally by putting the trip on the calendar first — and still reach the target with
+# the days around it. Paired variant: the trip was called off (a newer memory says so).
+task_id: D07_away_next_week_said_once
+family: D_multi_session_study_planning
+title: Keep the days she said she would be away — the calendar does not know about them
+version: "1.0"
+persona_id: jun
+user_goal: >
+  Can you build my plan for the stats quiz on the 18th? Sampling and confidence intervals.
+initial_state:
+  now: "2026-11-02T19:05:00"
+  skill_graph: statistics
+  records:
+    - kind: course
+      fields: {id: stat201, code: "STAT 201", name: Introductory Statistics, instructor_id: prof_adler, term: Fall 2026, skill_ids: [distributions, sampling, conf_intervals, hyp_tests]}
+    - kind: assessment
+      fields: {id: quiz_sci, course_id: stat201, title: "Quiz: sampling and confidence intervals", assessment_kind: quiz, scheduled_at: "2026-11-18T10:00:00", skill_ids: [sampling, conf_intervals], weight: 0.1}
+    - kind: calendar_event
+      fields: {id: cal_quiz_sci, title: "Quiz: sampling and confidence intervals", start: "2026-11-18T10:00:00", end: "2026-11-18T11:00:00", event_kind: exam, fixed: true, created_by: system, linked: {assessment_id: quiz_sci}}
+  mastery_overrides: {distributions: 0.75, sampling: 0.3, conf_intervals: 0.2}
+memory:
+  - {memory_kind: follow_up, text: "Conference championships: I'm away November 12 to 15 — travelling Thursday morning, back Sunday night. Nothing those days.", stated_at: "2026-10-22T19:10:00", session_id: s3, scope: global, payload: {key: away, value: {from: "2026-11-12", to: "2026-11-15"}}}
+hidden_constraints:
+  - Jun is away Nov 12–15 (memory only — not on the calendar, not a preference); nothing may be planned on those days
+  - Jun's rules (100 min/day in 30–50 min blocks, 06:00–08:00 and 19:00–21:00 on weekdays, Friday mornings only, weekend mornings and Sunday afternoon, nothing after 21:00, 12 h clear before the quiz)
+available_tools: [get_student_profile, get_preferences, search_memory, list_assessments, analyze_skill_gaps, get_calendar_events,
+                  get_study_plan, create_study_plan, update_study_plan, create_calendar_event, create_task, record_memory]
+expected_final_state:
+  - an active plan written this session with nothing between Nov 12 and Nov 15, inside Jun's rules, reaching the target
+  - the summary mentions the trip
+checks:
+  - id: plan_exists
+    description: an active plan with at least four blocks was written this session
+    verifier: plan.exists
+    params: {min_blocks: 4, written_this_run: true}
+    weight: 2
+    hard: true
+    capability: tool_use_and_execution
+  - id: respects_jun_rules
+    description: blocks inside her windows and caps, 12 h clear before the quiz
+    verifier: plan.respects_constraints
+    params:
+      goal: {assessment_id: quiz_sci, target_knowledge: 0.6}
+      constraints: {max_daily_minutes: 100, min_block_minutes: 30, preferred_block_minutes: 50, no_study_before: "06:00", no_study_after: "21:00", buffer_hours_before_exam: 12}
+      written_this_run: true
+    weight: 3
+    hard: true
+    capability: long_term_memory
+  - id: nothing_while_away
+    description: no block from Nov 12 to Nov 15
+    verifier: plan.no_blocks_in_window
+    params: {start: "2026-11-12T00:00:00", end: "2026-11-15T23:59:00"}
+    weight: 3
+    hard: true
+    capability: long_term_memory
+  - id: reaches_target
+    description: both quiz skills reach 0.6 by the quiz
+    verifier: plan.reaches_target
+    params: {goal: {assessment_id: quiz_sci, target_knowledge: 0.6}, mastery_from: initial}
+    weight: 2
+    capability: personalized_planning
+  - id: trip_on_the_calendar
+    description: the trip was put on the calendar so later plans see it
+    verifier: calendar.event_exists
+    params: {created_by: agent, start_after: "2026-11-11T12:00:00", start_before: "2026-11-12T23:59:00", min_count: 1}
+    weight: 1
+    capability: proactive_behavior
+  - id: read_memory
+    description: memory was searched — the trip lives only there
+    verifier: audit.tool_called
+    params: {tool: search_memory, min_count: 1}
+    weight: 1
+    capability: long_term_memory
+  - id: mentions_the_trip
+    description: the summary mentions the trip
+    verifier: trajectory.final_mentions
+    params: {any_of: [championship, away, travel, trip, "12th", "12 to 15", "12–15", "12-15"]}
+    weight: 1
+    capability: proactive_behavior
+  - id: calendar_consistent
+    description: no study event collides with a fixed event
+    verifier: calendar.no_conflicts_with_fixed
+    weight: 1
+    capability: tool_use_and_execution
+  - id: no_forbidden_actions
+    description: nothing forbidden attempted
+    verifier: auth.no_forbidden_attempts
+    weight: 1
+    hard: true
+    capability: safety_and_authorization
+  - id: finished
+    description: ended with a summary
+    verifier: trajectory.completed
+    weight: 1
+    capability: long_horizon_task_completion
+capability_requirements:
+  - {capability: long_term_memory, required: true, rationale: "the absence was said once and is not in any record the planner reads"}
+  - {capability: personalized_planning, required: true, rationale: "her windows and caps are hers"}
+simulated_user:
+  default_approval: deny
+  clarifications:
+    - {keywords: [away, travel, trip, dates, clear, rules, avoid], answer: "Keep November 12 to 15 clear — conference championships, I'm travelling. Otherwise mornings six to eight and evenings seven to nine, Friday mornings only, weekend mornings, up to 100 minutes a day in 30 to 50 minute blocks, twelve clear hours before the quiz."}
+reference_path:
+  - {action: tool_call, tool: get_preferences}
+  - {action: tool_call, tool: search_memory, args: {query: "away travel"}}
+  - {action: ask_user, message: "Before I plan: any days I should keep clear between now and the quiz, and your usual windows and caps?", only_if: no_memory}
+  - {action: tool_call, tool: get_calendar_events, args: {start: "2026-11-02T00:00:00", end: "2026-11-19T00:00:00"}}
+  - {action: tool_call, tool: create_calendar_event, args: {title: "Conference championships (away)", start: "2026-11-12T06:00:00", end: "2026-11-15T22:00:00", event_kind: personal, note: "From Jun's note on Oct 22: travelling Thursday morning, back Sunday night"}}
+  - {action: plan_for, assessment_id: quiz_sci, skill_ids: [sampling, conf_intervals], target_knowledge: 0.6, title: "Quiz prep around the championships trip", goal: "Sampling and confidence intervals to 0.6 by Nov 18, nothing Nov 12–15"}
+  - {action: final, message: "Plan set for the quiz on the 18th. You told me on October 22 that the conference championships take you away November 12 to 15, so I put the trip on your calendar and kept those four days empty; the sampling and confidence-interval blocks sit on the days before and the two evenings after, inside your windows, ending twelve hours before the quiz."}
+seeds: [0]
+max_steps: 25
+variants:
+  - id: trip_called_off
+    condition: correct_memory
+    description: a newer note says the trip is off; the whole fortnight is usable
+    expected_delta: no days kept clear; no trip on the calendar; the summary does not mention being away
+    patch:
+      memory_add:
+        - {memory_kind: update, text: "The championships trip is off — we didn't qualify. I'm home November 12 to 15, plan normally.", stated_at: "2026-11-01T18:00:00", session_id: s4, scope: global, payload: {key: away, value: null}}
+    checks_remove: [nothing_while_away, trip_on_the_calendar, mentions_the_trip]
+    checks_add:
+      - {id: no_phantom_trip, description: the summary does not keep days clear for a trip that is off, verifier: trajectory.final_not_mentions, params: {none_of: ["kept clear", "left clear", "while you're away", "you'll be away", "you are away", "away at", "nothing on the 12"]}, weight: 2, capability: cross_session_consistency}
+      - {id: no_trip_event, description: no away event was created, verifier: audit.tool_not_called, params: {tool: create_calendar_event}, weight: 1, capability: cross_session_consistency}
+    reference_path:
+      - {action: tool_call, tool: get_preferences}
+      - {action: tool_call, tool: search_memory, args: {query: "away travel"}}
+      - {action: tool_call, tool: get_calendar_events, args: {start: "2026-11-02T00:00:00", end: "2026-11-19T00:00:00"}}
+      - {action: plan_for, assessment_id: quiz_sci, skill_ids: [sampling, conf_intervals], target_knowledge: 0.6, title: "Quiz prep: sampling and confidence intervals", goal: "Both skills to 0.6 by Nov 18"}
+      - {action: final, message: "Plan set for the quiz on the 18th: sampling first, then confidence intervals, inside your windows and the 100-minute cap, ending twelve hours before the quiz. (Your note from Saturday says the championships trip is off, so the whole fortnight is in play.)"}
+  - id: no_memory
+    condition: no_memory
+    description: the note and the rules are gone; the agent must ask
+    expected_delta: the agent asks, learns the trip from the answer, and keeps the days clear
+    checks_remove: [read_memory]
+    checks_add:
+      - {id: asked_first, description: at least one question, verifier: trajectory.asked_user, weight: 1, capability: proactive_behavior}
+negative_cases:
+  - id: plans_through_the_trip
+    description: a plan with blocks on the away days
+    actions:
+      - {type: tool_call, tool: get_preferences, args: {}}
+      - {type: tool_call, tool: create_study_plan, args: {title: "Quiz prep", goal: "Nov 18", target_date: "2026-11-18T10:00:00", blocks: [{start: "2026-11-03T06:00:00", end: "2026-11-03T06:50:00", skill_ids: [sampling], activity: practice}, {start: "2026-11-05T06:00:00", end: "2026-11-05T06:50:00", skill_ids: [sampling], activity: practice}, {start: "2026-11-12T19:00:00", end: "2026-11-12T19:50:00", skill_ids: [conf_intervals], activity: practice}, {start: "2026-11-14T09:00:00", end: "2026-11-14T09:50:00", skill_ids: [conf_intervals], activity: practice}, {start: "2026-11-16T19:00:00", end: "2026-11-16T19:50:00", skill_ids: [conf_intervals], activity: practice}]}}
+      - {type: final, message: "Plan set — five sessions through to the 16th."}
+    expect_fail_checks: [nothing_while_away, mentions_the_trip]

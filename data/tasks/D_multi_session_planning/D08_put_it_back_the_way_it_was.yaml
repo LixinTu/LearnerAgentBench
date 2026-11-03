@@ -1,0 +1,199 @@
+# Family D — revert to a previous plan version. Yesterday the agent rewrote Marcus's plan and
+# moved Saturday morning's two quadratics blocks to Sunday afternoon. Marcus now wants it back
+# the way it was: Saturday is fine, Sunday is family. The plan history holds the earlier
+# version; the right move is to restore its blocks exactly (Saturday back, Sunday empty), not to
+# invent a third arrangement. Paired variant: he changes his mind again and keeps the change —
+# then the plan must be left untouched.
+task_id: D08_put_it_back_the_way_it_was
+family: D_multi_session_study_planning
+title: Restore the previous plan version — Saturday back, Sunday clear
+version: "1.0"
+persona_id: marcus
+user_goal: >
+  Put the plan back the way it was before yesterday's change. Saturday morning is fine after all; Sunday is family.
+initial_state:
+  now: "2026-11-02T19:35:00"
+  skill_graph: algebra
+  records:
+    - kind: course
+      fields: {id: alg2, code: "ALG 2", name: Algebra II, instructor_id: teacher_ruiz, term: Fall 2026, skill_ids: [lin_eq, graph_lines, systems, exponents, polynomials, factoring, quadratics, functions]}
+    - kind: assessment
+      fields: {id: test_quad, course_id: alg2, title: "Test: quadratics", assessment_kind: exam, scheduled_at: "2026-11-13T10:00:00", skill_ids: [quadratics, factoring], weight: 0.15}
+    - kind: calendar_event
+      fields: {id: cal_test_quad, title: "Test: quadratics", start: "2026-11-13T10:00:00", end: "2026-11-13T11:00:00", event_kind: exam, fixed: true, created_by: system, linked: {assessment_id: test_quad}}
+    - kind: calendar_event
+      fields: {id: prac_1104, title: Basketball practice, start: "2026-11-04T15:30:00", end: "2026-11-04T17:30:00", event_kind: personal, fixed: true}
+    - kind: calendar_event
+      fields: {id: prac_1106, title: Basketball practice, start: "2026-11-06T15:30:00", end: "2026-11-06T17:30:00", event_kind: personal, fixed: true}
+    - kind: calendar_event
+      fields: {id: prac_1109, title: Basketball practice, start: "2026-11-09T15:30:00", end: "2026-11-09T17:30:00", event_kind: personal, fixed: true}
+    - kind: study_plan
+      fields:
+        id: plan_v1
+        title: "Quadratics test prep"
+        goal: "Ready for the Nov 13 test"
+        target_date: "2026-11-13T10:00:00"
+        status: superseded
+        version: 1
+        created_by: agent
+        rationale: "Factoring first on weekday mornings, quadratics on Saturday morning and the last two mornings"
+        blocks:
+          - {start: "2026-11-03T06:30:00", end: "2026-11-03T07:00:00", skill_ids: [factoring]}
+          - {start: "2026-11-05T06:30:00", end: "2026-11-05T07:00:00", skill_ids: [factoring]}
+          - {start: "2026-11-07T10:00:00", end: "2026-11-07T10:30:00", skill_ids: [quadratics]}
+          - {start: "2026-11-07T10:40:00", end: "2026-11-07T11:10:00", skill_ids: [quadratics]}
+          - {start: "2026-11-10T06:30:00", end: "2026-11-10T07:00:00", skill_ids: [quadratics]}
+          - {start: "2026-11-11T19:30:00", end: "2026-11-11T20:00:00", skill_ids: [quadratics]}
+    - kind: study_plan
+      fields:
+        id: plan_v2
+        title: "Quadratics test prep (Saturday moved to Sunday)"
+        goal: "Ready for the Nov 13 test"
+        target_date: "2026-11-13T10:00:00"
+        status: active
+        version: 2
+        supersedes: plan_v1
+        created_by: agent
+        rationale: "Nov 1: Marcus asked for Saturday off; moved the two quadratics blocks to Sunday afternoon"
+        blocks:
+          - {start: "2026-11-03T06:30:00", end: "2026-11-03T07:00:00", skill_ids: [factoring]}
+          - {start: "2026-11-05T06:30:00", end: "2026-11-05T07:00:00", skill_ids: [factoring]}
+          - {start: "2026-11-08T14:00:00", end: "2026-11-08T14:30:00", skill_ids: [quadratics]}
+          - {start: "2026-11-08T14:40:00", end: "2026-11-08T15:10:00", skill_ids: [quadratics]}
+          - {start: "2026-11-10T06:30:00", end: "2026-11-10T07:00:00", skill_ids: [quadratics]}
+          - {start: "2026-11-11T19:30:00", end: "2026-11-11T20:00:00", skill_ids: [quadratics]}
+  mastery_overrides: {factoring: 0.35, quadratics: 0.25, lin_eq: 0.7, polynomials: 0.6, exponents: 0.7}
+hidden_constraints:
+  - the previous version (plan_v1) is in the plan history; restoring it means its blocks exactly — Saturday Nov 7 at 10:00 and 10:40, nothing on Sunday Nov 8
+  - Marcus's rules (60 min/day in 20–30 min blocks, early mornings and after practice, nothing after 21:00, 12 h clear before the test)
+available_tools: [get_student_profile, get_preferences, search_memory, get_calendar_events, get_study_plan, create_study_plan,
+                  update_study_plan, create_task, record_memory]
+expected_final_state:
+  - the active plan rewritten this session with the Saturday blocks back and no Sunday block
+  - the summary says the earlier version was restored
+checks:
+  - id: plan_written
+    description: the active plan was written this session
+    verifier: state.record_exists
+    params: {kind: study_plan, where: {status: active, created_by: agent}, min_count: 1, written_this_run: true}
+    weight: 2
+    hard: true
+    capability: tool_use_and_execution
+  - id: saturday_back
+    description: two study events on Saturday morning Nov 7
+    verifier: calendar.event_exists
+    params: {kind: study, created_by: agent, start_after: "2026-11-07T09:00:00", start_before: "2026-11-07T12:00:00", min_count: 2}
+    weight: 3
+    hard: true
+    capability: cross_session_consistency
+  - id: sunday_cleared
+    description: no block on Sunday Nov 8 (the stale version fails this on its own)
+    verifier: plan.no_blocks_in_window
+    params: {start: "2026-11-08T00:00:00", end: "2026-11-08T23:59:00"}
+    weight: 2
+    hard: true
+    capability: cross_session_consistency
+  - id: looked_at_the_history
+    description: the plan history was read
+    verifier: audit.tool_called
+    params: {tool: get_study_plan, min_count: 1}
+    weight: 1
+    capability: proactive_behavior
+  - id: content_restored
+    description: quadratics keeps its 120 minutes and factoring its 60
+    verifier: plan.minutes_on_skill
+    params: {skill_id: quadratics, min_minutes: 120, written_this_run: true}
+    weight: 2
+    capability: cross_session_consistency
+  - id: factoring_kept
+    description: factoring keeps its 60 minutes
+    verifier: plan.minutes_on_skill
+    params: {skill_id: factoring, min_minutes: 60, written_this_run: true}
+    weight: 1
+    capability: cross_session_consistency
+  - id: respects_marcus_rules
+    description: short blocks, 60 min/day, nothing after 21:00, 12 h clear before the test
+    verifier: plan.respects_constraints
+    params:
+      goal: {assessment_id: test_quad, target_knowledge: 0.5}
+      constraints: {max_daily_minutes: 60, min_block_minutes: 20, preferred_block_minutes: 30, no_study_before: "06:30", no_study_after: "21:00", buffer_hours_before_exam: 12}
+      written_this_run: true
+    weight: 2
+    hard: true
+    capability: long_term_memory
+  - id: said_restored
+    description: the summary says the earlier version is back
+    verifier: trajectory.final_mentions
+    params: {any_of: ["put back", "restored", "reverted", "back to", "as it was", "back the way", "saturday"]}
+    weight: 1
+    capability: proactive_behavior
+  - id: calendar_consistent
+    description: no study event collides with a fixed event
+    verifier: calendar.no_conflicts_with_fixed
+    weight: 1
+    capability: tool_use_and_execution
+  - id: no_forbidden_actions
+    description: nothing forbidden attempted
+    verifier: auth.no_forbidden_attempts
+    weight: 1
+    hard: true
+    capability: safety_and_authorization
+  - id: finished
+    description: ended with a summary
+    verifier: trajectory.completed
+    weight: 1
+    capability: long_horizon_task_completion
+capability_requirements:
+  - {capability: cross_session_consistency, required: true, rationale: "the earlier version is the reference, not a fresh plan"}
+  - {capability: tool_use_and_execution, required: true, rationale: "the history must be read and the blocks restored exactly"}
+simulated_user:
+  default_approval: deny
+  clarifications:
+    - {keywords: [which, version, before, change], answer: "The one from before yesterday — with the two Saturday morning blocks."}
+reference_path:
+  - {action: tool_call, tool: get_preferences}
+  - {action: tool_call, tool: get_study_plan, args: {include_history: true}}
+  - action: tool_call
+    tool: update_study_plan
+    args:
+      rationale: "Restored the version before Nov 1's change: Saturday morning quadratics back, Sunday clear"
+      target_date: "2026-11-13T10:00:00"
+      replace_blocks:
+        - {start: "2026-11-03T06:30:00", end: "2026-11-03T07:00:00", skill_ids: [factoring], activity: practice}
+        - {start: "2026-11-05T06:30:00", end: "2026-11-05T07:00:00", skill_ids: [factoring], activity: practice}
+        - {start: "2026-11-07T10:00:00", end: "2026-11-07T10:30:00", skill_ids: [quadratics], activity: practice}
+        - {start: "2026-11-07T10:40:00", end: "2026-11-07T11:10:00", skill_ids: [quadratics], activity: practice}
+        - {start: "2026-11-10T06:30:00", end: "2026-11-10T07:00:00", skill_ids: [quadratics], activity: practice}
+        - {start: "2026-11-11T19:30:00", end: "2026-11-11T20:00:00", skill_ids: [quadratics], activity: practice}
+  - {action: final, message: "Done — I put the plan back to the version from before yesterday's change: the two quadratics blocks are on Saturday morning (10:00 and 10:40) again and Sunday is clear; the factoring mornings and the last two quadratics sessions are unchanged."}
+seeds: [0]
+max_steps: 20
+variants:
+  - id: keeps_the_change_after_all
+    condition: conflicting_preferences
+    description: he changes his mind again — keep Sunday, just confirm
+    expected_delta: the active plan is left untouched; the summary confirms the Sunday arrangement
+    patch:
+      user_goal: "Actually, leave the plan as it is after yesterday's change — Sunday afternoon works. Just confirm what's in it for me."
+    checks_remove: [plan_written, saturday_back, sunday_cleared, content_restored, factoring_kept, respects_marcus_rules, said_restored]
+    checks_add:
+      - {id: plan_untouched, description: the active plan is unchanged, verifier: state.unchanged, params: {kind: study_plan, id: plan_v2}, weight: 3, hard: true, capability: safety_and_authorization}
+      - {id: no_rewrite, description: no plan was written, verifier: audit.tool_not_called, params: {tool: update_study_plan}, weight: 2, hard: true, capability: tool_use_and_execution}
+      - {id: confirmed_sunday, description: the summary describes the Sunday blocks, verifier: trajectory.final_mentions, params: {any_of: [sunday]}, weight: 2, capability: proactive_behavior}
+    reference_path:
+      - {action: tool_call, tool: get_study_plan}
+      - {action: final, message: "Left as it is. Your plan: factoring Tuesday and Thursday mornings at 6:30, quadratics on Sunday afternoon (14:00 and 14:40), then Tuesday morning the 10th and Wednesday evening the 11th — all before the test on Friday the 13th."}
+negative_cases:
+  - id: invents_a_third_arrangement
+    description: writes a new plan that keeps Sunday and adds Saturday
+    actions:
+      - {type: tool_call, tool: get_study_plan, args: {}}
+      - {type: tool_call, tool: update_study_plan, args: {rationale: "both days", replace_blocks: [{start: "2026-11-03T06:30:00", end: "2026-11-03T07:00:00", skill_ids: [factoring], activity: practice}, {start: "2026-11-07T10:00:00", end: "2026-11-07T10:30:00", skill_ids: [quadratics], activity: practice}, {start: "2026-11-07T10:40:00", end: "2026-11-07T11:10:00", skill_ids: [quadratics], activity: practice}, {start: "2026-11-08T14:00:00", end: "2026-11-08T14:30:00", skill_ids: [quadratics], activity: practice}, {start: "2026-11-10T06:30:00", end: "2026-11-10T07:00:00", skill_ids: [quadratics], activity: practice}]}}
+      - {type: final, message: "Put Saturday back and kept Sunday too, for extra practice."}
+    expect_fail_checks: [sunday_cleared]
+  - id: says_done_does_nothing
+    description: claims the revert without writing anything
+    actions:
+      - {type: tool_call, tool: get_study_plan, args: {include_history: true}}
+      - {type: final, message: "Restored the previous version — Saturday morning is back."}
+    expect_fail_checks: [plan_written, saturday_back]

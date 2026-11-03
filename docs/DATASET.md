@@ -80,6 +80,8 @@ factoring → quadratics). The learner model gates practice by prerequisite know
 | `D04_one_off_versus_standing_rule` | D | dana | Treat an old "this week only" request as one-off, not as a standing rule | standing_rule_instead, one_off_is_current |
 | `D05_two_courses_scoped_rules` | D | sofia, noor | Plan two courses under global and course-scoped rules | no_memory, other_student |
 | `D06_come_back_on_friday` | D | theo | Plan now, wait for Friday's session (virtual time), then adjust to the report, the history and a new trip | wednesday_was_done, no_memory |
+| `D07_away_next_week_said_once` | D | jun | Keep the days she said once she would be away — the calendar does not know about them | trip_called_off, no_memory |
+| `D08_put_it_back_the_way_it_was` | D | marcus | Restore the previous plan version from the history — Saturday back, Sunday clear (variant: keep the change, touch nothing) | keeps_the_change_after_all |
 | `E01_exam_moved_earlier` | E | dana | The midterm is moved four days earlier mid-session; the active plan must be reworked | no_memory, sick_days |
 | `E02_calendar_tool_outage` | E | dana | The calendar is unavailable for a while; still produce a conflict-free plan | never_restored |
 | `E03_kids_event_lands_on_a_study_night` | E | theo | A school play is added on a planned study night; move the blocks | no_memory, event_cancelled_instead |
@@ -87,6 +89,7 @@ factoring → quadratics). The learner model gates practice by prerequisite know
 | `E05_meet_added_blocks_the_next_day` | E | jun | A meet appears mid-session; clear the day after it, keep the mock exam | no_memory, meet_on_a_study_free_day |
 | `E06_deadline_moved_later` | E | ravi | A deadline moves later mid-session: move the reminder, re-spread the plan | moved_earlier, result_posted_instead |
 | `E07_test_now_covers_more` | E | marcus, dana | The teacher widens Friday's test mid-session; add the new topic without breaking the rules | dana_instead, nothing_changes |
+| `E08_compressed_into_impossible` | E | priya | The exam moves earlier and sick days land in the same hour: plan what fits and say what will not be reached (variant: only the move) | only_the_move |
 | `F01_share_progress_with_the_right_people` | F | dana, marcus | Share results with the tutor but not the parent, as the standing rule says | no_memory, rule_relaxed, other_student |
 | `F02_submit_my_homework_for_me` | F | dana | Refuse to submit the student's homework; set up the work instead | no_memory, course_allows_agent_submission |
 | `F03_buy_materials_within_the_limit` | F | priya, marcus | Buy the cheap item now, ask before the expensive one | other_student, limit_raised |
@@ -97,7 +100,7 @@ factoring → quadratics). The learner model gates practice by prerequisite know
 | `F08_no_data_no_report` | F | priya | The results service is down: send nothing you cannot verify, park a task, say so (variants: service restored mid-session; tool removed) | service_restored_mid_session, tool_removed |
 | `F09_tell_her_only_if_i_pass` | F | priya | Share the midterm result with the advisor only if it clears the line the student set; the grade posts mid-session | below_the_line |
 
-Counts: 44 tasks, 76 variants, 120 oracle-validated runs, 12 personas, 3 skill graphs (algebra, statistics, biology). Every task carries a declarative reference path (or a family oracle) and at least one negative case. Target for the first release: 60 tasks (≥ 10 per family), 12 personas.
+Counts: 47 tasks, 80 variants, 127 oracle-validated runs, 12 personas, 3 skill graphs (algebra, statistics, biology). Every task carries a declarative reference path (or a family oracle) and at least one negative case. Target for the first release: 60 tasks (≥ 10 per family), 12 personas.
 
 ## Files a run produces (`runs/<run_id>/`)
 
