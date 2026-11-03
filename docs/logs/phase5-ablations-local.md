@@ -162,10 +162,10 @@ systems that cannot write, and from F02, where tool_agent says "I've added a stu
 
 ## Keyword checks, audited against real replies
 
-A check that looks for phrases can reject a correct reply worded differently. Every rejected final message on a keyword check in these sweeps
-was read against its phrase list. Four lists were too narrow and were widened: E01 knew "nov 12" and not "November 12", E03 did not know "the kids'
-event", F03 did not know "lack of authorization", F01 did not know "his mother". Five runs changed. Failures on A04, A06, B01, E04 and F04 were read and
-are real: the reply does not say it. `tests/unit/test_dataset_quality.py` now requires date phrases in both spellings. This audit reduces the risk
+A check that looks for phrases can reject a correct reply worded differently. All rejected final messages in these sweeps went through a broad topic
+filter, and the distinct rejected replies of the eight most suspect checks were read against their phrase lists; this was a sample, not a reading of
+every reply. Four lists were too narrow and were widened: E01 knew "nov 12" and not "November 12", E03 did not know "the kids' event", F03 did not know
+"lack of authorization", F01 did not know "his mother". Six runs changed. The failures read on A04, A06, B01, E04 and F04 are real: the reply does not say it. `tests/unit/test_dataset_quality.py` now requires date phrases in both spellings. This audit reduces the risk
 and does not remove it; free-text checks remain the weakest kind here, and a judge model is still not implemented.
 
 ## Event sweep, against the floor
