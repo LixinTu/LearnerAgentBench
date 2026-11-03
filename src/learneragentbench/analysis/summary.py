@@ -23,7 +23,31 @@ def bootstrap_ci(values: list[float], *, n_boot: int = 2000, alpha: float = 0.05
 
 
 def load_verdicts(root: str | Path) -> list[dict[str, Any]]:
-    return [json.loads(p.read_text(encoding="utf-8")) for p in sorted(Path(root).rglob("verdict.json"))]
+    """Every verdict under ``root``, each enriched with its run's sidecar metadata (experiment
+    condition, task family, memory/tool settings) so tables can group by them."""
+    out = []
+    for p in sorted(Path(root).rglob("verdict.json")):
+        v = json.loads(p.read_text(encoding="utf-8"))
+        for k, val in _sidecar(p.parent).items():
+            v.setdefault(k, val)
+        out.append(v)
+    return out
+
+
+def _sidecar(run_dir: Path) -> dict[str, Any]:
+    meta: dict[str, Any] = {}
+    cfg_path, task_path = run_dir / "config.json", run_dir / "task_effective.json"
+    if cfg_path.exists():
+        cfg = json.loads(cfg_path.read_text(encoding="utf-8"))
+        tags = cfg.get("tags") or []
+        meta["condition"] = cfg.get("condition") or (tags[1] if len(tags) > 1 else "default")
+        meta["experiment"] = tags[0] if tags else "?"
+        for k in ("memory_access", "tool_profile", "adapter", "max_steps"):
+            if k in cfg:
+                meta[k] = cfg[k]
+    if task_path.exists():
+        meta["family"] = json.loads(task_path.read_text(encoding="utf-8")).get("family", "?")
+    return meta
 
 
 def summarize_runs(root: str | Path, *, group_by: str = "model,variant_id") -> str:
@@ -34,19 +58,23 @@ def summarize_runs(root: str | Path, *, group_by: str = "model,variant_id") -> s
     groups: dict[tuple[str, ...], list[dict[str, Any]]] = defaultdict(list)
     for v in verdicts:
         groups[tuple(str(v.get(k, "?")) for k in keys)].append(v)
-    lines = [f"{' / '.join(keys):40s} {'n':>4s} {'success':>8s} {'95% CI':>15s} {'score':>7s} {'calls':>6s} {'auth_viol':>9s} {'attribution'}"]
+    lines = [f"{' / '.join(keys):40s} {'n':>4s} {'success':>8s} {'95% CI':>15s} {'score':>7s} {'calls':>6s} "
+             f"{'0calls':>6s} {'hard':>5s} {'auth_viol':>9s} {'attribution'}"]
     for key, vs in sorted(groups.items()):
         succ = [1.0 if v["task_success"] else 0.0 for v in vs]
         rate = sum(succ) / len(succ)
         lo, hi = bootstrap_ci(succ)
         score = sum(v["score"] / v["max_score"] if v["max_score"] else 0.0 for v in vs) / len(vs)
         calls = sum(v["tool_call_count"] for v in vs) / len(vs)
+        no_calls = sum(1 for v in vs if v["tool_call_count"] == 0)
+        hard = sum(1 for v in vs if v.get("hard_failures"))
         viol = sum(len(v["authorization_violations"]) for v in vs)
         attr: dict[str, int] = defaultdict(int)
         for v in vs:
             attr[v["failure_attribution"]] += 1
         attr_s = ",".join(f"{k}:{n}" for k, n in sorted(attr.items()))
-        lines.append(f"{' / '.join(key):40s} {len(vs):4d} {rate:8.2f} [{lo:5.2f},{hi:5.2f}] {score:7.2f} {calls:6.1f} {viol:9d} {attr_s}")
+        lines.append(f"{' / '.join(key):40s} {len(vs):4d} {rate:8.2f} [{lo:5.2f},{hi:5.2f}] {score:7.2f} {calls:6.1f} "
+                     f"{no_calls:6d} {hard:5d} {viol:9d} {attr_s}")
     caps: dict[str, list[float]] = defaultdict(list)
     for v in verdicts:
         for cap, val in v.get("capability_scores", {}).items():

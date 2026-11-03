@@ -136,3 +136,21 @@ def test_event_state_after_counts_only_agent_writes_after_delivery(tmp_path: Pat
     assert by["plan_changed_after_event"].passed is True
     assert "delivered at step 1" in by["plan_changed_after_event"].evidence
     assert res.trajectory.env_errors == [] and res.verdict.failure_attribution == "none"
+
+
+def test_bad_arguments_are_the_agents_fault_not_the_environments(tmp_path: Path) -> None:
+    """The first local sweep sent record_learning_progress skill_ids=[]; the tool crashed (ZeroDivisionError)
+    and the run was attributed to the environment. It must be a validation error charged to the agent."""
+    t = DS.load_task("C02_counting_across_problems")
+    w = build_world(t.initial_state, DS.load_persona(t.persona_id), DS.load_graph(t.initial_state.skill_graph or "algebra"),
+                    task_id=t.task_id)
+    ex = ToolExecutor(REGISTRY, ToolContext(w, run_id="r", allowed_tools=t.available_tools))
+    spec = RunSpec(run_id="r", task_id=t.task_id, persona_id=t.persona_id, model="m", adapter="a", user_goal=t.user_goal,
+                   allowed_tools=t.available_tools, max_steps=5)
+    actions = [Action.call("record_learning_progress", skill_ids=[], minutes=30, started_at="2026-11-02T19:00:00"),
+               Action.final("logged it")]
+    traj = AgentLoop(w, ex, ActionListAdapter(actions), spec, tmp_path).run()
+    v = run_checks(VerifyContext(world=w, initial_world=None, trajectory=traj, task=t, variant=resolve_variant(t, "base")))
+    assert v.failure_attribution == "agent"
+    assert any("validation" in s for s in v.invalid_actions)
+    assert not any(r.error_type == "internal" for r in w.tool_calls("r"))

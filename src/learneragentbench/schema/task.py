@@ -204,3 +204,4 @@ class RunConfig(LABModel):
     temperature: float = 0.0
     adapter_params: dict[str, Any] = Field(default_factory=dict)
     tags: list[str] = Field(default_factory=list)
+    condition: str | None = Field(default=None, description="Experiment condition name (set by `lab sweep`).")

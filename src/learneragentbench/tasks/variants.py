@@ -87,7 +87,7 @@ def apply_patch(world: World, patch: StatePatch, *, condition: CounterfactualCon
         log.append(f"added memory {f['id']}")
     for m in patch.memory_replace:
         old = world.require(MemoryEntry, m["id"])
-        world.update(old.model_copy(update={k: v for k, v in m.items() if k != "id"}))
+        world.patch(old, {k: v for k, v in m.items() if k != "id"})
         log.append(f"replaced memory {m['id']}")
     for key in patch.preference_remove:
         for pref in world.preferences(key=key):
@@ -110,7 +110,7 @@ def apply_patch(world: World, patch: StatePatch, *, condition: CounterfactualCon
     for upd in patch.records_update:
         cls = RECORD_TYPES[upd["kind"]]
         rec = world.require(cls, upd["id"])
-        world.update(rec.model_copy(update=upd["fields"]))
+        world.patch(rec, upd["fields"])
         log.append(f"updated {upd['kind']}/{upd['id']}")
     for i, seed in enumerate(patch.records_add):
         cls = RECORD_TYPES[seed["kind"]]

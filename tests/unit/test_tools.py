@@ -11,6 +11,7 @@ from learneragentbench.schema import (
     Availability,
     CalendarEvent,
     Contact,
+    Course,
     EventKind,
     MasteryState,
     PermissionLevel,
@@ -330,3 +331,48 @@ class TestTimezones:
         assert r2.status == "error" and "blocks[0].start" in (r2.error or "")
         ok = ex.call("get_calendar_events", {"start": "2026-11-02T19:00:00", "end": "2026-11-16T19:00:00"})
         assert ok.ok
+
+
+class TestEnvironmentFairness:
+    """Found by the first local-model sweep: the environment must never crash on, or silently
+    mislead about, arguments a weak model is likely to send — those failures would be charged
+    to the environment (or worse, read by the agent as facts)."""
+
+    def test_progress_without_skills_is_a_validation_error_not_a_crash(self) -> None:
+        w = _world()
+        r = _exec(w).call("record_learning_progress",
+                          {"skill_ids": [], "minutes": 30, "started_at": (T0 - timedelta(hours=1)).isoformat()})
+        assert r.status == "error" and "skill_ids" in (r.error or "")
+        rec = w.tool_calls("run1")[-1]
+        assert rec.error_type == "validation" and not rec.mutated
+        assert w.sessions() == []
+
+    def test_course_filters_accept_the_code_and_reject_unknown_courses(self) -> None:
+        w = _world()
+        w.add(Course(id="math101", created_at=T0, updated_at=T0, code="MATH 101", name="Intermediate Algebra",
+                     instructor_id="prof1", term="F26"))
+        by_id = _exec(w).call("list_assignments", {"course_id": "math101"})
+        by_code = _exec(w).call("list_assignments", {"course_id": "math 101"})
+        assert by_id.ok and by_code.ok and by_id.result == by_code.result and len(by_id.result) == 1
+        wrong = _exec(w).call("list_assessments", {"course_id": "Intermediate Algebra"})
+        assert wrong.status == "error" and "known courses" in (wrong.error or "") and "math101" in (wrong.error or "")
+        assert w.tool_calls("run1")[-1].error_type == "not_found"
+        results = _exec(w).call("get_assessment_results", {"course_id": "nope"})
+        assert results.status == "error" and w.tool_calls("run1")[-1].error_type == "not_found"
+
+    def test_a_tool_that_fails_half_way_leaves_no_trace(self, monkeypatch) -> None:
+        w = _world()
+        n_prefs = len(w.preferences())
+
+        def half_write(ctx, p):
+            ctx.world.add(Preference(id="p_half", created_at=ctx.now, updated_at=ctx.now, key="max_daily_minutes",
+                                     value=10, stated_at=ctx.now))
+            raise RuntimeError("disk full")
+
+        monkeypatch.setitem(REGISTRY._fns, "record_memory", half_write)
+        r = _exec(w).call("record_memory", {"text": "x", "memory_kind": "update"})
+        assert r.status == "error" and "internal error" in (r.error or "")
+        assert w.get(Preference, "p_half") is None and len(w.preferences()) == n_prefs
+        assert w.store.history(Preference, "p_half") == []
+        rec = w.tool_calls("run1")[-1]
+        assert rec.error_type == "internal" and rec.records_touched == [] and not rec.mutated

@@ -236,7 +236,7 @@ def _custom(world: World, p: dict[str, Any], ev: ScheduledEvent) -> str:
     for upd in p.get("records_update", []):
         cls = RECORD_TYPES[upd["kind"]]
         rec = world.require(cls, upd["id"])
-        world.update(rec.model_copy(update=upd["fields"]))
+        world.patch(rec, upd["fields"])
     for rem in p.get("records_remove", []):
         world.remove(RECORD_TYPES[rem["kind"]], rem["id"])
     if p.get("mastery_set"):

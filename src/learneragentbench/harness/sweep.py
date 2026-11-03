@@ -89,7 +89,7 @@ def run_sweep(path: str | Path, *, out_root: str | Path, data_dir: str | None = 
             log(f"[dry] {rid}")
             continue
         cfg = RunConfig(model=exp["model"], adapter=exp["adapter"], adapter_params=dict(exp.get("adapter_params", {})),
-                        max_steps=exp.get("max_steps"), output_dir=str(out_dir), tags=[exp["name"], r["condition"]],
+                        max_steps=exp.get("max_steps"), output_dir=str(out_dir), tags=[exp["name"], r["condition"]], condition=r["condition"],
                         temperature=float(exp.get("temperature", 0.0))).model_copy(update=dict(r["overrides"]))
         try:
             res = run_one(ds, r["task_id"], r["variant_id"], cfg, r["seed"], out_root=out_dir, run_id=rid)

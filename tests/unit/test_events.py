@@ -125,6 +125,11 @@ def test_custom_event_records_and_mastery() -> None:
                                   payload={"records_add": [{"kind": "todo", "fields": {"id": "t9", "title": "x"}}],
                                            "mastery_set": {"z": 0.7}}))
     assert w.todos()[0].id == "t9" and w.mastery()["z"].mastery == 0.7
+    # record updates arrive as raw YAML values and must be re-validated into typed fields
+    apply_event(w, ScheduledEvent(id="cu2", event_kind=EventKind.CUSTOM, at=T0,
+                                  payload={"records_update": [{"kind": "todo", "id": "t9",
+                                                               "fields": {"due_at": "2026-11-05T18:00:00"}}]}))
+    assert w.todos()[0].due_at == datetime(2026, 11, 5, 18, 0) and w.todos()[0].version == 2
 
 
 def test_unknown_kind_raises() -> None:

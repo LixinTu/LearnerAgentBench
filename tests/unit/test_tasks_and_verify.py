@@ -224,3 +224,22 @@ def test_variant_simulated_user_patch_is_revalidated() -> None:
     assert eff.simulated_user.approval_rules and isinstance(eff.simulated_user.approval_rules[0], ApprovalRule)
     assert eff.simulated_user.approval_rules[0].decision == "deny"
     assert eff.simulated_user.clarifications == []
+
+
+def test_record_updates_from_yaml_are_revalidated() -> None:
+    """A records_update patch carries raw YAML values (string dates, dict blocks). The stored record
+    must hold typed fields — otherwise every later comparison on it breaks, silently."""
+    from datetime import datetime
+
+    from learneragentbench.schema import CalendarEvent, PlanBlock, StudyPlan
+
+    t = DS.load_task("D03_pick_up_where_we_left_off")
+    v = resolve_variant(t, "other_student")
+    w = build_world(t.initial_state, DS.load_persona("dana"), DS.load_graph(t.initial_state.skill_graph or "algebra"),
+                    task_id=t.task_id)
+    apply_patch(w, v.patch, condition=v.condition, run_seed_text="x")
+    plan = w.require(StudyPlan, "plan_started")
+    assert all(isinstance(b, PlanBlock) and isinstance(b.start, datetime) for b in plan.blocks)
+    assert plan.blocks[-1].end == datetime(2026, 11, 2, 20, 15)
+    ev = w.require(CalendarEvent, "st3")
+    assert ev.start == datetime(2026, 11, 2, 19, 30) and ev.version == 2

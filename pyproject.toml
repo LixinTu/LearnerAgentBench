@@ -33,6 +33,8 @@ packages = ["src/learneragentbench"]
 testpaths = ["tests"]
 addopts = "-q"
 markers = ["e2e: end-to-end runs (may be slow)", "llm: needs a local or remote language model"]
+# a record holding raw dicts/strings where typed fields belong is silent corruption — fail the suite
+filterwarnings = ["error:Pydantic serializer warnings:UserWarning"]
 
 [tool.ruff]
 line-length = 100

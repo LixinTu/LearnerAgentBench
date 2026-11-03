@@ -127,6 +127,19 @@ def search_learning_history(ctx: ToolContext, p: HistoryParams) -> list[dict[str
              "activity": s.activity, "source": s.source, "notes": s.notes} for s in rows]
 
 
+def _course_id(ctx: ToolContext, course_id: str | None) -> str | None:
+    """Accept a course id or its code (case- and space-insensitive). An unknown course is an error,
+    never a silently empty list — the agent must not conclude 'no results' from a typo."""
+    if course_id is None:
+        return None
+    key = course_id.replace(" ", "").lower()
+    courses = ctx.world.courses()
+    for c in courses:
+        if key in (c.id.replace(" ", "").lower(), c.code.replace(" ", "").lower()):
+            return c.id
+    raise ToolError(f"no course {course_id!r}; known courses: {[(c.id, c.code) for c in courses]}", "not_found")
+
+
 class ResultsParams(P):
     course_id: str | None = None
     assessment_id: str | None = None
@@ -135,12 +148,13 @@ class ResultsParams(P):
 @_rec(ToolSpec(name="get_assessment_results", description="Posted quiz/exam/homework results with per-skill scores and feedback.", category="read", params_model=ResultsParams))
 def get_assessment_results(ctx: ToolContext, p: ResultsParams) -> list[dict[str, Any]]:
     by_id = {a.id: a for a in ctx.world.assessments()}
+    course = _course_id(ctx, p.course_id)
     out = []
     for r in sorted(ctx.world.results(), key=lambda r: r.posted_at, reverse=True):
         a = by_id.get(r.assessment_id)
         if p.assessment_id and r.assessment_id != p.assessment_id:
             continue
-        if p.course_id and (a is None or a.course_id != p.course_id):
+        if course and (a is None or a.course_id != course):
             continue
         out.append({"assessment_id": r.assessment_id, "title": a.title if a else "?", "course_id": a.course_id if a else None,
                     "kind": a.assessment_kind if a else None, "taken_at": r.taken_at.isoformat(),
@@ -157,8 +171,8 @@ class AssessmentsParams(P):
 @_rec(ToolSpec(name="list_assessments", description="Scheduled quizzes and exams: when, where, which skills they cover.", category="read", params_model=AssessmentsParams))
 def list_assessments(ctx: ToolContext, p: AssessmentsParams) -> list[dict[str, Any]]:
     rows = ctx.world.assessments()
-    if p.course_id:
-        rows = [a for a in rows if a.course_id == p.course_id]
+    if course := _course_id(ctx, p.course_id):
+        rows = [a for a in rows if a.course_id == course]
     if p.upcoming_only:
         rows = [a for a in rows if a.scheduled_at >= ctx.now]
     return [{"id": a.id, "course_id": a.course_id, "title": a.title, "kind": a.assessment_kind,
@@ -253,8 +267,8 @@ class AssignmentsParams(P):
 @_rec(ToolSpec(name="list_assignments", description="Assignments with due dates, status and skills.", category="read", params_model=AssignmentsParams))
 def list_assignments(ctx: ToolContext, p: AssignmentsParams) -> list[dict[str, Any]]:
     rows = ctx.world.assignments()
-    if p.course_id:
-        rows = [a for a in rows if a.course_id == p.course_id]
+    if course := _course_id(ctx, p.course_id):
+        rows = [a for a in rows if a.course_id == course]
     if p.status:
         rows = [a for a in rows if a.status == p.status]
     return [{"id": a.id, "course_id": a.course_id, "title": a.title, "due_at": a.due_at.isoformat(), "status": a.status,
@@ -546,7 +560,7 @@ def update_task(ctx: ToolContext, p: UpdateTaskParams) -> dict[str, Any]:
 
 
 class ProgressParams(P):
-    skill_ids: list[str]
+    skill_ids: list[str] = Field(min_length=1, description="At least one skill id from the skill graph (see analyze_skill_gaps).")
     minutes: int = Field(ge=1, le=600)
     started_at: datetime
     activity: str = "practice"

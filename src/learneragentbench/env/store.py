@@ -162,6 +162,20 @@ class Store:
         rows = self.conn.execute("SELECT key FROM kv WHERE key LIKE ? ORDER BY key", (prefix + "%",))
         return [r[0] for r in rows.fetchall()]
 
+    # -------------------------------------------------------------- checkpoints
+    def checkpoint(self) -> sqlite3.Connection:
+        """An in-memory copy of the whole database. Hand it to ``restore_checkpoint`` to undo
+        everything written since — so a tool call that fails half-way leaves no trace."""
+        dest = sqlite3.connect(":memory:")
+        self.conn.backup(dest)
+        return dest
+
+    def restore_checkpoint(self, cp: sqlite3.Connection) -> None:
+        try:
+            cp.backup(self.conn)
+        finally:
+            cp.close()
+
     # ---------------------------------------------------------------- snapshots
     def snapshot_bytes(self) -> bytes:
         return self.conn.serialize()

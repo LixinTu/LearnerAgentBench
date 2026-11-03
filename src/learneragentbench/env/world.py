@@ -113,6 +113,12 @@ class World:
         self._note(out)
         return out  # type: ignore[return-value]
 
+    def patch(self, rec: R, fields: dict[str, Any]) -> R:
+        """Update ``rec`` from raw field values (strings and dicts straight from YAML), re-validated
+        through the record's model so a date stays a datetime and a plan block a PlanBlock."""
+        merged = type(rec).model_validate({**rec.model_dump(mode="python"), **fields})
+        return self.update(merged)
+
     def remove(self, cls: type[Record], rec_id: str) -> Record:
         out = self.store.delete(cls, rec_id, now=self.now)
         self._note(out)

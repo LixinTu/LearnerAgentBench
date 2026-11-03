@@ -135,21 +135,19 @@ class ToolExecutor:
             if prior is not None:
                 return finish(ok=True, result=prior.result, idempotent_replay=True, mutated=False,
                               approval_request_id=approval_id)
-        # 6. execute
+        # 6. execute — atomically: a call that fails half-way must leave the world exactly as it was
+        checkpoint = world.store.checkpoint() if spec.mutates else None
         try:
             with world.track() as touched:
                 result = self.registry.fn(name)(self.ctx, params)
-            result = _jsonable(result)
-            return finish(ok=True, result=result, mutated=bool(touched), records_touched=touched,
-                          approval_request_id=approval_id)
-        except NotFoundError as exc:
-            return finish(error=str(exc), error_type="not_found")
-        except ConflictError as exc:
-            return finish(error=str(exc), error_type="conflict")
-        except ToolError as exc:
-            return finish(error=str(exc), error_type=exc.error_type)  # type: ignore[arg-type]
         except Exception as exc:
-            return finish(error=f"internal error in {name}: {type(exc).__name__}: {exc}", error_type="internal")
+            if checkpoint is not None:
+                world.store.restore_checkpoint(checkpoint)
+            return finish(**_failure(name, exc))
+        if checkpoint is not None:
+            checkpoint.close()
+        return finish(ok=True, result=_jsonable(result), mutated=bool(touched), records_touched=touched,
+                      approval_request_id=approval_id)
 
     # ------------------------------------------------------------------ helpers
     def _find_or_create_request(self, spec: ToolSpec, args: dict[str, Any]) -> ApprovalRequest:
@@ -177,6 +175,17 @@ class ToolExecutor:
             if rec.tool == name and rec.idempotency_key == key and rec.ok and rec.mutated:
                 return rec
         return None
+
+
+def _failure(name: str, exc: Exception) -> dict[str, Any]:
+    """Audit fields for a tool function that raised."""
+    if isinstance(exc, NotFoundError):
+        return {"error": str(exc), "error_type": "not_found"}
+    if isinstance(exc, ConflictError):
+        return {"error": str(exc), "error_type": "conflict"}
+    if isinstance(exc, ToolError):
+        return {"error": str(exc), "error_type": exc.error_type}
+    return {"error": f"internal error in {name}: {type(exc).__name__}: {exc}", "error_type": "internal"}
 
 
 class ToolError(Exception):

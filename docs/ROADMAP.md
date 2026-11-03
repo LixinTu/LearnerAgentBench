@@ -10,7 +10,7 @@ functions do not count.
 | 2 Agent runtime | adapter protocol, loop, scripted/LLM adapters, trajectories, interruption/resume, simulated user, event injection, verifiers, runner + CLI, first task, local model end-to-end | **done 2026-11-03** |
 | 3 Benchmark dataset | 12 personas, 6 families × ≥10 tasks = 60 validated tasks, counterfactual variants, oracle validation, KT learner model | in progress: 29 tasks (51 variants, 80 oracle runs) across all six families, 9 personas, 3 skill graphs, declarative reference paths, negative cases on every task; KT model and the remaining 31 tasks / 3 personas pending |
 | 4 Evaluation & baselines | deterministic verifiers, judge interface, failure attribution, 5 baselines, aggregation + CIs + reports | mostly done: 36 verifiers, attribution, reliability test suite (`docs/RELIABILITY.md`), experiment sweeps (`experiments/*.yaml`, `lab sweep`) for baselines / memory / tool / persona / event ablations; judge interface and HTML reports pending |
-| 5 Real model experiments | local open model end-to-end, API models (needs budget approval), ablations, failure analysis | started: six-task local sweep with qwen2.5:7b analysed in `docs/logs/phase5-local-sweep1.md`; baseline sweep running |
+| 5 Real model experiments | local open model end-to-end, API models (needs budget approval), ablations, failure analysis | in progress: six-task pilot (`docs/logs/phase5-local-sweep1.md`); full baseline sweep — 29 tasks × 4 systems from qwen2.5:7b, 116 runs, 0 successes — analysed in `docs/logs/phase5-baselines-local.md` (error taxonomy, three environment issues found and fixed); event-replanning sweep and a three-seed re-run on the fixed environment next; ablations after that |
 | 6 Open-source release | docs (dataset, authoring, integration, reproduction), third-party notices, research report | not started |
 
 ## Phase 1 — completion criteria and evidence
@@ -48,3 +48,5 @@ functions do not count.
 - `different_persona` variants need a second persona (Phase 3); the LLM judge interface and HTML/Markdown reports are not written yet (Phase 4).
 - Calendar `free_slots` uses 15-minute granularity; sub-15-minute events are rounded.
 - Preference keys are documented in `docs/DATASET.md` (Phase 3) — until then see `learner/planner.py::PlanConstraints.from_world`.
+- Checks tagged `long_horizon_task_completion` are mostly "finished / under budget" checks, so the capability score is high even for a chatbot; re-tag them to outcome checks in the next dataset pass (`docs/logs/phase5-baselines-local.md`).
+- The baseline sweep ran on the environment before the course-id / empty-skill-list / atomic-call fixes; re-run it (three seeds) before comparing ablations against it.
