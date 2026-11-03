@@ -1,0 +1,30 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.11", "3.12", "3.13"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+      - name: Install
+        run: |
+          uv venv --python ${{ matrix.python-version }} .venv
+          uv pip install -e ".[dev,llm]"
+      - name: Lint
+        run: .venv/bin/ruff check src tests
+      - name: Type check
+        run: .venv/bin/pyright src
+      - name: Unit and integration tests
+        run: .venv/bin/pytest tests/unit tests/integration -q
+      - name: End-to-end (no model needed)
+        run: .venv/bin/pytest tests/e2e -q -m "not llm"
+      - name: Dataset validation
+        run: .venv/bin/python -m learneragentbench.harness.cli validate --all

@@ -1,0 +1,16 @@
+# Intermediate algebra skill graph (fictional course scope). Prerequisite edges are what the
+# learner model uses to gate practice effectiveness and what the plan oracle orders by.
+subject: algebra
+skills:
+  - {id: arith_ops, name: Order of operations and integer arithmetic, subject: algebra, difficulty: 0.2}
+  - {id: fractions, name: Fractions and decimals, subject: algebra, difficulty: 0.3, prerequisites: [arith_ops]}
+  - {id: lin_eq, name: Linear equations in one variable, subject: algebra, difficulty: 0.4, prerequisites: [arith_ops]}
+  - {id: lin_ineq, name: Linear inequalities, subject: algebra, difficulty: 0.45, prerequisites: [lin_eq]}
+  - {id: word_prob, name: Linear word problems, subject: algebra, difficulty: 0.55, prerequisites: [lin_eq, fractions]}
+  - {id: graph_lines, name: Graphing lines and slope, subject: algebra, difficulty: 0.5, prerequisites: [lin_eq]}
+  - {id: systems, name: Systems of linear equations, subject: algebra, difficulty: 0.6, prerequisites: [lin_eq, graph_lines]}
+  - {id: exponents, name: Exponent rules, subject: algebra, difficulty: 0.45, prerequisites: [arith_ops]}
+  - {id: polynomials, name: Polynomial arithmetic, subject: algebra, difficulty: 0.55, prerequisites: [exponents]}
+  - {id: factoring, name: Factoring polynomials, subject: algebra, difficulty: 0.65, prerequisites: [polynomials]}
+  - {id: quadratics, name: Solving quadratic equations, subject: algebra, difficulty: 0.7, prerequisites: [factoring, lin_eq]}
+  - {id: functions, name: Functions and notation, subject: algebra, difficulty: 0.5, prerequisites: [graph_lines]}

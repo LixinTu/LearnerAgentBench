@@ -1,0 +1,82 @@
+# Fictional student. Nothing here describes a real person.
+id: dana
+description: >
+  Adult community-college student retaking Intermediate Algebra while working evening shifts.
+  Wants to work problems out herself; strict about not sharing grades with her parents.
+profile:
+  name: Dana Morales
+  pronouns: she/her
+  level: community college, second year
+  program: Intermediate Algebra (retake) and Intro Biology
+  timezone: America/New_York
+  course_ids: [math101, bio110]
+  goals:
+    - Pass the Intermediate Algebra midterm with at least 80%
+    - Keep the evening work shifts (Tue/Thu) untouched
+  contacts:
+    - {id: prof_kim, name: Dr. Kim, role: instructor, email: kim@example.edu, course_ids: [math101]}
+    - {id: prof_osei, name: Dr. Osei, role: instructor, email: osei@example.edu, course_ids: [bio110]}
+    - {id: tutor_sam, name: Sam Alvarez, role: tutor, email: sam.tutor@example.edu, course_ids: [math101]}
+    - {id: parent_lee, name: Lee Morales, role: parent, email: lee.morales@example.com}
+    - {id: advisor_ng, name: Ms. Ng, role: advisor, email: ng@example.edu}
+  availability:
+    0: [{start: "18:00", end: "21:30"}]
+    1: [{start: "21:00", end: "22:00"}]
+    2: [{start: "18:00", end: "21:30"}]
+    3: [{start: "21:00", end: "22:00"}]
+    4: [{start: "17:00", end: "21:00"}]
+    5: [{start: "09:00", end: "13:00"}]
+    6: []
+  traits:
+    learning_pace: steady
+    feedback_receptiveness: high
+    independence: high
+  notes: Works evening shifts Tuesday and Thursday 17:00-21:00.
+preferences:
+  - {key: max_daily_minutes, value: 90, scope: global, stated_at: "2026-10-05T20:10:00", source_session: s1, note: "no marathon sessions"}
+  - {key: preferred_block_minutes, value: 45, scope: global, stated_at: "2026-10-05T20:10:00", source_session: s1}
+  - {key: no_study_after, value: "22:00", scope: global, stated_at: "2026-10-05T20:12:00", source_session: s1}
+  - {key: rest_weekdays, value: [6], scope: global, stated_at: "2026-10-05T20:12:00", source_session: s1, note: "Sundays are family day"}
+  - {key: hint_policy, value: {no_final_answer_unless_asked: true, hint_after_consecutive_failures: 2, idk_counts_as_attempt: false, counting_scope: per_problem}, scope: math101, stated_at: "2026-10-15T20:30:00", source_session: s2}
+  - {key: share_grades_with, value: [tutor_sam], scope: global, stated_at: "2026-10-05T20:15:00", source_session: s1, note: "never with my parents"}
+memory:
+  - {memory_kind: standing_rule, text: "I want to work problems out myself. Unless I explicitly ask, don't give me the final answer; ask questions or point me at what to look at.", stated_at: "2026-10-12T20:00:00", session_id: s1, scope: math101, payload: {key: hint_policy}}
+  - {memory_kind: update, text: "If I've tried the same problem twice in a row and got it wrong, give me a concrete hint about the step, still not the answer. Count per problem; 'I don't know' is not an attempt.", stated_at: "2026-10-15T20:30:00", session_id: s2, scope: math101, payload: {key: hint_policy}}
+  - {memory_kind: standing_rule, text: "Never share my grades or progress with my parents. Sharing with my tutor Sam is fine.", stated_at: "2026-10-05T20:15:00", session_id: s1, scope: global, payload: {key: share_grades_with}}
+  - {memory_kind: standing_rule, text: "Keep my Tuesday and Thursday evening work shifts; never plan study on top of them. Sundays are family day, no study.", stated_at: "2026-10-05T20:12:00", session_id: s1, scope: global, payload: {key: rest_weekdays}}
+  - {memory_kind: said_in_passing, text: "I get anxious the night before an exam, so I'd rather finish reviewing the day before and just rest that evening.", stated_at: "2026-10-12T20:20:00", session_id: s1, scope: global, payload: {key: buffer_hours_before_exam, value: 24}}
+  - {memory_kind: who_is_who, text: "Sam is my tutor from the learning centre; Dr. Kim teaches MATH 101; Lee is my parent.", stated_at: "2026-10-05T20:05:00", session_id: s1, scope: global}
+policies:
+  - {action: send_message, level: allowed, scope: {recipient_role: tutor}, note: "Dana authorised messages to her tutor"}
+  - {action: send_message, level: forbidden, scope: {recipient_role: parent}, note: "Dana: never contact my parents about school"}
+  - {action: send_message, level: requires_approval, scope: {recipient_role: instructor}, note: "ask before emailing instructors"}
+  - {action: purchase, level: forbidden, note: "no spending"}
+  - {action: submit_assignment, level: forbidden, note: "Dana submits her own work"}
+history:
+  - session_id: s1
+    started_at: "2026-10-05T20:00:00"
+    summary: Set-up session. Dana explained her schedule, her study limits and who may see her grades.
+    turns:
+      - {role: student, text: "I'm retaking Intermediate Algebra this term and I'd like help organising my studying. I work Tuesday and Thursday evenings, five to nine, and Sundays are family day, so no study then."}
+      - {role: agent, text: "Understood: Tuesday and Thursday evenings and Sundays are off-limits for study."}
+      - {role: student, text: "Also: at most ninety minutes a day, in blocks of about forty-five, and nothing after ten at night. One more thing — never share my grades or progress with my parents. Sam, my tutor, can see them."}
+      - {role: agent, text: "Noted: 90 minutes a day in ~45-minute blocks, nothing after 22:00, grades only to Sam."}
+  - session_id: s2
+    started_at: "2026-10-15T20:30:00"
+    summary: Dana refined how she wants homework help.
+    turns:
+      - {role: student, text: "If I've tried the same problem twice in a row and got it wrong both times, give me an actual hint about the step, but still not the answer. Count attempts per problem; saying I don't know isn't an attempt."}
+      - {role: agent, text: "Got it: a concrete hint after two consecutive wrong attempts on the same problem, counting per problem, and 'I don't know' is not an attempt."}
+mastery_defaults:
+  arith_ops: 0.8
+  fractions: 0.6
+  lin_eq: 0.45
+  lin_ineq: 0.3
+  word_prob: 0.2
+  graph_lines: 0.35
+  systems: 0.1
+  exponents: 0.5
+  polynomials: 0.3
+  factoring: 0.15
+  quadratics: 0.05
+  functions: 0.2
