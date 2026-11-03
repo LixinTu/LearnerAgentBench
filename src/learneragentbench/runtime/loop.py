@@ -96,7 +96,8 @@ class AgentLoop:
         for ev in self.spec.events:
             if ev.id in done:
                 continue
-            if (ev.after_step is not None and step >= ev.after_step) or (ev.at is not None and self.world.now >= ev.at):
+            if ((ev.after_step is not None and step >= ev.after_step) or (ev.at is not None and self.world.now >= ev.at)
+                    or (ev.after_student_lines is not None and self.user.lines_said() >= ev.after_student_lines)):
                 due.append(ev)
         return due
 

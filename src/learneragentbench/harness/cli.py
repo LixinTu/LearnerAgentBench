@@ -10,7 +10,7 @@
     lab reverify RUN_DIR
     lab show RUN_DIR
     lab summarize RUNS_ROOT [--group-by condition,family] [--floor]
-    lab rescore RUNS_ROOT [--dry-run] [--skip-family F]
+    lab rescore RUNS_ROOT [--dry-run] [--skip-family F] [--skip-task T]
     lab collect OUT ROOT [ROOT ...] [--where k=v] [--where-not k=v]
     lab compare RUNS_A RUNS_B [--filter-a k=v,...] [--filter-b k=v,...] [--pair-on task_id,seed]
     lab coverage [--write docs/COVERAGE.md]
@@ -162,7 +162,8 @@ def cmd_rescore(a: argparse.Namespace) -> int:
     n = moved = 0
     refused: list[str] = []
     for p in sorted(Path(a.runs_root).glob("*/verdict.json")):
-        if a.skip_family and json.loads((p.parent / "task_effective.json").read_text(encoding="utf-8")).get("family") == a.skip_family:
+        stored = json.loads((p.parent / "task_effective.json").read_text(encoding="utf-8"))
+        if stored.get("family") == a.skip_family or stored.get("task_id") == a.skip_task:
             continue
         n += 1
         try:
@@ -259,6 +260,7 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("runs_root")
     p.add_argument("--dry-run", action="store_true")
     p.add_argument("--skip-family", default=None)
+    p.add_argument("--skip-task", default=None, help="a task that was re-run because something the agent sees changed")
     p.set_defaults(fn=cmd_rescore)
 
     p = sub.add_parser("collect", help="copy the scoring files of selected runs into one run set")

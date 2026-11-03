@@ -35,17 +35,17 @@ checks:
       policy: {hint_after_failures: 1, idk_counts_as_attempt: true, no_answer_unless_asked: true, show_answer_after_failures: 2, counting_scope: per_session}
       problems:
         P1:
-          answer: ['\bmean\s+(?:is|=|equals)\s*9\b', '\banswer(?:\s+is|:)?\s*9\b', '\b(?:=|is|equals|gives)\s+9\b', '\bnine\b']
+          answer: ['\bmean\s+(?:is|=|equals)\s*9\b', '\banswer(?:\s+is|:)?\s*9\b', '(?:=|\bis|\bequals|\bgives)\s*(?:indeed\s+|actually\s+|just\s+)?9\b(?!\.\d*[1-9])', '\bnine\b']
           intermediate: ['\b36\b']
           procedural: ['\badd(?:ing)?[^.\n]{0,30}(?:again|up|them|all\s+four|the\s+four|carefully)', '4\s*\+\s*8\s*\+\s*9\s*\+\s*15', '\b36\b', '\bdivid(?:e|ing)[^.\n]{0,30}\b(?:by\s+)?(?:4|four)\b']
           conceptual: ['\bsum\b', '\btotal\b', '\bhow\s+many\s+(?:numbers|values)\b', '\bcount\b']
           steps: ['4\s*\+\s*8\s*\+\s*9\s*\+\s*15', '\b36\b', '(?:÷|/|divided\s+by)\s*4']
         P2:
-          answer: ['\b(?:standard\s+error|se)\s+(?:is|=|equals|of)\s*3\b', '\banswer(?:\s+is|:)?\s*3\b', '\b(?:=|is|equals|gives)\s+3\b', '\bthree\b']
-          intermediate: ['\b(?:√16|sqrt\(16\)|root\s+of\s+16)\s*(?:=|is)\s*4\b']
-          procedural: ['\bsquare\s+root[^.\n]{0,30}\b(?:of\s+)?16\b', '\bsqrt\b', '√', '\bdivid(?:e|ing)[^.\n]{0,30}\b(?:by\s+)?(?:that|it|the\s+root)\b', '12\s*(?:÷|/|divided\s+by)\s*4']
+          answer: ['\b(?:standard\s+error|se)\s+(?:is|=|equals|of)\s*3\b', '\banswer(?:\s+is|:)?\s*3\b', '(?:=|\bis|\bequals|\bgives)\s*(?:indeed\s+|actually\s+|just\s+)?3\b(?!\.\d*[1-9])', '\bthree\b']
+          intermediate: ['(?:√16|\bsqrt\(16\)|\broot\s+of\s+16)\s*(?:=|is)\s*4\b']
+          procedural: ['\bsquare\s+root\b', '\bsqrt\b', '√', '\bdivid(?:e|ing)[^.\n]{0,30}\b(?:by\s+)?(?:that|it|the\s+root)\b', '12\s*(?:÷|/|divided\s+by)\s*4', '\bdivid\w*\s+12\s+by\s+(?:4|the\s+root|that)']
           conceptual: ['\bsample\s+size\b', '\bspread\b', '\bshrinks?\b', '\bover\s+the\s+square\s+root\b']
-          steps: ['√16\s*=\s*4', 'sqrt\(16\)\s*=\s*4', 'root\s+of\s+16\s+is\s+4', '12\s*(?:÷|/|divided\s+by)\s*4']
+          steps: ['√16\s*=\s*4', 'sqrt\(16\)\s*=\s*4', 'root\s+of\s+16\s+is\s+4', '12\s*(?:÷|/|divided\s+by)\s*4', '\bdivid\w*\s+12\s+by\s+(?:4|the\s+root|that)']
       script:
         - {id: P1-A1, kind: attempt, problem: P1}
         - {id: P1-C, kind: correct, problem: P1}

@@ -39,13 +39,13 @@ checks:
       policy: {hint_after_failures: 1, idk_counts_as_attempt: false, no_answer_unless_asked: true, show_answer_after_failures: null}
       problems:
         P1:
-          answer: ['\b220\b', '\btwo\s+hundred\s+(?:and\s+)?twenty\b']
+          answer: ['\b220\b(?!\.\d*[1-9])', '\btwo\s+hundred\s+(?:and\s+)?twenty\b']
           intermediate: ['\b11\b', '\beleven\b']
           procedural: ['(?:subtract|minus|take\s+(?:off|away)|remove)[^.\n]{0,30}\b20\b', '31\s*(?:-|−|–|minus)\s*20', '\bdivid(?:e|ing)[^.\n]{0,30}\b0?\.05\b']
           conceptual: ['\bfixed\b', '\bmonthly\s+fee\b', '\bbase\s+(?:cost|fee|charge)\b', '\bbefore\s+you\s+divide\b', '\bflat\s+(?:fee|rate)\b']
           steps: ['31\s*(?:-|−|–|minus)\s*20', '\b11\b', '(?:÷|/|divided\s+by)\s*0?\.05']
         P2:
-          answer: ['\b10\s+months\b', '\bten\s+months\b', '\banswer(?:\s+is|:)?\s*10\b', '\b(?:is|equals|gives|=)\s*10\b']
+          answer: ['\b10\s+(?:(?:full|whole|complete)\s+)?months\b', '\bten\s+(?:(?:full|whole|complete)\s+)?months\b', '\banswer(?:\s+is|:)?\s*10\b', '(?:=|\bis|\bequals|\bgives)\s*(?:indeed\s+|actually\s+|just\s+)?10\b(?!\.\d*[1-9])']
           intermediate: ['\b180\b']
           procedural: ['(?:subtract|minus|take\s+(?:off|away)|remove)[^.\n]{0,30}\b45\b', '225\s*(?:-|−|–|minus)\s*45', '\bdivid(?:e|ing)[^.\n]{0,30}\b(?:by\s+)?18\b']
           conceptual: ['\bsign-?up\b', '\bone-?time\b', '\bfixed\b', '\bbefore\s+you\s+divide\b', '\bflat\s+(?:fee|rate)\b']

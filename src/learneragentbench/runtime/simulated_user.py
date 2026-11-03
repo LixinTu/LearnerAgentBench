@@ -24,6 +24,10 @@ class SimulatedUser:
             return self.spec.scripted_replies[i]
         return None
 
+    def lines_said(self) -> int:
+        """How many scripted lines the agent has heard so far (the goal is not one of them)."""
+        return int(self.world.store.kv_get("sim_user.script_index", 0))
+
     def answer(self, question: str) -> str:
         scripted = self.next_scripted()
         if scripted is not None:

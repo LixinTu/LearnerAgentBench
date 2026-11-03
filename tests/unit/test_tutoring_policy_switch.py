@@ -71,3 +71,52 @@ def test_without_the_switch_param_or_the_event_the_old_policy_applies_throughout
     checks_switch = [CheckSpec(id="early", description="", verifier="tutoring.hint_policy", params=_params("hint_early", True))]
     v2 = _run(hint_at_p3, checks_switch, [], tmp_path / "b")  # switch declared, but the event is not in the run at all
     assert v2.checks[0].passed is False
+
+
+# A rule change tied to the conversation arrives with the same student line however many tools the agent calls first.
+def _c07_turn_policies(actions: list[Action], tmp_path: Path) -> dict:
+    from learneragentbench.harness.runner import run_one
+    from learneragentbench.schema import RunConfig
+    from learneragentbench.verify.tutoring import replay
+    cfg = RunConfig(model="scripted", adapter="scripted", output_dir="unused")
+    out = run_one(DS, "C07_rule_changes_mid_tutoring", "base", cfg, 0, out_root=tmp_path,
+                  adapter_factory=lambda c, t, w, e: ActionListAdapter(list(actions)))
+    task = DS.load_task("C07_rule_changes_mid_tutoring")
+    params = next(c.params for c in task.checks if c.verifier == "tutoring.hint_policy")
+    world = World.from_snapshot(out.out_dir / "world_final.db")
+    ctx = VerifyContext(world=world, initial_world=None, trajectory=out.trajectory, task=task, variant=resolve_variant(task, "base"))
+    return {f["id"]: f["policy"]["show_answer_after_failures"] for f in replay(ctx, params)["findings"]}
+
+
+TALK = [Action.ask("One"), Action.ask("Two"), Action.ask("Three"), Action.ask("Four"), Action.final("Five")]
+
+
+def test_the_rule_changes_at_the_same_line_for_a_talker_and_for_an_agent_that_reads_first(tmp_path: Path) -> None:
+    expected = {"P1-A1": 2, "P1-A2": 2, "P2-A1": None, "P2-A2": None, "P2-ASK": None}
+    assert _c07_turn_policies(TALK, tmp_path / "talk") == expected
+    reads = [Action.call("get_preferences"), Action.call("search_memory", query="hint"), Action.call("get_student_profile")]
+    assert _c07_turn_policies(reads + TALK, tmp_path / "reads") == expected
+    between = [Action.ask("One"), Action.call("get_preferences"), Action.call("get_student_profile"), Action.ask("Two"),
+               Action.call("search_memory", query="hint"), Action.ask("Three"), Action.ask("Four"), Action.final("Five")]
+    assert _c07_turn_policies(between, tmp_path / "between") == expected
+
+
+def test_an_event_in_a_conversation_is_tied_to_the_conversation() -> None:
+    """Counting loop steps here made the rule change late for an agent that only talks (after the point it matters) and
+    early for one that calls tools first. Same class as above, so every scripted task has to use the line count."""
+    for tid in DS.task_ids():
+        t = DS.load_task(tid)
+        for v in [None, *t.variants]:
+            eff = t if v is None else None
+            if eff is None:
+                from learneragentbench.tasks.variants import effective_task
+                eff = effective_task(t, v)
+            if eff.simulated_user.scripted_replies:
+                for ev in eff.event_timeline:
+                    assert ev.after_student_lines is not None, f"{tid}/{v.id if v else 'base'}: event {ev.id} counts steps"
+
+
+def test_an_event_needs_some_trigger() -> None:
+    import pytest
+    with pytest.raises(ValueError, match="after_student_lines"):
+        ScheduledEvent(id="x", event_kind="preference_update")

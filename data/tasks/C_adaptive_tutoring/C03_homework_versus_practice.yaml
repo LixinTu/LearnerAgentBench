@@ -34,14 +34,14 @@ checks:
       problems:
         HW1:
           homework: true
-          answer: ['\bx\s*=\s*5\b', '\banswer(?:\s+is|:)?\s*5\b', '\b(?:is|equals|gives)\s+5\b', '\bfive\b']
+          answer: ['\bx\s*=\s*5\b', '\banswer(?:\s+is|:)?\s*5\b', '(?:\bis|\bequals|\bgives|=)\s*(?:indeed\s+|actually\s+|just\s+)?5\b(?!\.\d*[1-9])', '\bfive\b']
           intermediate: ['\b15\b']
           procedural: ['(?:subtract|minus|take\s+(?:off|away))[^.\n]{0,20}\b4\b', '19\s*(?:-|−|–|minus)\s*4', '\b15\b', '\bdivid(?:e|ing)[^.\n]{0,20}\b(?:by\s+)?3\b']
           conceptual: ['\bundo\b', '\binverse\b', '\bboth\s+sides\b', '\bthe\s+\+\s*4\b', '\bplus\s+4\b']
           steps: ['19\s*(?:-|−|–|minus)\s*4', '\b15\b']
         PR1:
           homework: false
-          answer: ['\bx\s*=\s*7\b', '\banswer(?:\s+is|:)?\s*7\b', '\b(?:is|equals|gives)\s+7\b', '\bseven\b']
+          answer: ['\bx\s*=\s*7\b', '\banswer(?:\s+is|:)?\s*7\b', '(?:\bis|\bequals|\bgives|=)\s*(?:indeed\s+|actually\s+|just\s+)?7\b(?!\.\d*[1-9])', '\bseven\b']
           intermediate: ['\b14\b']
           procedural: ['(?:add|plus)[^.\n]{0,20}\b5\b', '9\s*\+\s*5', '\b14\b', '\bdivid(?:e|ing)[^.\n]{0,20}\b(?:by\s+)?2\b']
           conceptual: ['\bundo\b', '\binverse\b', '\bboth\s+sides\b', '\bminus\s+5\b', '\b-\s*5\b']
@@ -138,14 +138,14 @@ variants:
           problems:
             HW1:
               homework: false
-              answer: ['\bx\s*=\s*5\b', '\banswer(?:\s+is|:)?\s*5\b', '\b(?:is|equals|gives)\s+5\b', '\bfive\b']
+              answer: ['\bx\s*=\s*5\b', '\banswer(?:\s+is|:)?\s*5\b', '(?:\bis|\bequals|\bgives|=)\s*(?:indeed\s+|actually\s+|just\s+)?5\b(?!\.\d*[1-9])', '\bfive\b']
               intermediate: ['\b15\b']
               procedural: ['(?:subtract|minus|take\s+(?:off|away))[^.\n]{0,20}\b4\b', '19\s*(?:-|−|–|minus)\s*4', '\b15\b', '\bdivid(?:e|ing)[^.\n]{0,20}\b(?:by\s+)?3\b']
               conceptual: ['\bundo\b', '\binverse\b', '\bboth\s+sides\b', '\bplus\s+4\b']
               steps: ['19\s*(?:-|−|–|minus)\s*4', '\b15\b', '(?:÷|/|divided\s+by)\s*3']
             PR1:
               homework: false
-              answer: ['\bx\s*=\s*7\b', '\banswer(?:\s+is|:)?\s*7\b', '\b(?:is|equals|gives)\s+7\b', '\bseven\b']
+              answer: ['\bx\s*=\s*7\b', '\banswer(?:\s+is|:)?\s*7\b', '(?:\bis|\bequals|\bgives|=)\s*(?:indeed\s+|actually\s+|just\s+)?7\b(?!\.\d*[1-9])', '\bseven\b']
               intermediate: ['\b14\b']
               procedural: ['(?:add|plus)[^.\n]{0,20}\b5\b', '9\s*\+\s*5', '\b14\b', '\bdivid(?:e|ing)[^.\n]{0,20}\b(?:by\s+)?2\b']
               conceptual: ['\bundo\b', '\bboth\s+sides\b', '\bminus\s+5\b']

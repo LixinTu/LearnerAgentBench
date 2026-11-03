@@ -1,0 +1,18 @@
+# C07 after its rule change was tied to the conversation. It used to arrive at loop step 4, a number that assumed two
+# tool calls first: a system that only talks had reached the last line by then, so the change was never tested on it, and
+# one that called more tools got it before the first problem was over. It now arrives with the student's second line, for
+# every system. The agent sees something different, so these runs replace the C07 runs of family_c_v2_local.
+name: family_c_c07_rule_at_a_line_local
+model: qwen2.5:7b-instruct
+adapter: openai_compatible
+adapter_params: {base_url: "http://127.0.0.1:11434/v1", max_tokens: 900}
+tasks: [C07_rule_changes_mid_tutoring]
+variants: [base]
+seeds: [0, 1, 2]
+max_steps: 25
+conditions:
+  tool_agent:       {memory_access: tools, tool_profile: full, variants: [all]}
+  full_agent:       {memory_access: full,  tool_profile: full}
+  chatbot:          {memory_access: none,  tool_profile: none}
+  memory_assistant: {memory_access: full,  tool_profile: none}
+  read_only:        {memory_access: tools, tool_profile: read_only}

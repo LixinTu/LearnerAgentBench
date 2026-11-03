@@ -64,20 +64,23 @@ class TodoItem(Record):
 
 
 class ScheduledEvent(LABModel):
-    """An environment event the harness injects at a virtual time or after an agent step."""
+    """An environment event the harness injects at a virtual time, after an agent step, or once the
+    scripted student has said a given number of lines. In a conversation the last is the one to use:
+    how many loop steps a line takes depends on how many tools the agent calls in between."""
 
     id: str
     event_kind: EventKind
     at: datetime | None = None
     after_step: int | None = None
+    after_student_lines: int | None = None
     payload: dict[str, Any] = Field(default_factory=dict)
     description: str = ""
     notify: bool = True
 
     @model_validator(mode="after")
     def _trigger(self) -> ScheduledEvent:
-        if self.at is None and self.after_step is None:
-            raise ValueError("scheduled event needs `at` or `after_step`")
+        if self.at is None and self.after_step is None and self.after_student_lines is None:
+            raise ValueError("scheduled event needs `at`, `after_step` or `after_student_lines`")
         return self
 
 

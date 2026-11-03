@@ -33,13 +33,13 @@ checks:
       policy: {hint_after_failures: 2, idk_counts_as_attempt: false, no_answer_unless_asked: true, show_answer_after_failures: null}
       problems:
         P1:
-          answer: ['\bx\s*=\s*(?:-|−|–)\s*3\b', '\bnegative\s+three\b', '\bminus\s+three\b', '\bx\s+(?:is|equals)\s+(?:-|−|–)\s*3\b']
+          answer: ['\bx\s*=\s*(?:-|−|–)\s*3\b', '(?:=|\bis|\bequals|\bgives)\s*(?:indeed\s+|actually\s+|just\s+)?(?:-|−|–)\s*3\b(?!\.\d*[1-9])', '\bnegative\s+three\b', '\bminus\s+three\b', '\bx\s+(?:is|equals)\s+(?:-|−|–)\s*3\b']
           intermediate: ['2x\s*=\s*(?:-|−|–)\s*6\b', '\b(?:-|−|–)\s*6\b']
           procedural: ['(?:subtract|minus|take\s+(?:off|away))[^.\n]{0,25}\b6\b', '\bdivid(?:e|ing)[^.\n]{0,25}\b(?:by\s+)?2\b', '2x\s*=\s*(?:-|−|–)\s*6\b']
           conceptual: ['\bsign\b', '\bnegative\b', '\bboth\s+sides\b', '\bundo\b', '\bput\s+.{0,12}\s+back\s+in\b', '\bcheck\b']
           steps: ['2x\s*=\s*(?:-|−|–)\s*6\b', '(?:÷|/|divided\s+by)\s*2']
         P2:
-          answer: ['\bx\s*=\s*(?:-|−|–)\s*2\b', '\bnegative\s+two\b', '\bminus\s+two\b', '\bx\s+(?:is|equals)\s+(?:-|−|–)\s*2\b']
+          answer: ['\bx\s*=\s*(?:-|−|–)\s*2\b', '(?:=|\bis|\bequals|\bgives)\s*(?:indeed\s+|actually\s+|just\s+)?(?:-|−|–)\s*2\b(?!\.\d*[1-9])', '\bnegative\s+two\b', '\bminus\s+two\b', '\bx\s+(?:is|equals)\s+(?:-|−|–)\s*2\b']
           intermediate: ['4x\s*=\s*(?:-|−|–)\s*8\b', '\b(?:-|−|–)\s*8\b']
           procedural: ['(?:subtract|minus|take\s+(?:off|away))[^.\n]{0,25}\b8\b', '\bdivid(?:e|ing)[^.\n]{0,25}\b(?:by\s+)?4\b', '4x\s*=\s*(?:-|−|–)\s*8\b']
           conceptual: ['\bsign\b', '\bnegative\b', '\bboth\s+sides\b', '\bundo\b', '\bput\s+.{0,12}\s+back\s+in\b', '\bcheck\b']

@@ -70,6 +70,7 @@ def test_rescore_refuses_when_the_agent_could_see_the_change(tmp_path: Path, fie
     with pytest.raises(RescoreError, match=field):
         rescore(out, Dataset(str(data)))
     assert main(["--data-dir", str(data), "rescore", str(tmp_path / "runs")]) == 1  # the command reports it as a failure
+    assert main(["--data-dir", str(data), "rescore", str(tmp_path / "runs"), "--skip-task", TASK]) == 0  # the re-run task is left alone
 
 
 def test_passive_floor_is_a_real_passive_run_and_unknown_variants_have_none() -> None:

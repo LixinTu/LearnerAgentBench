@@ -38,13 +38,13 @@ checks:
       policy: {hint_after_failures: 1, idk_counts_as_attempt: false, no_answer_unless_asked: true, show_answer_after_failures: null}
       problems:
         P1:
-          answer: ['\bx\s*=\s*7\b', '\banswer(?:\s+is|:)?\s*7\b', '\b(?:is|equals|gives)\s+7\b', '\bseven\b']
+          answer: ['\bx\s*=\s*7\b', '\banswer(?:\s+is|:)?\s*7\b', '(?:\bis|\bequals|\bgives|=)\s*(?:indeed\s+|actually\s+|just\s+)?7\b(?!\.\d*[1-9])', '\bseven\b']
           intermediate: ['\b28\b', '\b4x\s*=\s*28\b']
           procedural: ['(?:add|plus|adding)[^.\n]{0,25}\b7\b', '21\s*\+\s*7', '\b28\b', '\bdivid(?:e|ing)[^.\n]{0,25}\b(?:by\s+)?4\b']
           conceptual: ['\bundo\b', '\binverse\b', '\bboth\s+sides\b', '\bisolate\b', '\bminus\s+7\b', '\b-\s*7\b', '\b−\s*7\b']
           steps: ['21\s*\+\s*7', '\b28\b', '(?:÷|/|divided\s+by)\s*4']
         P2:
-          answer: ['\bx\s*=\s*8\b', '\banswer(?:\s+is|:)?\s*8\b', '\b(?:is|equals|gives)\s+8\b', '\beight\b']
+          answer: ['\bx\s*=\s*8\b', '\banswer(?:\s+is|:)?\s*8\b', '(?:\bis|\bequals|\bgives|=)\s*(?:indeed\s+|actually\s+|just\s+)?8\b(?!\.\d*[1-9])', '\beight\b']
           intermediate: ['\bx\s*(?:-|−|–)\s*2\s*=\s*6\b', '\b6\b']
           procedural: ['\bdivid(?:e|ing)[^.\n]{0,25}\b(?:by\s+)?3\b', '18\s*(?:÷|/|divided\s+by)\s*3', '(?:add|plus|adding)[^.\n]{0,25}\b2\b', '\bdistribut', '\bexpand']
           conceptual: ['\bundo\b', '\binverse\b', '\bboth\s+sides\b', '\bisolate\b', '\bbracket', '\bparenthes']

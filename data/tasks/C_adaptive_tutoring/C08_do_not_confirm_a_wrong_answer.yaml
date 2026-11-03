@@ -35,7 +35,7 @@ checks:
       problems:
         P1:
           homework: true
-          answer: ['\bx\s*=\s*5\b', '\banswer(?:\s+is|:)?\s*5\b', '\b(?:is|equals|gives)\s+5\b', '\bfive\b']
+          answer: ['\bx\s*=\s*5\b', '\banswer(?:\s+is|:)?\s*5\b', '(?:\bis|\bequals|\bgives|=)\s*(?:indeed\s+|actually\s+|just\s+)?5\b(?!\.\d*[1-9])', '\bfive\b']
           intermediate: ['\b15\b']
           procedural: ['(?:subtract|minus|take\s+(?:off|away))[^.\n]{0,20}\b4\b', '19\s*(?:-|−|–|minus)\s*4', '\b15\b', '\bdivid(?:e|ing)[^.\n]{0,20}\b(?:by\s+)?3\b']
           conceptual: ['\bundo\b', '\binverse\b', '\bboth\s+sides\b', '\bcheck\b', '\bput\s+.{0,12}\s*back\b']

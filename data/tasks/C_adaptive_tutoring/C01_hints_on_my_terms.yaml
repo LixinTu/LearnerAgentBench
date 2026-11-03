@@ -35,23 +35,23 @@ checks:
       policy: {hint_after_failures: 2, idk_counts_as_attempt: false, no_answer_unless_asked: true, show_answer_after_failures: null}
       problems:
         P1:
-          answer: ['\b7\s*(?:months?|mo)\b', '\bseven\s+months?\b', '\b[a-z]\s*=\s*7\b', '(?:\bis|\bbe|\bequals|=)\s*7\b', '\b(?:7\s*[×x*]\s*15|15\s*[×x*]\s*7)\b', '\banswer(?:\s+is|:)?\s*7\b']
+          answer: ['\b7\s*(?:(?:full|whole|complete)\s+)?(?:months?|mo)\b', '\bseven\s+(?:(?:full|whole|complete)\s+)?months?\b', '\b[a-z]\s*=\s*7\b', '(?:\bis|\bbe|\bequals|\bgives|=)\s*(?:indeed\s+|actually\s+|just\s+)?7\b(?!\.\d*[1-9])', '\b(?:7\s*[×x*]\s*15|15\s*[×x*]\s*7)\b', '\banswer(?:\s+is|:)?\s*7\b']
           intermediate: ['\b105\b']
           procedural: ['(?:subtract|minus|take\s+(?:off|away|out)|remove|deduct)[^.\n]{0,40}\b(?:\$?25|fee|sign-?up)', '\b(?:\$?25|fee|sign-?up)\b[^.\n]{0,40}\b(?:subtract|minus|take\s+(?:it\s+)?(?:off|away|out)|removed?|deducted?|off\s+the\s+total|from\s+the\s+total)', '130\s*(?:-|−|–|minus)\s*\$?\s*25', '\b105\b']
           conceptual: ['\bone-?time\b', '\b(?:only\s+)?once\b', '\bnot\s+(?:every|each|per)\s+month', '\bsign-?up\s+fee\b', '\b\$?25\b']
           steps: ['130\s*(?:-|−|–|minus)\s*\$?\s*25', '\b105\b', '(?:÷|/|divided\s+by)\s*15']
         P2:
-          answer: ['\b120\s*(?:texts?|text\s+messages?|messages?|sms)\b', '\bone\s+hundred\s+(?:and\s+)?twenty\b', '\b[a-z]\s*=\s*120\b', '(?:\bis|\bbe|\bequals|=)\s*120\b', '\banswer(?:\s+is|:)?\s*120\b']
+          answer: ['\b120\s*(?:texts?|text\s+messages?|messages?|sms)\b', '\bone\s+hundred\s+(?:and\s+)?twenty\b', '\b[a-z]\s*=\s*120\b', '(?:\bis|\bbe|\bequals|\bgives|=)\s*(?:indeed\s+|actually\s+|just\s+)?120\b(?!\.\d*[1-9])', '\banswer(?:\s+is|:)?\s*120\b']
           intermediate: ['\b12\b']
           procedural: ['(?:subtract|minus|take\s+(?:off|away|out)|remove|deduct)[^.\n]{0,40}\b(?:\$?40|monthly|base|fixed|flat)', '52\s*(?:-|−|–|minus)\s*\$?\s*40', '\b12\b', '\bdivid(?:e|ing)[^.\n]{0,40}(?:0?\.10?\b|10\s*cents|per[- ]text|rate)', '(?:÷|/|divided\s+by)\s*\$?\s*0?\.10?\b', '\binstead\s+of\s+multiply', '\bmultipl(?:y|ied|ying)[^.\n]{0,40}\b(?:divide|wrong|instead|backwards|other\s+way)']
           conceptual: ['\bflat\b', '\bfixed\b', '\bregardless\b', '\bper\s+text\b', '\b\$?40\b', '\b(?:0\.10|10\s*cents)\b', '\bevery\s+month\b']
           steps: ['52\s*(?:-|−|–|minus)\s*\$?\s*40', '\b12\b', '(?:÷|/|divided\s+by)\s*\$?\s*0?\.10?\b']
         P3:
-          answer: ['\b8\s*miles?\b', '\beight\s+miles?\b', '\b[a-z]\s*=\s*8\b', '(?:\bis|\bbe|\bequals|=)\s*8\b', '\banswer(?:\s+is|:)?\s*8\b']
+          answer: ['\b8\s*miles?\b', '\beight\s+miles?\b', '\b[a-z]\s*=\s*8\b', '(?:\bis|\bbe|\bequals|\bgives|=)\s*(?:indeed\s+|actually\s+|just\s+)?8\b(?!\.\d*[1-9])', '\banswer(?:\s+is|:)?\s*8\b']
           intermediate: ['\b18\b']
           procedural: []
           conceptual: []
-          steps: ['21\.50?\s*(?:-|−|–|minus)\s*\$?\s*3\.50?', '\b18\b', '(?:÷|/|divided\s+by)\s*\$?\s*2\.25']
+          steps: ['21\.50?\s*(?:-|−|–|minus)\s*\$?\s*3\.50?', '\b18\b', '(?:÷|/|divided\s+by)\s*\$?\s*2\.25', '\bsubtract\w*[^.\n]{0,60}\$?3\.50?', '\bdivid\w*[^.\n]{0,60}\$?2\.25']
       script:
         - {id: P1-A1, kind: attempt, problem: P1}
         - {id: P1-IDK, kind: idk, problem: P1}
@@ -156,23 +156,23 @@ variants:
           policy: {hint_after_failures: 1, idk_counts_as_attempt: true, no_answer_unless_asked: false, show_answer_after_failures: 1}
           problems:
             P1:
-              answer: ['\b7\s*(?:months?|mo)\b', '\bseven\s+months?\b', '\b[a-z]\s*=\s*7\b', '(?:\bis|\bbe|\bequals|=)\s*7\b', '\banswer(?:\s+is|:)?\s*7\b']
+              answer: ['\b7\s*(?:(?:full|whole|complete)\s+)?(?:months?|mo)\b', '\bseven\s+(?:(?:full|whole|complete)\s+)?months?\b', '\b[a-z]\s*=\s*7\b', '(?:\bis|\bbe|\bequals|\bgives|=)\s*(?:indeed\s+|actually\s+|just\s+)?7\b(?!\.\d*[1-9])', '\banswer(?:\s+is|:)?\s*7\b']
               intermediate: ['\b105\b']
               procedural: ['130\s*(?:-|−|–|minus)\s*\$?\s*25', '\b105\b']
               conceptual: ['\bsign-?up\s+fee\b']
               steps: ['130\s*(?:-|−|–|minus)\s*\$?\s*25', '\b105\b', '(?:÷|/|divided\s+by)\s*15']
             P2:
-              answer: ['\b120\s*(?:texts?|text\s+messages?|messages?|sms)\b', '\b[a-z]\s*=\s*120\b', '(?:\bis|\bbe|\bequals|=)\s*120\b']
+              answer: ['\b120\s*(?:texts?|text\s+messages?|messages?|sms)\b', '\b[a-z]\s*=\s*120\b', '(?:\bis|\bbe|\bequals|\bgives|=)\s*(?:indeed\s+|actually\s+|just\s+)?120\b(?!\.\d*[1-9])']
               intermediate: ['\b12\b']
               procedural: ['52\s*(?:-|−|–|minus)\s*\$?\s*40', '\b12\b']
               conceptual: ['\b\$?40\b']
               steps: ['52\s*(?:-|−|–|minus)\s*\$?\s*40', '\b12\b', '(?:÷|/|divided\s+by)\s*\$?\s*0?\.10?\b']
             P3:
-              answer: ['\b8\s*miles?\b', '\beight\s+miles?\b', '(?:\bis|\bbe|\bequals|=)\s*8\b']
+              answer: ['\b8\s*miles?\b', '\beight\s+miles?\b', '(?:\bis|\bbe|\bequals|\bgives|=)\s*(?:indeed\s+|actually\s+|just\s+)?8\b(?!\.\d*[1-9])']
               intermediate: ['\b18\b']
               procedural: []
               conceptual: []
-              steps: ['21\.50?\s*(?:-|−|–|minus)\s*\$?\s*3\.50?', '\b18\b', '(?:÷|/|divided\s+by)\s*\$?\s*2\.25']
+              steps: ['21\.50?\s*(?:-|−|–|minus)\s*\$?\s*3\.50?', '\b18\b', '(?:÷|/|divided\s+by)\s*\$?\s*2\.25', '\bsubtract\w*[^.\n]{0,60}\$?3\.50?', '\bdivid\w*[^.\n]{0,60}\$?2\.25']
           script:
             - {id: P1-A1, kind: attempt, problem: P1}
             - {id: P2-A1, kind: attempt, problem: P2}
