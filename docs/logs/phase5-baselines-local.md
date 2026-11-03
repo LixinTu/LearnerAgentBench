@@ -1,5 +1,10 @@
 # Phase 5 — local baseline sweep: four systems from one 7B model on all 29 base tasks
 
+> **Read with care (added 2026-11-03).** Family C here was measured under a harness rule later found unfair: a plain reply ended the run, so
+> tutoring stopped after two or three of five to eight student lines. Those rows are superseded by `experiments/family_c_v2_local.yaml`. Scores also
+> have to be read against a passive floor of about 0.29 on these 29 tasks, which the talk-only systems barely exceed.
+> See `phase5-ablations-local.md`.
+
 Experiment file `experiments/baselines_local.yaml`, run with
 `lab sweep experiments/baselines_local.yaml --out runs` (raw log: `phase5-baselines-local.txt`,
 `planned=116 done=116 skipped=0 failed=0`, exit 0). Sweep started 2026-11-03 03:01 and finished

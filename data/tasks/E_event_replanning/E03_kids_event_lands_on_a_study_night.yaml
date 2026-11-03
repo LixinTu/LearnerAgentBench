@@ -106,7 +106,7 @@ checks:
   - id: summary_mentions_play
     description: the summary mentions the play
     verifier: trajectory.final_mentions
-    params: {any_of: [play, wednesday, "nov 4", moved]}
+    params: {any_of: [play, wednesday, "nov 4", "november 4", moved, "kids' event"]}
     weight: 1
     capability: proactive_behavior
   - id: finished

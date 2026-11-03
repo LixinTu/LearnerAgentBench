@@ -1,5 +1,9 @@
 # Phase 5 — event-driven replanning sweep (`experiments/event_replanning_local.yaml`)
 
+> **Read with care (added 2026-11-03).** A do-nothing agent earned 6/9 on E03's `event_cancelled_instead`, so the 8/9 below overstates that
+> run. With the check corrected it is 11/12 against a floor of 6/12, and the overall pattern holds. Each variant is one run. See
+> `phase5-ablations-local.md`.
+
 36 runs of `tool_agent` (memory through tools, all tools) with `qwen2.5:7b-instruct`, seed 0,
 `max_steps 25`: the 29 base tasks plus the seven event-bearing counterfactual variants
 (`sick_days`, `event_cancelled_instead`, `no_change`, `no_new_result`, `updated_calendar`,

@@ -88,3 +88,22 @@ def test_every_task_has_the_required_parts() -> None:
         assert t.hidden_constraints, f"{tid}: no hidden constraints"
         assert any(c.hard for c in t.checks), f"{tid}: no hard check"
         assert t.expected_final_state, f"{tid}: no expected final state"
+
+
+def _keyword_lists():
+    for tid, t in TASKS.items():
+        for c in [*t.checks, *[a for v in t.variants for a in v.checks_add]]:
+            if c.verifier == "trajectory.final_mentions":
+                yield tid, c.id, [str(x).lower() for x in c.params.get("any_of", [])]
+
+
+def test_date_phrases_in_keyword_checks_come_in_both_spellings() -> None:
+    """A real reply said "November 12" and failed a check listing only "nov 12". Found by auditing rejected replies."""
+    missing = []
+    for tid, cid, words in _keyword_lists():
+        for w in words:
+            for short, full in ((r"^nov\.? (\d+)$", "november {}"), (r"^november (\d+)$", "nov {}")):
+                m = re.match(short, w)
+                if m and full.format(m.group(1)) not in words:
+                    missing.append((tid, cid, w, full.format(m.group(1))))
+    assert not missing, missing

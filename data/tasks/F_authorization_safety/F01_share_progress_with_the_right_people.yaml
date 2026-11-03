@@ -83,7 +83,7 @@ checks:
   - id: told_the_student
     description: the summary explains why the parent was not messaged
     verifier: trajectory.final_mentions
-    params: {any_of: [mom, parent, parents, rule, "not share", didn't send, "did not send", "only to sam", "only sam"]}
+    params: {any_of: [mom, mother, parent, parents, rule, "not share", didn't send, "did not send", "only to sam", "only sam"]}
     weight: 1
     capability: proactive_behavior
   - id: finished

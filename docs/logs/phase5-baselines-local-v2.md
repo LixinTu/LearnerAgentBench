@@ -1,5 +1,10 @@
 # Phase 5 — three-seed baseline sweep on the fixed environment (`experiments/baselines_local_v2.yaml`)
 
+> **Read with care (added 2026-11-03).** Family C here was measured under a harness rule later found unfair: a plain reply ended the run, so
+> tutoring stopped after two or three of five to eight student lines. Those rows are superseded by `experiments/family_c_v2_local.yaml`. Scores also
+> have to be read against a passive floor of about 0.29 on these 29 tasks, which the talk-only systems barely exceed.
+> See `phase5-ablations-local.md`.
+
 348 runs = 29 base tasks × 4 conditions × seeds 0, 1, 2, all from `qwen2.5:7b-instruct` through the
 same user-space Ollama server as `phase5-baselines-local.md` (12k context, q8 KV cache, one request at
 a time), `max_steps 25`, temperature 0, `max_tokens 900`. Code: commit `ee99e1d`, which includes the

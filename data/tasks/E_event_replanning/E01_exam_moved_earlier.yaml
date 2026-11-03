@@ -161,7 +161,7 @@ checks:
   - id: summary_mentions_move
     description: the summary tells the student the exam moved
     verifier: trajectory.final_mentions
-    params: {any_of: [moved, "nov 12", "12th", earlier, rescheduled, thursday]}
+    params: {any_of: [moved, "nov 12", "november 12", "12th", earlier, rescheduled, thursday, "instead of"]}
     weight: 1
     capability: proactive_behavior
 capability_requirements:
