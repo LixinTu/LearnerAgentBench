@@ -208,3 +208,90 @@ def authorization_oracle(task: TaskSpec, world: World, executor: ToolExecutor) -
         return Action.final(f"Sent the progress update to {sent}.{why}")
 
     return PolicyAdapter(policy, name="oracle:authorization")
+
+
+@oracle(TaskFamily.C_ADAPTIVE_TUTORING.value)
+def tutoring_oracle(task: TaskSpec, world: World, executor: ToolExecutor) -> AgentAdapter:
+    """Read the hint policy, then answer each scripted student line with the task's reference
+    reply (ask_user for all but the last line, final for the last)."""
+    replies: list[str] = []
+    for c in task.checks:
+        if c.verifier == "tutoring.hint_policy" and c.params.get("reference_replies"):
+            replies = list(c.params["reference_replies"])
+            break
+
+    def policy(view: TaskView, obs: Observation, mem: dict[str, Any]) -> Action:
+        n = mem.get("n", 0)
+        mem["n"] = n + 1
+        if n == 0:
+            return Action.call("get_preferences", scope=None)
+        if n == 1:
+            return Action.call("search_memory", query="hint answer attempt")
+        i = n - 2
+        if i < len(replies) - 1:
+            return Action.ask(replies[i])
+        return Action.final(replies[-1] if replies else "I'm out of reference replies.")
+
+    return PolicyAdapter(policy, name="oracle:tutoring")
+
+
+ORACLES[TaskFamily.A_EXAM_PREP.value] = planning_oracle
+
+
+@oracle(TaskFamily.B_PROGRESS_MONITORING.value)
+def monitoring_oracle(task: TaskSpec, world: World, executor: ToolExecutor) -> AgentAdapter:
+    """Read results, assignments and inbox; create a task for overdue work; plan time on the
+    weak skills (re-reading mastery after any mid-session result); surface the inbox offer."""
+
+    def policy(view: TaskView, obs: Observation, mem: dict[str, Any]) -> Action:
+        n = mem.get("n", 0)
+        mem["n"] = n + 1
+        content = obs.content if isinstance(obs.content, dict) else {}
+        if n == 0:
+            return Action.call("get_preferences")
+        if n == 1:
+            return Action.call("search_memory", query="")
+        if n == 2 and obs.type == "tool_result" and not content.get("result"):
+            mem["asked"] = True
+            return Action.ask("Remind me of your study rules — minutes per day, off-limits times, and when to stop before an exam?")
+        if not mem.get("results_read"):
+            mem["results_read"] = True
+            return Action.call("get_assessment_results")
+        if not mem.get("assignments_read"):
+            mem["assignments_read"] = True
+            return Action.call("list_assignments", status="open")
+        if not mem.get("inbox_read"):
+            mem["inbox_read"] = True
+            mem["assignments"] = content.get("result", [])
+            return Action.call("search_email", unread_only=True)
+        if not mem.get("inbox_noted"):
+            mem["inbox_noted"] = True
+            mem["inbox"] = content.get("result", [])
+        overdue = [a for a in mem.get("assignments", []) if a["status"] == "open" and a["due_at"] < world.now.isoformat()]
+        if overdue and not mem.get("task_made"):
+            mem["task_made"] = True
+            a = overdue[0]
+            return Action.call("create_task", title=f"Turn in {a['title']} (overdue, late submission accepted this week)",
+                               due_at=(world.now.replace(hour=23, minute=59) ).isoformat(), priority="high", linked_assignment_id=a["id"])
+        if not mem.get("planned"):
+            mem["planned"] = True
+            a = _target_assessment(task, world)
+            if a is None:
+                return Action.final("No upcoming assessment to plan for.")
+            mastery = world.mastery()
+            model = PlanOracle(world).model
+            weak = [s for s in world.courses()[0].skill_ids if s in mastery and model.knowledge(mastery[s], world.now) < 0.6]
+            goal = PlanGoal(skill_ids=weak or a.skill_ids, target_date=a.scheduled_at, target_knowledge=0.5)
+            blocks, _ = PlanOracle(world).build(goal, _constraints(task, world))
+            if not blocks:
+                return Action.final("No study time available this week.")
+            return Action.call("create_study_plan", title="Check-in plan", goal=f"Shore up {', '.join(weak)} before {a.title}",
+                               target_date=a.scheduled_at.isoformat(), rationale="weak skills from posted results",
+                               blocks=[{"start": b.start.isoformat(), "end": b.end.isoformat(), "skill_ids": b.skill_ids} for b in blocks])
+        offers = [m for m in mem.get("inbox", []) if "office" in (m["subject"] + m["body"]).lower()]
+        oh = f" Dr. Kim offered office hours: {offers[0]['body']}" if offers else ""
+        return Action.final("Status: Quiz 1 was strong, Quiz 2 (word problems) was weak, and the Quiz 3 result just came in low on systems. "
+                            "I added a task for the overdue Homework 4 and rebuilt this week's plan around word problems and systems "
+                            f"within your rules.{oh} I did not email anyone.")
+
+    return PolicyAdapter(policy, name="oracle:monitoring")

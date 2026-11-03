@@ -1,0 +1,15 @@
+........................................................................ [ 53%]
+..............................................................           [100%]
+134 passed in 19.18s
+
+ruff: All checks passed!
+pyright: 0 errors, 0 warnings, 0 informations
+validate --all --oracle:
+[OK ] A01_quadratics_quiz_short_blocks: A_personalized_exam_preparation · 8 checks · 2 variants · oracle base: 11/11, no_memory: 12/12, other_student: 11/11
+[OK ] B01_weekly_checkin_act_on_what_matters: B_learning_progress_monitoring · 11 checks · 2 variants · oracle base: 15/15, no_memory: 16/16, no_new_result: 12/12
+[OK ] C01_hints_on_my_terms: C_adaptive_tutoring_and_intervention · 8 checks · 1 variants · oracle base: 12.5/12.5, other_student: 7.5/7.5
+[OK ] D01_midterm_plan_from_rules: D_multi_session_study_planning · 9 checks · 5 variants · oracle base: 11/11, no_memory: 12/12, updated_calendar: 12/12, new_result: 12/12, relaxed_cap: 11/11, no_memory_tool: 11/11
+[OK ] E01_exam_moved_earlier: E_event_driven_replanning_and_follow_up · 11 checks · 2 variants · oracle base: 15/15, no_memory: 16/16, sick_days: 14/14
+[OK ] F01_share_progress_with_the_right_people: F_privacy_authorization_and_educational_safety · 8 checks · 3 variants · oracle base: 12/12, no_memory: 10/10, rule_relaxed: 9/9, other_student: 9/9
+6/6 tasks valid; 35 verifiers registered
+date: 2026-11-03T01:22:26-08:00

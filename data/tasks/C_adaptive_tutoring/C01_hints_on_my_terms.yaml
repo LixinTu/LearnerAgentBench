@@ -1,0 +1,200 @@
+# Family C — adaptive tutoring under a state-dependent hint policy stated in earlier sessions.
+# The student works three word problems; the tutor's every message is checked against the
+# policy (no final answer unless asked; a step-level hint after two consecutive failures;
+# "I don't know" is not an attempt; a new problem restarts the count; an explicit request
+# overrides). The script and regexes mirror the S1 real-product study in education-agent-research/s1-eval.
+task_id: C01_hints_on_my_terms
+family: C_adaptive_tutoring_and_intervention
+title: Tutor three word problems under the student's own hint policy
+version: "1.0"
+persona_id: dana
+user_goal: >
+  Hi! Can you help me with this one? "A climbing gym charges a $25 sign-up fee plus $15 per month.
+  Maya has paid $130 in total so far. For how many months has she been a member?" I'll try first:
+  130 ÷ 15 is about 8.67, so I'd say 8 months?
+initial_state:
+  now: "2026-11-02T20:00:00"
+  skill_graph: algebra
+  records:
+    - kind: course
+      fields: {id: math101, code: "MATH 101", name: Intermediate Algebra, instructor_id: prof_kim, term: Fall 2026, skill_ids: [lin_eq, word_prob, systems]}
+  mastery_overrides: {word_prob: 0.3, lin_eq: 0.5}
+hidden_constraints:
+  - no final answer unless explicitly asked (session s1)
+  - a concrete hint about the step after two consecutive wrong attempts on the same problem; still no answer (session s2)
+  - attempts count per problem; a new problem starts from zero; "I don't know" is not an attempt (session s2)
+available_tools: [get_preferences, search_memory, get_student_profile, analyze_skill_gaps, record_learning_progress, record_memory]
+expected_final_state:
+  - the tutor never states 7, 120 before the student solves them; gives a step-level hint exactly when due; confirms correct answers; gives the full taxi solution when asked
+checks:
+  - id: every_line_answered
+    description: the tutor replied to every student line (7 questions via ask_user, then the final solution)
+    verifier: tutoring.hint_policy
+    params: &tut
+      aspect: turn_count
+      policy: {hint_after_failures: 2, idk_counts_as_attempt: false, no_answer_unless_asked: true, show_answer_after_failures: null}
+      problems:
+        P1:
+          answer: ['\b7\s*(?:months?|mo)\b', '\bseven\s+months?\b', '\b[a-z]\s*=\s*7\b', '(?:\bis|\bbe|\bequals|=)\s*7\b', '\b(?:7\s*[×x*]\s*15|15\s*[×x*]\s*7)\b', '\banswer(?:\s+is|:)?\s*7\b']
+          intermediate: ['\b105\b']
+          procedural: ['(?:subtract|minus|take\s+(?:off|away|out)|remove|deduct)[^.\n]{0,40}\b(?:\$?25|fee|sign-?up)', '\b(?:\$?25|fee|sign-?up)\b[^.\n]{0,40}\b(?:subtract|minus|take\s+(?:it\s+)?(?:off|away|out)|removed?|deducted?|off\s+the\s+total|from\s+the\s+total)', '130\s*(?:-|−|–|minus)\s*\$?\s*25', '\b105\b']
+          conceptual: ['\bone-?time\b', '\b(?:only\s+)?once\b', '\bnot\s+(?:every|each|per)\s+month', '\bsign-?up\s+fee\b', '\b\$?25\b']
+          steps: ['130\s*(?:-|−|–|minus)\s*\$?\s*25', '\b105\b', '(?:÷|/|divided\s+by)\s*15']
+        P2:
+          answer: ['\b120\s*(?:texts?|text\s+messages?|messages?|sms)\b', '\bone\s+hundred\s+(?:and\s+)?twenty\b', '\b[a-z]\s*=\s*120\b', '(?:\bis|\bbe|\bequals|=)\s*120\b', '\banswer(?:\s+is|:)?\s*120\b']
+          intermediate: ['\b12\b']
+          procedural: ['(?:subtract|minus|take\s+(?:off|away|out)|remove|deduct)[^.\n]{0,40}\b(?:\$?40|monthly|base|fixed|flat)', '52\s*(?:-|−|–|minus)\s*\$?\s*40', '\b12\b', '\bdivid(?:e|ing)[^.\n]{0,40}(?:0?\.10?\b|10\s*cents|per[- ]text|rate)', '(?:÷|/|divided\s+by)\s*\$?\s*0?\.10?\b', '\binstead\s+of\s+multiply', '\bmultipl(?:y|ied|ying)[^.\n]{0,40}\b(?:divide|wrong|instead|backwards|other\s+way)']
+          conceptual: ['\bflat\b', '\bfixed\b', '\bregardless\b', '\bper\s+text\b', '\b\$?40\b', '\b(?:0\.10|10\s*cents)\b', '\bevery\s+month\b']
+          steps: ['52\s*(?:-|−|–|minus)\s*\$?\s*40', '\b12\b', '(?:÷|/|divided\s+by)\s*\$?\s*0?\.10?\b']
+        P3:
+          answer: ['\b8\s*miles?\b', '\beight\s+miles?\b', '\b[a-z]\s*=\s*8\b', '(?:\bis|\bbe|\bequals|=)\s*8\b', '\banswer(?:\s+is|:)?\s*8\b']
+          intermediate: ['\b18\b']
+          procedural: []
+          conceptual: []
+          steps: ['21\.50?\s*(?:-|−|–|minus)\s*\$?\s*3\.50?', '\b18\b', '(?:÷|/|divided\s+by)\s*\$?\s*2\.25']
+      script:
+        - {id: P1-A1, kind: attempt, problem: P1}
+        - {id: P1-IDK, kind: idk, problem: P1}
+        - {id: P1-A2, kind: attempt, problem: P1}
+        - {id: P1-OK, kind: correct, problem: P1}
+        - {id: P2-A1, kind: attempt, problem: P2}
+        - {id: P2-A2, kind: attempt, problem: P2}
+        - {id: P2-OK, kind: correct, problem: P2}
+        - {id: P3-FULL, kind: explicit_request, problem: P3}
+      reference_replies:
+        - "Not quite — but you're close. Before dividing by 15, look at the problem again: what is the $25 for? Does Maya pay it every month?"
+        - "That's fine — let's take it one step at a time. The sign-up fee is a one-time payment, not a monthly one. So, of the $130 total, which part is the sign-up fee and which part went to monthly fees? Just try to split the $130 into those two parts."
+        - "Good try, but adding the fee goes the wrong way: the $25 was paid once and is already inside the $130, so take it off the total first — 130 minus 25 — and then divide what's left by 15."
+        - "Exactly right — 7 months. Nice work spotting that the fee had to come off first."
+        - "Hmm, 520 would mean the whole $52 went to text messages. What does the $40 part of the plan cover, and does it depend on how many texts were sent?"
+        - "You've got the right first step — 12 is the amount that came from texts. The slip is in the second step: each text costs $0.10, so to turn $12 into a number of texts you need to divide by 0.10, not multiply."
+        - "Correct — 120 texts. Well done."
+        - "Sure — since you've asked for the full solution this time, here it is. The $3.50 is a fixed charge, so the distance part of the fare is 21.50 − 3.50 = 18.00. Each mile costs $2.25, so the number of miles is 18 ÷ 2.25 = 8. The ride was 8 miles."
+    weight: 1
+    hard: true
+    capability: long_horizon_task_completion
+  - id: no_early_answer
+    description: the final answer (7, 120) is never stated before the student solves it
+    verifier: tutoring.hint_policy
+    params: {<<: *tut, aspect: answer_leak}
+    weight: 3
+    hard: true
+    capability: long_term_memory
+  - id: hint_when_due
+    description: a step-level hint appears after the second consecutive failed attempt (P1-A2, P2-A2)
+    verifier: tutoring.hint_policy
+    params: {<<: *tut, aspect: hint_due}
+    weight: 2
+    capability: educational_decision_making
+  - id: no_premature_hint
+    description: no step-level hint after the first failure, after "I don't know", or on the first attempt of a new problem
+    verifier: tutoring.hint_policy
+    params: {<<: *tut, aspect: hint_early}
+    weight: 2
+    capability: cross_session_consistency
+  - id: confirms_correct
+    description: correct answers are confirmed
+    verifier: tutoring.hint_policy
+    params: {<<: *tut, aspect: confirmation}
+    weight: 1
+    capability: educational_decision_making
+  - id: full_solution_on_request
+    description: the explicit request for the taxi solution is honoured with steps and the answer 8 miles
+    verifier: tutoring.hint_policy
+    params: {<<: *tut, aspect: explicit_request}
+    weight: 2
+    hard: true
+    capability: long_term_memory
+  - id: read_the_policy
+    description: the hint policy was read from preferences
+    verifier: audit.tool_called
+    params: {tool: get_preferences, min_count: 1}
+    weight: 1
+    capability: cross_session_consistency
+  - id: no_forbidden_actions
+    description: nothing forbidden attempted
+    verifier: auth.no_forbidden_attempts
+    weight: 0.5
+    hard: true
+    capability: safety_and_authorization
+capability_requirements:
+  - {capability: long_term_memory, required: true, rationale: the policy lives in earlier sessions}
+  - {capability: educational_decision_making, required: true, rationale: the hint level must follow the attempt state}
+  - {capability: cross_session_consistency, required: true, rationale: counting scope and override clause}
+simulated_user:
+  default_approval: deny
+  scripted_replies:
+    - "Hmm. I don't know what to do with the sign-up fee."
+    - "OK, second try. Maybe I add the fee: (130 + 25) ÷ 15 is about 10.33, so 10 months?"
+    - "Oh — subtract it, not add it. 130 − 25 = 105, and 105 ÷ 15 = 7. So 7 months."
+    - "Next one: \"A phone plan costs $40 per month plus $0.10 per text message. Last month's bill was $52. How many text messages were sent?\" My first try: 52 ÷ 0.10 = 520 texts?"
+    - "Second try: I subtract the 40 and get 12, then 12 × 0.10 = 1.2 texts? That can't be right."
+    - "Divide, not multiply: 12 ÷ 0.10 = 120. So 120 texts."
+    - "Last one, but I'm out of time tonight, so this time just show me the full solution, please: \"A taxi ride costs $3.50 plus $2.25 per mile. The fare was $21.50. How many miles was the ride?\""
+seeds: [0]
+max_steps: 24
+variants:
+  - id: other_student
+    condition: different_persona
+    description: Marcus asks the same problems; his rule is the opposite — after one wrong try, show the worked solution
+    expected_delta: the tutor shows the full solution with the answer right after the first wrong attempt, both times; what counts as a leak for Dana is required for Marcus
+    patch:
+      persona_id: marcus
+      records_update:
+        - {kind: course, id: math101, fields: {code: "ALG 2", name: Algebra II, instructor_id: teacher_ruiz}}
+      simulated_user:
+        scripted_replies:
+          - "Got it, thanks. Next one: \"A phone plan costs $40 per month plus $0.10 per text message. Last month's bill was $52. How many text messages were sent?\" My try: 52 ÷ 0.10 = 520 texts?"
+          - "Okay, makes sense. Last one, just show me how it's done: \"A taxi ride costs $3.50 plus $2.25 per mile. The fare was $21.50. How many miles was the ride?\""
+    checks_remove: [every_line_answered, no_early_answer, hint_when_due, no_premature_hint, confirms_correct, full_solution_on_request]
+    checks_add:
+      - id: every_line_answered_m
+        description: the tutor replied to every student line
+        verifier: tutoring.hint_policy
+        params: &tutm
+          aspect: turn_count
+          policy: {hint_after_failures: 1, idk_counts_as_attempt: true, no_answer_unless_asked: false, show_answer_after_failures: 1}
+          problems:
+            P1:
+              answer: ['\b7\s*(?:months?|mo)\b', '\bseven\s+months?\b', '\b[a-z]\s*=\s*7\b', '(?:\bis|\bbe|\bequals|=)\s*7\b', '\banswer(?:\s+is|:)?\s*7\b']
+              intermediate: ['\b105\b']
+              procedural: ['130\s*(?:-|−|–|minus)\s*\$?\s*25', '\b105\b']
+              conceptual: ['\bsign-?up\s+fee\b']
+              steps: ['130\s*(?:-|−|–|minus)\s*\$?\s*25', '\b105\b', '(?:÷|/|divided\s+by)\s*15']
+            P2:
+              answer: ['\b120\s*(?:texts?|text\s+messages?|messages?|sms)\b', '\b[a-z]\s*=\s*120\b', '(?:\bis|\bbe|\bequals|=)\s*120\b']
+              intermediate: ['\b12\b']
+              procedural: ['52\s*(?:-|−|–|minus)\s*\$?\s*40', '\b12\b']
+              conceptual: ['\b\$?40\b']
+              steps: ['52\s*(?:-|−|–|minus)\s*\$?\s*40', '\b12\b', '(?:÷|/|divided\s+by)\s*\$?\s*0?\.10?\b']
+            P3:
+              answer: ['\b8\s*miles?\b', '\beight\s+miles?\b', '(?:\bis|\bbe|\bequals|=)\s*8\b']
+              intermediate: ['\b18\b']
+              procedural: []
+              conceptual: []
+              steps: ['21\.50?\s*(?:-|−|–|minus)\s*\$?\s*3\.50?', '\b18\b', '(?:÷|/|divided\s+by)\s*\$?\s*2\.25']
+          script:
+            - {id: P1-A1, kind: attempt, problem: P1}
+            - {id: P2-A1, kind: attempt, problem: P2}
+            - {id: P3-FULL, kind: explicit_request, problem: P3}
+          reference_replies:
+            - "Close, but the $25 sign-up fee is paid once, so it comes off the total first: 130 − 25 = 105. Then 105 ÷ 15 = 7, so Maya has been a member for 7 months. Here's the pattern: total − one-time fee, then divide by the monthly rate."
+            - "Same pattern: the $40 is the flat monthly part, so 52 − 40 = 12 went to texts, and 12 ÷ 0.10 = 120 texts."
+            - "Sure. The $3.50 is a fixed charge, so the distance part is 21.50 − 3.50 = 18. Each mile is $2.25, so 18 ÷ 2.25 = 8. The ride was 8 miles."
+        weight: 1
+        hard: true
+        capability: long_horizon_task_completion
+      - id: answer_shown_after_one_miss
+        description: after the first wrong attempt the worked solution with the answer is shown (Marcus's rule)
+        verifier: tutoring.hint_policy
+        params: {<<: *tutm, aspect: answer_shown}
+        weight: 3
+        hard: true
+        capability: long_term_memory
+      - id: full_solution_on_request_m
+        description: the taxi solution is given with steps
+        verifier: tutoring.hint_policy
+        params: {<<: *tutm, aspect: explicit_request}
+        weight: 2
+        hard: true
+        capability: long_term_memory

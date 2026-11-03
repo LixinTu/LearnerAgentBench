@@ -1,0 +1,150 @@
+# Family A — personalised exam preparation. Marcus (short blocks, 60 min/day, practice three
+# afternoons a week) asks for a quiz plan. The weak prerequisites (factoring, polynomials)
+# must be scheduled before quadratics, and nothing may land on practice or after 21:00.
+task_id: A01_quadratics_quiz_short_blocks
+family: A_personalized_exam_preparation
+title: Prepare a quadratics quiz plan for a student who learns in short blocks around practice
+version: "1.0"
+persona_id: marcus
+user_goal: >
+  Quiz on quadratics next Friday the 13th. Can you get me ready — plan it out and put it on my
+  calendar? You know how I work.
+initial_state:
+  now: "2026-11-02T19:35:00"
+  skill_graph: algebra
+  generator: standard_semester
+  generator_params:
+    term_start: "2026-08-17"
+    weeks: 18
+    courses:
+      - {id: alg2, code: "ALG 2", name: Algebra II, instructor_id: teacher_ruiz, term: Fall 2026,
+         skill_ids: [exponents, polynomials, factoring, quadratics, functions],
+         meetings: [{weekday: 0, start: "09:00", end: "09:50"}, {weekday: 1, start: "09:00", end: "09:50"}, {weekday: 2, start: "09:00", end: "09:50"}, {weekday: 3, start: "09:00", end: "09:50"}, {weekday: 4, start: "09:00", end: "09:50"}]}
+  records:
+    - kind: assessment
+      fields: {id: quiz_quad, course_id: alg2, title: "Algebra II Quiz: Quadratics", assessment_kind: quiz, scheduled_at: "2026-11-13T09:00:00", skill_ids: [quadratics, factoring], weight: 0.1}
+    - kind: calendar_event
+      fields: {id: cal_quiz, title: "Algebra II Quiz: Quadratics", start: "2026-11-13T09:00:00", end: "2026-11-13T09:50:00", event_kind: exam, fixed: true, created_by: system, linked: {assessment_id: quiz_quad}}
+    - kind: calendar_event
+      fields: {id: prac_1102, title: "Basketball practice", start: "2026-11-02T16:00:00", end: "2026-11-02T18:30:00", event_kind: personal, fixed: true}
+    - kind: calendar_event
+      fields: {id: prac_1104, title: "Basketball practice", start: "2026-11-04T16:00:00", end: "2026-11-04T18:30:00", event_kind: personal, fixed: true}
+    - kind: calendar_event
+      fields: {id: prac_1106, title: "Basketball practice", start: "2026-11-06T16:00:00", end: "2026-11-06T18:30:00", event_kind: personal, fixed: true}
+    - kind: calendar_event
+      fields: {id: prac_1109, title: "Basketball practice", start: "2026-11-09T16:00:00", end: "2026-11-09T18:30:00", event_kind: personal, fixed: true}
+    - kind: calendar_event
+      fields: {id: prac_1111, title: "Basketball practice", start: "2026-11-11T16:00:00", end: "2026-11-11T18:30:00", event_kind: personal, fixed: true}
+    - kind: calendar_event
+      fields: {id: game_1107, title: "Away game", start: "2026-11-07T12:00:00", end: "2026-11-07T20:00:00", event_kind: personal, fixed: true}
+  mastery_overrides: {quadratics: 0.1, factoring: 0.2, polynomials: 0.4, exponents: 0.55}
+hidden_constraints:
+  - 30-minute blocks (20 min minimum), at most 60 minutes a day, nothing after 21:00 (session s1)
+  - mornings 06:30–07:30 or after practice; practice Mon/Wed/Fri 16:00–18:30 is fixed; Friday nights off (availability)
+  - the away game on Saturday blocks the usual Saturday window
+available_tools: [get_student_profile, get_preferences, search_memory, list_assessments, analyze_skill_gaps,
+                  get_calendar_events, list_assignments, get_study_plan, create_study_plan, update_study_plan,
+                  create_calendar_event, update_calendar_event, delete_calendar_event, create_task, record_memory]
+expected_final_state:
+  - an active plan of 20–30-minute blocks, ≤ 60 min/day, inside Marcus's windows, never over practice, the game or classes
+  - factoring and polynomials get time before quadratics; projected knowledge of quadratics and factoring ≥ 0.5 by quiz day
+checks:
+  - id: plan_exists
+    description: an active plan with at least four blocks
+    verifier: plan.exists
+    params: {min_blocks: 4}
+    weight: 1
+    hard: true
+    capability: tool_use_and_execution
+  - id: respects_marcus_rules
+    description: blocks respect the 60-minute cap, 20–30-minute blocks, the 21:00 limit and the calendar
+    verifier: plan.respects_constraints
+    params: &goal
+      goal: {assessment_id: quiz_quad, target_knowledge: 0.5}
+      constraints: {max_daily_minutes: 60, min_block_minutes: 20, preferred_block_minutes: 30, no_study_after: "21:00", rest_weekdays: [], buffer_hours_before_exam: 12, max_skills_per_block: 1}
+    weight: 3
+    hard: true
+    capability: long_term_memory
+  - id: reaches_target
+    description: quadratics and factoring (with weak prerequisites) reach 0.5 by quiz day
+    verifier: plan.reaches_target
+    params: {<<: *goal, mastery_from: initial}
+    weight: 2
+    capability: educational_decision_making
+  - id: prerequisites_first
+    description: factoring gets at least 60 minutes
+    verifier: plan.minutes_on_skill
+    params: {skill_id: factoring, min_minutes: 60}
+    weight: 1
+    capability: educational_decision_making
+  - id: calendar_consistent
+    description: no study event overlaps a fixed event
+    verifier: calendar.no_conflicts_with_fixed
+    weight: 1
+    capability: tool_use_and_execution
+  - id: consulted_rules_first
+    description: preferences or memory read before writing the plan
+    verifier: audit.read_before_write
+    params: {read_tools: [get_preferences, search_memory], write_tools: [create_study_plan, update_study_plan]}
+    weight: 1
+    capability: cross_session_consistency
+  - id: no_forbidden_actions
+    description: nothing forbidden attempted
+    verifier: auth.no_forbidden_attempts
+    weight: 1
+    hard: true
+    capability: safety_and_authorization
+  - id: finished
+    description: ended with a summary
+    verifier: trajectory.completed
+    weight: 1
+    capability: long_horizon_task_completion
+capability_requirements:
+  - {capability: personalized_planning, required: true, rationale: block length and windows are personal}
+  - {capability: educational_decision_making, required: true, rationale: prerequisites of quadratics are weak}
+  - {capability: long_term_memory, required: true, rationale: the limits were stated in session s1}
+simulated_user:
+  default_approval: deny
+  clarifications:
+    - {keywords: [minutes], answer: "Half an hour at a time, an hour a day max, mornings or after practice, nothing after nine."}
+    - {keywords: [rules], answer: "Thirty-minute blocks, an hour a day tops, mornings before school or after practice, never over practice, nothing Friday night or after nine."}
+    - {keywords: [practice], answer: "Practice is Monday, Wednesday, Friday four to six-thirty. Don't touch it."}
+seeds: [0]
+max_steps: 30
+variants:
+  - id: no_memory
+    condition: no_memory
+    description: the rules are gone; the agent must ask
+    expected_delta: the agent asks and then plans within the answered rules
+    checks_add:
+      - {id: asked_about_rules, description: the agent asked at least one question, verifier: trajectory.asked_user, weight: 1, capability: proactive_behavior}
+  - id: other_student
+    condition: different_persona
+    description: Dana asks for the same quiz plan; her rules (45-minute blocks, 90 min/day, Sundays off, 24 h buffer) apply instead
+    expected_delta: the plan shape changes — longer blocks, evenings/Saturday, no Sunday, done the day before
+    patch:
+      persona_id: dana
+      records_remove: [calendar_event/prac_1102, calendar_event/prac_1104, calendar_event/prac_1106, calendar_event/prac_1109, calendar_event/prac_1111, calendar_event/game_1107]
+      records_add:
+        - {kind: calendar_event, fields: {id: shift_1103, title: "Work shift", start: "2026-11-03T17:00:00", end: "2026-11-03T21:00:00", event_kind: work, fixed: true}}
+        - {kind: calendar_event, fields: {id: shift_1105, title: "Work shift", start: "2026-11-05T17:00:00", end: "2026-11-05T21:00:00", event_kind: work, fixed: true}}
+        - {kind: calendar_event, fields: {id: shift_1110, title: "Work shift", start: "2026-11-10T17:00:00", end: "2026-11-10T21:00:00", event_kind: work, fixed: true}}
+      records_update:
+        - {kind: course, id: alg2, fields: {code: "MATH 101", name: Intermediate Algebra, instructor_id: prof_kim}}
+    checks_remove: [respects_marcus_rules, reaches_target]
+    checks_add:
+      - id: respects_dana_rules
+        description: blocks respect Dana's rules
+        verifier: plan.respects_constraints
+        params: &goald
+          goal: {assessment_id: quiz_quad, target_knowledge: 0.5}
+          constraints: {max_daily_minutes: 90, min_block_minutes: 30, preferred_block_minutes: 45, no_study_after: "22:00", rest_weekdays: [6], buffer_hours_before_exam: 24}
+        weight: 3
+        hard: true
+        capability: long_term_memory
+      - id: reaches_target_d
+        description: target reached under Dana's constraints
+        verifier: plan.reaches_target
+        params: {<<: *goald, mastery_from: initial}
+        weight: 2
+        capability: educational_decision_making

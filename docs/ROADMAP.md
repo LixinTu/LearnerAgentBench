@@ -8,7 +8,7 @@ functions do not count.
 |---|---|---|
 | 1 Core infrastructure | schema, World/Store/clock/snapshots, events, learner model + plan oracle, tool layer, world builder, data formats, tests, CI, docs | **done 2026-11-03** |
 | 2 Agent runtime | adapter protocol, loop, scripted/LLM adapters, trajectories, interruption/resume, simulated user, event injection, verifiers, runner + CLI, first task, local model end-to-end | **done 2026-11-03** |
-| 3 Benchmark dataset | 12 personas, 6 families × ≥10 tasks = 60 validated tasks, counterfactual variants, oracle validation, KT learner model | in progress (3 tasks D01/E01/F01 with 10 variants, 2 personas, 3 family oracles) |
+| 3 Benchmark dataset | 12 personas, 6 families × ≥10 tasks = 60 validated tasks, counterfactual variants, oracle validation, KT learner model | in progress: every family has one validated task (6 tasks, 15 variants, 21 oracle runs), 2 personas, 6 family oracles, tutoring verifier; KT model and the remaining 54 tasks / 10 personas pending |
 | 4 Evaluation & baselines | deterministic verifiers, judge interface, failure attribution, 5 baselines, aggregation + CIs + reports | partly done (34 verifiers, attribution, oracle + 4 config-defined baselines, summary with bootstrap CIs); judge interface and reports pending |
 | 5 Real model experiments | local open model end-to-end, API models (needs budget approval), ablations, failure analysis | not started |
 | 6 Open-source release | docs (dataset, authoring, integration, reproduction), third-party notices, research report | not started |
@@ -31,7 +31,14 @@ functions do not count.
 - [x] Runner writing config / effective task / init + final world snapshots / steps / trajectory / verdict / variant log; `lab` CLI: list, validate (static + oracle), run, resume, reverify, show, summarize (bootstrap CIs).
 - [x] Tasks `D01_midterm_plan_from_rules` (5 variants), `E01_exam_moved_earlier` (2), `F01_share_progress_with_the_right_people` (3); personas `dana`, `marcus`; the family oracles pass every base task and variant (`lab validate --all --oracle`, 13 runs, all full score).
 - [x] A real model-driven run end to end on the development laptop: qwen2.5:7b-instruct through a user-space Ollama server (`docs/logs/phase2-local-model-run.txt`).
-- [x] ? tests including an end-to-end oracle run of every task × variant; `ruff`, `pyright` clean (`docs/logs/phase2-tests.txt`).
+- [x] 134 tests including an end-to-end oracle run of every task × variant; `ruff`, `pyright` clean (`docs/logs/phase2-tests.txt`).
+
+## Phase 3 — progress so far (2026-11-03)
+
+- [x] One validated task per family: A01, B01, C01, D01, E01, F01 (`docs/DATASET.md`); each passes `lab validate --oracle` on the base task and every variant.
+- [x] Family C infrastructure: scripted student replies (`SimulatedUserSpec.scripted_replies`) and the `tutoring.hint_policy` verifier (answer leak, hint due / early, confirmation, explicit request, worked-example policy) ported from the S1 study.
+- [x] Oracles for all six families (`baselines/oracle.py`).
+- [ ] Remaining: ≥ 9 more tasks per family with genuinely different failure mechanisms, 10 more personas, generators for assignments/assessments, the trained KT learner, variant coverage of all eight counterfactual conditions per family.
 
 ## Known gaps carried forward
 

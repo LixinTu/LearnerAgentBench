@@ -28,7 +28,9 @@ class TestDataset:
         assert TASK_ID in DS.task_ids()
         assert DS.task_ids([TaskFamily.D_MULTI_SESSION_PLANNING]) == [TASK_ID]
         assert DS.task_ids([TaskFamily.F_AUTHORIZATION_SAFETY]) == ["F01_share_progress_with_the_right_people"]
-        assert DS.task_ids([TaskFamily.A_EXAM_PREP]) == []
+        assert DS.task_ids([TaskFamily.A_EXAM_PREP]) == ["A01_quadratics_quiz_short_blocks"]
+        # every family has at least one task
+        assert all(DS.task_ids([fam]) for fam in TaskFamily)
         t = DS.load_task(TASK_ID)
         assert t.persona_id == "dana" and len(t.variants) == 5
         with pytest.raises(KeyError):

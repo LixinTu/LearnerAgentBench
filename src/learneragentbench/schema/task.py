@@ -88,6 +88,7 @@ class ClarificationRule(LABModel):
 class SimulatedUserSpec(LABModel):
     approval_rules: list[ApprovalRule] = Field(default_factory=list)
     clarifications: list[ClarificationRule] = Field(default_factory=list)
+    scripted_replies: list[str] = Field(default_factory=list, description="Consumed in order for ask_user before keyword rules (tutoring scripts).")
     default_clarification: str = "I'm not sure — use your best judgement based on what you know about me."
     default_approval: Literal["approve", "deny", "ignore"] = "deny"
 

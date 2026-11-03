@@ -17,6 +17,11 @@ class SimulatedUser:
 
     # -------------------------------------------------------------- questions
     def answer(self, question: str) -> str:
+        if self.spec.scripted_replies:
+            i = int(self.world.store.kv_get("sim_user.script_index", 0))
+            if i < len(self.spec.scripted_replies):
+                self.world.store.kv_set("sim_user.script_index", i + 1)
+                return self.spec.scripted_replies[i]
         q = question.lower()
         for rule in self.spec.clarifications:
             if all(k.lower() in q for k in rule.keywords):
