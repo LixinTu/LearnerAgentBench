@@ -134,7 +134,7 @@ variants:
           - "Oops, 8 over 4 is 2, not 3 — x = −2."
     checks_remove: [pattern_recorded, said_so]
     checks_add:
-      - {id: no_false_pattern, description: nothing is written to memory — two unrelated slips are not a pattern, verifier: audit.tool_not_called, params: {tool: record_memory, successful_only: true}, weight: 2, capability: cross_session_consistency}
+      - {id: no_false_pattern, description: nothing is written to memory — two unrelated slips are not a pattern, verifier: audit.tool_not_called, params: {tool: record_memory, successful_only: true}, weight: 1, capability: cross_session_consistency}
     reference_path:
       - {action: tool_call, tool: get_preferences}
       - {action: tool_call, tool: search_memory, args: {query: "hint answer"}}

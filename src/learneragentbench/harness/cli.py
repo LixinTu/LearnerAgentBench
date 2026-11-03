@@ -9,7 +9,9 @@
     lab resume RUN_DIR --model M --adapter A [...]
     lab reverify RUN_DIR
     lab show RUN_DIR
-    lab summarize RUNS_ROOT [--group-by condition,family]
+    lab summarize RUNS_ROOT [--group-by condition,family] [--floor]
+    lab rescore RUNS_ROOT [--dry-run] [--skip-family F]
+    lab collect OUT ROOT [ROOT ...] [--where k=v] [--where-not k=v]
     lab compare RUNS_A RUNS_B [--filter-a k=v,...] [--filter-b k=v,...] [--pair-on task_id,seed]
     lab coverage [--write docs/COVERAGE.md]
     lab sweep experiments/<name>.yaml [--out runs] [--dry-run] [--limit N]
@@ -150,7 +152,37 @@ def cmd_coverage(a: argparse.Namespace) -> int:
 
 def cmd_summarize(a: argparse.Namespace) -> int:
     from ..analysis import summarize_runs
-    print(summarize_runs(a.runs_root, group_by=a.group_by))
+    print(summarize_runs(a.runs_root, group_by=a.group_by, floor=a.floor, data_dir=a.data_dir))
+    return 0
+
+
+def cmd_rescore(a: argparse.Namespace) -> int:
+    from .runner import RescoreError, rescore
+    ds = Dataset(a.data_dir)
+    n = moved = 0
+    refused: list[str] = []
+    for p in sorted(Path(a.runs_root).glob("*/verdict.json")):
+        if a.skip_family and json.loads((p.parent / "task_effective.json").read_text(encoding="utf-8")).get("family") == a.skip_family:
+            continue
+        n += 1
+        try:
+            verdict, changed = rescore(p.parent, ds, dry_run=a.dry_run)
+        except RescoreError as exc:
+            refused.append(str(exc))
+            continue
+        if changed:
+            moved += 1
+            print(f"changed: {p.parent.name}: now {verdict.score:g}/{verdict.max_score:g}")
+    print(f"{a.runs_root}: {n} runs judged against the current checks, {moved} changed, {len(refused)} refused" + (" (dry run)" if a.dry_run else ""))
+    for r in refused:
+        print("refused:", r)
+    return 1 if refused else 0
+
+
+def cmd_collect(a: argparse.Namespace) -> int:
+    from ..analysis import collect_runs, parse_filter
+    n = collect_runs(a.out, a.sources, where=parse_filter(a.where), where_not=parse_filter(a.where_not))
+    print(f"{n} runs collected into {a.out}")
     return 0
 
 
@@ -220,7 +252,21 @@ def main(argv: list[str] | None = None) -> int:
     p = sub.add_parser("summarize")
     p.add_argument("runs_root")
     p.add_argument("--group-by", default="model,variant_id")
+    p.add_argument("--floor", action="store_true", help="add what a passive agent scores on the same tasks, and the score above it")
     p.set_defaults(fn=cmd_summarize)
+
+    p = sub.add_parser("rescore", help="judge stored runs against the current checks, without re-running the agent")
+    p.add_argument("runs_root")
+    p.add_argument("--dry-run", action="store_true")
+    p.add_argument("--skip-family", default=None)
+    p.set_defaults(fn=cmd_rescore)
+
+    p = sub.add_parser("collect", help="copy the scoring files of selected runs into one run set")
+    p.add_argument("out")
+    p.add_argument("sources", nargs="+")
+    p.add_argument("--where", default=None, help="k=v[,k=v]")
+    p.add_argument("--where-not", default=None, help="k=v[,k=v]")
+    p.set_defaults(fn=cmd_collect)
 
     p = sub.add_parser("compare", help="paired comparison of two run sets (same tasks and seeds)")
     p.add_argument("runs_a")

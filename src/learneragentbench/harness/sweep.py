@@ -21,6 +21,7 @@ experiments/<name>.yaml::
 from __future__ import annotations
 
 import json
+import shutil
 import subprocess
 import urllib.request
 from datetime import datetime
@@ -128,6 +129,12 @@ def run_sweep(path: str | Path, *, out_root: str | Path, data_dir: str | None = 
         if dry_run:
             log(f"[dry] {rid}")
             continue
+        partial = out_dir / rid
+        if partial.exists():
+            # A run that was interrupted has a world database but no verdict. Starting over on top of that database
+            # would collide with its records, so an unfinished run of this sweep is removed and run again.
+            shutil.rmtree(partial)
+            log(f"[{i + 1}/{len(runs)}] {rid}: removed an unfinished earlier attempt")
         cfg = RunConfig(model=exp["model"], adapter=exp["adapter"], adapter_params=dict(exp.get("adapter_params", {})),
                         max_steps=exp.get("max_steps"), output_dir=str(out_dir), tags=[exp["name"], r["condition"]], condition=r["condition"],
                         temperature=float(exp.get("temperature", 0.0))).model_copy(update=dict(r["overrides"]))

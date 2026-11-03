@@ -155,21 +155,31 @@ class AgentLoop:
                     nxt = Observation(type="tool_result" if res.ok else "tool_error", content=res.for_agent(),
                                       step=step + 1, virtual_time=self.world.now)
                 elif action.type == "ask_user":
-                    reply = self.user.answer(action.message)
+                    student_line = self.user.next_scripted()
+                    content = ({"student_says": student_line} if student_line is not None
+                               else {"question": action.message, "answer": self.user.answer(action.message)})
                     self.world.advance(minutes=self.spec.step_minutes, reason=f"step {step} ask")
-                    nxt = Observation(type="user_message", content={"question": action.message, "answer": reply},
-                                      step=step + 1, virtual_time=self.world.now)
+                    nxt = Observation(type="user_message", content=content, step=step + 1, virtual_time=self.world.now)
                 elif action.type == "wait":
                     self.world.advance(minutes=max(1, action.wait_minutes), reason=f"step {step} wait")
                     nxt = Observation(type="event", content={"waited_minutes": action.wait_minutes,
                                                              "now": self.world.now.isoformat()},
                                       step=step + 1, virtual_time=self.world.now)
                 else:  # final
-                    self.trajectory.final_message = action.message
-                    self.trajectory.status = "completed"
-                    self.recorder.record(Step(index=step, observation=obs, action=action, virtual_time=self.world.now,
-                                              wall_time=wall, usage=self.adapter.usage(), events_delivered=notices))
-                    break
+                    student_line = self.user.next_scripted()
+                    if student_line is None:
+                        self.trajectory.final_message = action.message
+                        self.trajectory.status = "completed"
+                        self.recorder.record(Step(index=step, observation=obs, action=action, virtual_time=self.world.now,
+                                                  wall_time=wall, usage=self.adapter.usage(), events_delivered=notices))
+                        break
+                    # A tutoring session is a conversation. A reply to the student is not the end of the job while the
+                    # student has more to say, and nothing tells the agent to route its replies through ask_user: ending
+                    # here would judge the channel it picked rather than its tutoring. The reply is a tutor turn.
+                    action = action.model_copy(update={"type": "ask_user"})
+                    self.world.advance(minutes=self.spec.step_minutes, reason=f"step {step} reply")
+                    nxt = Observation(type="user_message", content={"student_says": student_line},
+                                      step=step + 1, virtual_time=self.world.now)
                 self.recorder.record(Step(index=step, observation=obs, action=action, tool_record_id=tool_record_id,
                                           virtual_time=self.world.now, wall_time=wall, usage=self.adapter.usage(),
                                           events_delivered=notices))

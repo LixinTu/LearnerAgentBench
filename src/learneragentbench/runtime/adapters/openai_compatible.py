@@ -125,7 +125,13 @@ class OpenAICompatibleAdapter:
         return Action(type="tool_call", tool_call=ToolCall(tool=name, args=args), reasoning=reasoning)
 
     def _append_observation(self, obs: Observation) -> None:
-        text = json.dumps(obs.content, default=str)
+        content = dict(obs.content) if isinstance(obs.content, dict) else obs.content
+        line = content.pop("student_says", None) if isinstance(content, dict) else None
+        if line is not None:
+            # The student's own words, as written: JSON would turn "2x = −6" into "2x = \\u22126".
+            text = f"{line}\n\n{json.dumps(content, default=str)}" if content else str(line)
+        else:
+            text = json.dumps(obs.content, default=str)
         if self._last_tool_call_id and obs.type in ("tool_result", "tool_error"):
             self.messages.append({"role": "tool", "tool_call_id": self._last_tool_call_id, "content": text})
         elif self._last_tool_call_id:

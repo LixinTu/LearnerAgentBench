@@ -156,8 +156,8 @@ variants:
         - {kind: study_session, fields: {id: sess_1105, skill_ids: [systems], started_at: "2026-11-05T19:00:00", ended_at: "2026-11-05T19:30:00", minutes: 30, source: actual}}
     checks_remove: [asked_about_the_gap, honest_summary, functions_back, systems_back]
     checks_add:
-      - {id: did_not_ask, description: no question was needed, verifier: trajectory.did_not_ask_user, params: {max: 0}, weight: 2, capability: proactive_behavior}
-      - {id: no_false_alarm, description: the summary does not claim missing blocks, verifier: trajectory.final_not_mentions, params: {none_of: ["not logged", "not in the log", "no record", missing, skipped, "didn't happen"]}, weight: 2, capability: proactive_behavior}
+      - {id: did_not_ask, description: no question was needed, verifier: trajectory.did_not_ask_user, params: {max: 0}, weight: 1, capability: proactive_behavior}
+      - {id: no_false_alarm, description: the summary does not claim missing blocks, verifier: trajectory.final_not_mentions, params: {none_of: ["not logged", "not in the log", "no record", missing, skipped, "didn't happen"]}, weight: 1, capability: proactive_behavior}
     reference_path:
       - {action: tool_call, tool: get_preferences}
       - {action: tool_call, tool: search_memory, args: {query: "block log"}}

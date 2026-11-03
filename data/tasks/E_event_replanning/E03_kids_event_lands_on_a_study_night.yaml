@@ -148,8 +148,8 @@ variants:
         - {id: recital_cancelled, event_kind: calendar_change, after_step: 1, description: "recital cancelled", payload: {op: cancel, id: recital}}
     checks_remove: [plan_changed_after_event, nothing_during_the_play, summary_mentions_play]
     checks_add:
-      - {id: reacted_to_cancellation, description: the plan was written after the cancellation (the freed evening is usable), verifier: event.state_after, params: {event_id: recital_cancelled, kind: study_plan, where: {status: active}}, weight: 1, capability: event_driven_replanning}
-      - {id: summary_mentions_recital, description: the summary mentions the freed evening, verifier: trajectory.final_mentions, params: {any_of: [recital, cancelled, canceled, thursday, "freed"]}, weight: 1, capability: proactive_behavior}
+      - {id: reacted_to_cancellation, description: the plan was written after the cancellation (the freed evening is usable), verifier: event.state_after, params: {event_id: recital_cancelled, kind: study_plan, where: {status: active}}, weight: 2, capability: event_driven_replanning}
+      - {id: summary_mentions_recital, description: the summary mentions the freed evening, verifier: trajectory.final_mentions, params: {any_of: [recital, cancelled, canceled, thursday, "freed"]}, weight: 3, hard: true, capability: proactive_behavior}
     reference_path:
       - {action: tool_call, tool: get_preferences}
       - {action: tool_call, tool: search_memory, args: {query: ""}}

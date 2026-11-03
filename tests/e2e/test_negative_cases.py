@@ -57,6 +57,19 @@ def test_claiming_success_without_acting_fails(task_id: str, tmp_path: Path) -> 
     assert v.failure_attribution == "agent"
 
 
+VARIANTS = [(tid, v.id) for tid in DS.task_ids() for v in DS.load_task(tid).variants]
+
+
+@pytest.mark.parametrize(("task_id", "variant"), VARIANTS, ids=[f"{t}:{v}" for t, v in VARIANTS])
+def test_a_passive_agent_and_a_talker_fail_every_variant_too(task_id: str, variant: str, tmp_path: Path) -> None:
+    """A variant is often about what NOT to do, which is exactly where doing nothing could look right. The score of
+    a paired comparison is only readable if neither silence nor a claim earns most of it."""
+    for name, message in (("passive", "I had a look; nothing to do."), ("talker", CLAIM)):
+        v = _run(task_id, variant, [Action.final(message)], tmp_path / name).verdict
+        assert v.hard_failures, f"{task_id}/{variant}: a {name} agent fails no hard check"
+        assert v.score / v.max_score <= 0.5, f"{task_id}/{variant}: a {name} agent scored {v.score}/{v.max_score}"
+
+
 CASES = [(tid, nc) for tid in DS.task_ids() for nc in DS.load_task(tid).negative_cases]
 
 

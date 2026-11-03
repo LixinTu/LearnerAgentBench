@@ -143,6 +143,47 @@ def reverify(out_dir: str | Path, dataset: Dataset) -> Verdict:
     return verdict
 
 
+class RescoreError(ValueError):
+    """The task has changed in a way the agent could see, so the stored run no longer answers it."""
+
+
+_AGENT_FACING = ("user_goal", "persona_id", "initial_state", "memory", "event_timeline", "available_tools", "simulated_user")
+
+
+def rescore(out_dir: str | Path, dataset: Dataset, *, dry_run: bool = False) -> tuple[Verdict, bool]:
+    """Judge a stored run against the task's CURRENT checks, without re-running the agent. This is legitimate because
+    checks are hidden from the agent: changing one cannot change what it did. Anything the agent could see must be
+    unchanged, or this refuses. The verdict and spec as they were at run time are kept beside the new ones.
+    Returns the verdict and whether it differs from the stored one."""
+    out = Path(out_dir)
+    stored = TaskSpec.model_validate_json((out / "task_effective.json").read_text(encoding="utf-8"))
+    cfg = json.loads((out / "config.json").read_text(encoding="utf-8"))
+    base_task = dataset.load_task(cfg["task_id"])
+    variant = resolve_variant(base_task, cfg["variant_id"])
+    current = effective_task(base_task, variant)
+    changed = [f for f in _AGENT_FACING if getattr(stored, f) != getattr(current, f)]
+    if changed:
+        raise RescoreError(f"{out.name}: {changed} changed since the run; it has to be run again")
+    spec = stored.model_copy(update={"checks": current.checks})
+    trajectory = Trajectory.model_validate_json((out / "trajectory.json").read_text(encoding="utf-8"))
+    world = World.from_snapshot(out / "world_final.db")
+    initial = World.from_snapshot(out / "world_init.db") if (out / "world_init.db").is_file() else None
+    verdict = verify_run(world, initial, trajectory, spec, variant)
+    old_text = (out / "verdict.json").read_text(encoding="utf-8")
+    old = json.loads(old_text)
+    def key(checks: list[dict[str, Any]]) -> list[tuple[Any, ...]]:
+        return sorted((c["check_id"], c["passed"], c["weight"], c["hard"]) for c in checks)
+    new = verdict.model_dump(mode="json")
+    moved = key(old["checks"]) != key(new["checks"]) or old["score"] != new["score"] or old["task_success"] != new["task_success"]
+    if moved and not dry_run:
+        for name, text in (("verdict_at_run.json", old_text), ("task_effective_at_run.json", (out / "task_effective.json").read_text(encoding="utf-8"))):
+            if not (out / name).exists():
+                (out / name).write_text(text, encoding="utf-8")
+        (out / "task_effective.json").write_text(spec.model_dump_json(indent=2), encoding="utf-8")
+        (out / "verdict.json").write_text(verdict.model_dump_json(indent=2), encoding="utf-8")
+    return verdict, moved
+
+
 def resume_run(out_dir: str | Path, config: RunConfig, dataset: Dataset, *,
                adapter_factory: AdapterFactory = default_adapter_factory) -> RunResult:
     out = Path(out_dir)

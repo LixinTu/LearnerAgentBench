@@ -105,6 +105,7 @@ checks:
     params:
       goal: {assessment_id: mid1, target_knowledge: 0.5}
       constraints: {max_daily_minutes: 90, min_block_minutes: 30, preferred_block_minutes: 45, no_study_after: "22:00", rest_weekdays: [6], buffer_hours_before_exam: 24}
+      written_this_run: true
     weight: 2
     hard: true
     capability: long_term_memory

@@ -24,7 +24,7 @@ class ActionListAdapter:
 
     def step(self, observation: Observation) -> Action:
         if self._i >= len(self._actions):
-            return Action.final("done (scripted)")
+            return Action.final("")  # out of actions: silence, so a scripted agent cannot "answer" a line by accident
         a = self._actions[self._i]
         self._i += 1
         return a

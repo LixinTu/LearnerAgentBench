@@ -162,8 +162,9 @@ variants:
         - {id: meet_added_fri, event_kind: calendar_change, after_step: 1, description: "meet on Friday", payload: {op: add, event: {id: meet_1106, title: "Swim meet (away)", start: "2026-11-06T10:00:00", end: "2026-11-06T20:00:00", event_kind: personal, fixed: true}}}
     checks_remove: [plan_changed_after_event, day_after_meet_cleared, summary_mentions_meet]
     checks_add:
-      - {id: saturday_cleared, description: no block on Saturday Nov 7, verifier: plan.no_blocks_in_window, params: {start: "2026-11-07T00:00:00", end: "2026-11-08T00:00:00"}, weight: 3, hard: true, capability: long_term_memory}
-      - {id: friday_morning_block_moved, description: "no block overlaps the Friday meet (the 6am block before it may stay)", verifier: plan.no_blocks_in_window, params: {start: "2026-11-06T10:00:00", end: "2026-11-06T20:00:00"}, weight: 2, hard: true, capability: event_driven_replanning}
+      - {id: saturday_cleared, description: no block on Saturday Nov 7, verifier: plan.no_blocks_in_window, params: {start: "2026-11-07T00:00:00", end: "2026-11-08T00:00:00"}, weight: 2, hard: true, capability: long_term_memory}
+      - {id: summary_mentions_friday_meet, description: the summary names the meet and the blocked Saturday, verifier: trajectory.final_mentions, params: {any_of: [meet, saturday]}, weight: 3, hard: true, capability: event_driven_replanning}
+      - {id: friday_morning_block_moved, description: "no block overlaps the Friday meet (the 6am block before it may stay)", verifier: plan.no_blocks_in_window, params: {start: "2026-11-06T10:00:00", end: "2026-11-06T20:00:00"}, weight: 1, hard: true, capability: event_driven_replanning}
     reference_path:
       - {action: tool_call, tool: get_preferences}
       - {action: tool_call, tool: search_memory, args: {query: ""}}

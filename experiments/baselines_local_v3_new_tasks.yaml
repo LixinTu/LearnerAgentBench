@@ -1,6 +1,6 @@
-# The tasks added after baselines_local_v2, under the same four systems, seeds and settings, so the two sweeps
-# read as one baseline (the environment and tool schemas are the same; re-scoring v2 with the current verifiers
-# changes no verdict). Local Ollama; no cost.
+# The tasks added after baselines_local_v2, under the same four systems, seeds and settings, so the two sweeps read
+# as one baseline (the prompts, environment and tool schemas are the same). Family C is in family_c_v2_local.
+# Local Ollama; no cost.
 name: baselines_local_v3_new_tasks
 model: qwen2.5:7b-instruct
 adapter: openai_compatible
@@ -17,12 +17,6 @@ tasks:
   - B08_did_you_actually_send_it
   - B10_pattern_in_the_history
   - B11_i_did_all_four_check_the_record
-  - C05_tutor_then_log_it
-  - C06_newest_hint_rule_wins
-  - C07_rule_changes_mid_tutoring
-  - C08_do_not_confirm_a_wrong_answer
-  - C10_same_mistake_twice_write_it_down
-  - C11_two_misses_tonight_then_show_me
   - D06_come_back_on_friday
   - D07_away_next_week_said_once
   - D08_put_it_back_the_way_it_was

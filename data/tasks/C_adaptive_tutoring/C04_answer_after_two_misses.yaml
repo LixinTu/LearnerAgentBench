@@ -160,7 +160,7 @@ variants:
         hard: true
         capability: long_horizon_task_completion
       - {id: no_early_answer_d, description: no final answer before it is earned or asked for, verifier: tutoring.hint_policy, params: {<<: *tutd, aspect: answer_leak}, weight: 3, hard: true, capability: long_term_memory}
-      - {id: no_premature_hint_d, description: no step-level hint at a first miss or after 'I don't know', verifier: tutoring.hint_policy, params: {<<: *tutd, aspect: hint_early}, weight: 2, capability: cross_session_consistency}
+      - {id: no_premature_hint_d, description: no step-level hint at a first miss or after 'I don't know', verifier: tutoring.hint_policy, params: {<<: *tutd, aspect: hint_early}, weight: 1, capability: cross_session_consistency}
       - {id: hint_when_due_d, description: a step-level hint at P2-A2, verifier: tutoring.hint_policy, params: {<<: *tutd, aspect: hint_due}, weight: 2, capability: educational_decision_making}
 negative_cases:
   - id: withholds_the_answer_like_a_socratic_tutor

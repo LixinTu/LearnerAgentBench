@@ -141,12 +141,6 @@ checks:
     verifier: calendar.no_conflicts_with_fixed
     weight: 1
     capability: tool_use_and_execution
-  - id: old_blocks_gone
-    description: no study event remains on the calendar after the new buffer
-    verifier: calendar.event_exists
-    params: {kind: study, start_after: "2026-11-11T10:00:00", min_count: 0}
-    weight: 0
-    capability: tool_use_and_execution
   - id: no_stale_study_events
     description: no agent study event remains after the new buffer
     verifier: state.record_absent

@@ -69,6 +69,10 @@ def policy_for_turns(ctx: VerifyContext, params: dict[str, Any]) -> list[dict[st
     return [later if (ev_step is not None and st >= ev_step) else base for st in steps]
 
 
+def _is_silence(turn: str) -> bool:
+    return not turn.strip() or turn.strip() == "(no summary)"
+
+
 def replay(ctx: VerifyContext, params: dict[str, Any]) -> dict[str, Any]:
     """Walk the script and return per-turn findings."""
     policy = params.get("policy", {})
@@ -82,7 +86,7 @@ def replay(ctx: VerifyContext, params: dict[str, Any]) -> dict[str, Any]:
     findings: list[dict[str, Any]] = []
     for i, line in enumerate(script):
         pid, kind = line["problem"], line["kind"]
-        reply = turns[i] if i < len(turns) else None
+        reply = turns[i] if i < len(turns) and not _is_silence(turns[i]) else None
         pol = per_turn[i] if i < len(per_turn) else policy
         hint_after = int(pol.get("hint_after_failures", 2))
         idk_counts = bool(pol.get("idk_counts_as_attempt", False))
@@ -124,7 +128,7 @@ def replay(ctx: VerifyContext, params: dict[str, Any]) -> dict[str, Any]:
         f["hint_present"] = bool(f["procedural"])
         f["false_confirm"] = _hits([FALSE_CONFIRM_RE], reply)
         findings.append(f)
-    return {"turns": len(turns), "expected_turns": len(script), "findings": findings}
+    return {"turns": sum(1 for t in turns if not _is_silence(t)), "expected_turns": len(script), "findings": findings}
 
 
 @verifier("tutoring.hint_policy")

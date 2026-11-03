@@ -16,12 +16,18 @@ class SimulatedUser:
         self.world = world
 
     # -------------------------------------------------------------- questions
+    def next_scripted(self) -> str | None:
+        """The student's next scripted line, or None when the script is finished (or there is none)."""
+        i = int(self.world.store.kv_get("sim_user.script_index", 0))
+        if i < len(self.spec.scripted_replies):
+            self.world.store.kv_set("sim_user.script_index", i + 1)
+            return self.spec.scripted_replies[i]
+        return None
+
     def answer(self, question: str) -> str:
-        if self.spec.scripted_replies:
-            i = int(self.world.store.kv_get("sim_user.script_index", 0))
-            if i < len(self.spec.scripted_replies):
-                self.world.store.kv_set("sim_user.script_index", i + 1)
-                return self.spec.scripted_replies[i]
+        scripted = self.next_scripted()
+        if scripted is not None:
+            return scripted
         q = question.lower()
         for rule in self.spec.clarifications:
             if all(k.lower() in q for k in rule.keywords):

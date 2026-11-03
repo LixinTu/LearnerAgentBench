@@ -1,0 +1,19 @@
+# Family C after the conversation fix. Until commit 0de9e4b a plain reply ended the run, so a tutoring session stopped
+# after two or three of its five to eight student lines and every system failed for using the wrong channel. Now a reply
+# is a tutor turn while the student has lines left, and each turn is judged by the hint policy, which is the question
+# this family asks. Every family C run before this sweep is superseded. The other families have no script and are
+# unaffected. All ten tasks, the four systems, the read-only ablation and every variant with the tool_agent.
+name: family_c_v2_local
+model: qwen2.5:7b-instruct
+adapter: openai_compatible
+adapter_params: {base_url: "http://127.0.0.1:11434/v1", max_tokens: 900}
+families: [C_adaptive_tutoring_and_intervention]
+variants: [base]
+seeds: [0, 1, 2]
+max_steps: 25
+conditions:
+  tool_agent:       {memory_access: tools, tool_profile: full, variants: [all]}
+  full_agent:       {memory_access: full,  tool_profile: full}
+  chatbot:          {memory_access: none,  tool_profile: none}
+  memory_assistant: {memory_access: full,  tool_profile: none}
+  read_only:        {memory_access: tools, tool_profile: read_only}
