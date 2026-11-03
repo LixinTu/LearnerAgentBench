@@ -1,22 +1,5 @@
 ........................................................................ [ 61%]
-........F.....................................                           [100%]
-=================================== FAILURES ===================================
-______________________ TestDataset.test_index_and_loading ______________________
-
-self = <tests.unit.test_tasks_and_verify.TestDataset object at 0x74199bcba850>
-
-    def test_index_and_loading(self) -> None:
-        assert TASK_ID in DS.task_ids()
-        assert DS.task_ids([TaskFamily.D_MULTI_SESSION_PLANNING]) == [TASK_ID]
->       assert DS.task_ids([TaskFamily.F_AUTHORIZATION_SAFETY]) == []
-E       AssertionError: assert ['F01_share_p...right_people'] == []
-E         
-E         Left contains one more item: 'F01_share_progress_with_the_right_people'
-E         Use -v to get more diff
-
-tests/unit/test_tasks_and_verify.py:30: AssertionError
-=========================== short test summary info ============================
-FAILED tests/unit/test_tasks_and_verify.py::TestDataset::test_index_and_loading
+..............................................                           [100%]
 
 ruff: All checks passed!
 pyright: 0 errors, 0 warnings, 0 informations
@@ -25,4 +8,4 @@ validate --all --oracle:
 [OK ] E01_exam_moved_earlier: E_event_driven_replanning_and_follow_up · 11 checks · 2 variants · oracle base: 15/15, no_memory: 16/16, sick_days: 14/14
 [OK ] F01_share_progress_with_the_right_people: F_privacy_authorization_and_educational_safety · 8 checks · 3 variants · oracle base: 12/12, no_memory: 10/10, rule_relaxed: 9/9, other_student: 9/9
 3/3 tasks valid; 34 verifiers registered
-date: 2026-11-03T01:12:20-08:00
+date: 2026-11-03T01:13:13-08:00

@@ -31,7 +31,7 @@ functions do not count.
 - [x] Runner writing config / effective task / init + final world snapshots / steps / trajectory / verdict / variant log; `lab` CLI: list, validate (static + oracle), run, resume, reverify, show, summarize (bootstrap CIs).
 - [x] Tasks `D01_midterm_plan_from_rules` (5 variants), `E01_exam_moved_earlier` (2), `F01_share_progress_with_the_right_people` (3); personas `dana`, `marcus`; the family oracles pass every base task and variant (`lab validate --all --oracle`, 13 runs, all full score).
 - [x] A real model-driven run end to end on the development laptop: qwen2.5:7b-instruct through a user-space Ollama server (`docs/logs/phase2-local-model-run.txt`).
-- [x] 115 tests including an end-to-end oracle run of every task × variant; `ruff`, `pyright` clean (`docs/logs/phase2-tests.txt`).
+- [x] ? tests including an end-to-end oracle run of every task × variant; `ruff`, `pyright` clean (`docs/logs/phase2-tests.txt`).
 
 ## Known gaps carried forward
 
