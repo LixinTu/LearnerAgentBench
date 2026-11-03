@@ -21,12 +21,14 @@ class PlanConstraints(LABModel):
     max_daily_minutes: int = 120
     min_block_minutes: int = 30
     preferred_block_minutes: int = 45
+    max_block_minutes: int | None = None
     no_study_before: str = "07:00"
     no_study_after: str = "22:00"
     rest_weekdays: list[int] = Field(default_factory=list)
     buffer_hours_before_exam: int = 12
     windows_by_weekday: dict[int, list[TimeWindow]] = Field(default_factory=dict)
     max_skills_per_block: int = 2
+    min_gap_minutes: int = 0
 
     @classmethod
     def from_world(cls, world: World, scope: str = "global") -> PlanConstraints:
@@ -36,11 +38,13 @@ class PlanConstraints(LABModel):
             max_daily_minutes=int(get("max_daily_minutes", scope, 120)),
             min_block_minutes=int(get("min_block_minutes", scope, 30)),
             preferred_block_minutes=int(get("preferred_block_minutes", scope, 45)),
+            max_block_minutes=(int(mx) if (mx := get("max_block_minutes", scope, None)) is not None else None),
             no_study_before=str(get("no_study_before", scope, "07:00")),
             no_study_after=str(get("no_study_after", scope, "22:00")),
             rest_weekdays=[int(x) for x in get("rest_weekdays", scope, [])],
             buffer_hours_before_exam=int(get("buffer_hours_before_exam", scope, 12)),
             windows_by_weekday={int(k): v for k, v in prof.availability.windows.items()},
+            min_gap_minutes=int(get("min_gap_minutes", scope, 0)),
         )
 
     def windows_for(self, day: datetime) -> list[TimeWindow]:
@@ -103,6 +107,9 @@ class PlanOracle:
         mastery = mastery if mastery is not None else self.world.mastery()
         violations: list[str] = []
         now = now or self.world.now
+        # Blocks that already started are history or in progress (kept on a plan that is being
+        # extended); they are neither judged nor simulated — their effect is already in `mastery`.
+        blocks = [b for b in blocks if b.start >= now]
         # structural checks
         by_day: dict[str, int] = {}
         for i, b in enumerate(blocks):
@@ -112,6 +119,8 @@ class PlanOracle:
                 violations.append(f"block {i} ends inside the {constraints.buffer_hours_before_exam}h buffer before the target")
             if b.minutes < constraints.min_block_minutes and b.activity != "rest":
                 violations.append(f"block {i} is shorter than {constraints.min_block_minutes} min")
+            if constraints.max_block_minutes and b.minutes > constraints.max_block_minutes and b.activity != "rest":
+                violations.append(f"block {i} is longer than {constraints.max_block_minutes} min")
             if len(b.skill_ids) > constraints.max_skills_per_block:
                 violations.append(f"block {i} mixes {len(b.skill_ids)} skills (max {constraints.max_skills_per_block})")
             wins = constraints.windows_for(b.start)
@@ -128,6 +137,10 @@ class PlanOracle:
             for j, other in enumerate(blocks):
                 if j > i and b.start < other.end and other.start < b.end:
                     violations.append(f"blocks {i} and {j} overlap each other")
+                elif j != i and constraints.min_gap_minutes and b.activity != "rest" and other.activity != "rest":
+                    gap = (other.start - b.end) if other.start >= b.end else (b.start - other.end)
+                    if timedelta(0) <= gap < timedelta(minutes=constraints.min_gap_minutes) and j > i:
+                        violations.append(f"blocks {i} and {j} need a break of {constraints.min_gap_minutes} min between them")
         for day, mins in by_day.items():
             if mins > constraints.max_daily_minutes:
                 violations.append(f"{day}: {mins} min exceeds the daily cap of {constraints.max_daily_minutes}")
@@ -165,6 +178,8 @@ class PlanOracle:
                 while cur + timedelta(minutes=constraints.min_block_minutes) <= e and used_today < constraints.max_daily_minutes:
                     room = min(constraints.preferred_block_minutes, constraints.max_daily_minutes - used_today,
                                int((e - cur).total_seconds() // 60))
+                    if constraints.max_block_minutes:
+                        room = min(room, constraints.max_block_minutes)
                     if room < constraints.min_block_minutes:
                         break
                     end = cur + timedelta(minutes=room)
@@ -175,7 +190,7 @@ class PlanOracle:
                         break
                     blocks.append(PlanBlock(start=cur, end=end, skill_ids=[sid], activity="practice"))
                     used_today += room
-                    cur = end
+                    cur = end + timedelta(minutes=constraints.min_gap_minutes)
                     if self.assess(blocks, goal, constraints, mastery=mastery).feasible:
                         break
                 if self.assess(blocks, goal, constraints, mastery=mastery).feasible:

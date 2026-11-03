@@ -102,6 +102,10 @@ class ToolExecutor:
             params = spec.params_model.model_validate(args)
         except ValidationError as exc:
             return finish(error=f"invalid arguments: {exc.errors(include_url=False)}", error_type="validation")
+        tz_fields = _aware_datetime_fields(params)
+        if tz_fields:
+            return finish(error=f"invalid arguments: {tz_fields} carry a timezone suffix; use the student's local time "
+                                f"without an offset, e.g. 2026-11-12T10:00:00", error_type="validation")
         norm_args = params.model_dump(mode="json")
         base["args"] = norm_args
         # 4. permission
@@ -181,6 +185,23 @@ class ToolError(Exception):
     def __init__(self, message: str, error_type: str = "validation") -> None:
         super().__init__(message)
         self.error_type = error_type
+
+
+def _aware_datetime_fields(params: BaseModel, prefix: str = "") -> list[str]:
+    """Names of datetime fields that carry tzinfo (the world is timezone-naive local time)."""
+    out: list[str] = []
+    for name, value in params.__dict__.items():
+        if isinstance(value, datetime) and value.tzinfo is not None:
+            out.append(prefix + name)
+        elif isinstance(value, BaseModel):
+            out.extend(_aware_datetime_fields(value, f"{prefix}{name}."))
+        elif isinstance(value, list):
+            for i, v in enumerate(value):
+                if isinstance(v, BaseModel):
+                    out.extend(_aware_datetime_fields(v, f"{prefix}{name}[{i}]."))
+                elif isinstance(v, datetime) and v.tzinfo is not None:
+                    out.append(f"{prefix}{name}[{i}]")
+    return out
 
 
 def _args_signature(args: dict[str, Any]) -> str:

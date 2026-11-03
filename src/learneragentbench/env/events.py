@@ -46,13 +46,16 @@ def _notify(world: World, subject: str, body: str, *, channel: str = "lms_notifi
     return world.add(msg)
 
 
-def apply_event(world: World, ev: ScheduledEvent) -> str:
+def apply_event(world: World, ev: ScheduledEvent, *, step: int | None = None) -> str:
+    """Apply one event and record when it landed: virtual time, the records it touched and the
+    loop step it was delivered at (verifiers use the step to tell agent writes *after* the event
+    from writes before it, which timestamps alone cannot do when time does not advance)."""
     handler = _HANDLERS.get(ev.event_kind)
     if handler is None:
         raise EventError(f"no handler for event kind {ev.event_kind}")
     with world.track() as touched:
         text = handler(world, ev.payload, ev)
-    world.store.kv_set(f"event_applied:{ev.id}", {"at": world.now.isoformat(), "touched": touched})
+    world.store.kv_set(f"event_applied:{ev.id}", {"at": world.now.isoformat(), "touched": touched, "step": step})
     return text
 
 
@@ -115,7 +118,11 @@ def _calendar_change(world: World, p: dict[str, Any], ev: ScheduledEvent) -> str
         text = f"New calendar event: {cal.title} {cal.start:%a %b %d %H:%M}-{cal.end:%H:%M}"
     elif op == "update":
         cal = world.require(CalendarEvent, p["id"])
-        cal = world.update(cal.model_copy(update=p.get("fields", {})))
+        fields = dict(p.get("fields", {}))
+        for k in ("start", "end"):
+            if k in fields:
+                fields[k] = _dt(fields[k])
+        cal = world.update(CalendarEvent.model_validate({**cal.model_dump(mode="python"), **fields}))
         text = f"Calendar event updated: {cal.title} now {cal.start:%a %b %d %H:%M}-{cal.end:%H:%M}"
     elif op == "cancel":
         cal = world.require(CalendarEvent, p["id"])

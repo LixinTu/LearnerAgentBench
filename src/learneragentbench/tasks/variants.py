@@ -14,6 +14,7 @@ from ..schema import (
     MemoryEntry,
     PermissionLevel,
     Preference,
+    SimulatedUserSpec,
     StatePatch,
     TaskSpec,
     VariantSpec,
@@ -52,7 +53,12 @@ def effective_task(task: TaskSpec, variant: VariantSpec) -> TaskSpec:
     checks = [c for c in task.checks if c.id not in variant.checks_remove] + list(variant.checks_add)
     update["checks"] = checks
     if p.simulated_user is not None:
-        update["simulated_user"] = task.simulated_user.model_copy(update=p.simulated_user)
+        # re-validate: a plain dict patch must become ApprovalRule / ClarificationRule models
+        merged = {**task.simulated_user.model_dump(mode="json"), **p.simulated_user}
+        update["simulated_user"] = SimulatedUserSpec.model_validate(merged)
+    if variant.reference_path is not None:
+        update["reference_path"] = list(variant.reference_path)
+    update["negative_cases"] = [n for n in task.negative_cases if n.variant == variant.id]
     if variant.condition == CounterfactualCondition.NO_MEMORY:
         update["history"] = []
         update["memory"] = []

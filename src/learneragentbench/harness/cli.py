@@ -10,6 +10,8 @@
     lab reverify RUN_DIR
     lab show RUN_DIR
     lab summarize RUNS_ROOT
+    lab coverage [--write docs/COVERAGE.md]
+    lab sweep experiments/<name>.yaml [--out runs] [--dry-run] [--limit N]
 """
 from __future__ import annotations
 
@@ -127,6 +129,24 @@ def cmd_show(a: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_sweep(a: argparse.Namespace) -> int:
+    from .sweep import run_sweep
+    stats = run_sweep(a.experiment, out_root=a.out, data_dir=a.data_dir, dry_run=a.dry_run, limit=a.limit)
+    print(f"planned={stats['planned']} done={stats['done']} skipped={stats['skipped']} failed={stats['failed']} -> {stats['out']}")
+    return 0
+
+
+def cmd_coverage(a: argparse.Namespace) -> int:
+    from .coverage import coverage_matrix, render_markdown
+    md = render_markdown(coverage_matrix(Dataset(a.data_dir)))
+    if a.write:
+        Path(a.write).write_text(md, encoding="utf-8")
+        print(f"written: {a.write}")
+    else:
+        print(md)
+    return 0
+
+
 def cmd_summarize(a: argparse.Namespace) -> int:
     from ..analysis import summarize_runs
     print(summarize_runs(a.runs_root, group_by=a.group_by))
@@ -189,6 +209,17 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("runs_root")
     p.add_argument("--group-by", default="model,variant_id")
     p.set_defaults(fn=cmd_summarize)
+
+    p = sub.add_parser("sweep")
+    p.add_argument("experiment", help="experiments/<name>.yaml")
+    p.add_argument("--out", default="runs")
+    p.add_argument("--dry-run", action="store_true")
+    p.add_argument("--limit", type=int, default=None, help="run at most N new runs (resumable)")
+    p.set_defaults(fn=cmd_sweep)
+
+    p = sub.add_parser("coverage")
+    p.add_argument("--write", default=None, help="write the Markdown matrix to this path")
+    p.set_defaults(fn=cmd_coverage)
 
     a = ap.parse_args(argv)
     if a.cmd == "validate" and not a.all and not a.task_id:

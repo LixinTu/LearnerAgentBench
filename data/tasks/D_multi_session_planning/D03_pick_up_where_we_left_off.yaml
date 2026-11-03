@@ -1,0 +1,215 @@
+# Family D — continuity across sessions. A plan exists; its first two blocks are done (sessions
+# recorded). "Pick up where we left off" means extend that plan, not start a new one and not
+# re-schedule what is already done.
+task_id: D03_pick_up_where_we_left_off
+family: D_multi_session_study_planning
+title: Extend the existing plan through the quiz without discarding what is done
+version: "1.0"
+persona_id: marcus
+user_goal: >
+  Pick up where we left off — extend my plan through the quiz on the 13th. Don't redo what I've
+  already finished.
+initial_state:
+  now: "2026-11-02T19:35:00"
+  skill_graph: algebra
+  records:
+    - kind: course
+      fields: {id: alg2, code: "ALG 2", name: Algebra II, instructor_id: teacher_ruiz, term: Fall 2026, skill_ids: [exponents, polynomials, factoring, quadratics]}
+    - kind: assessment
+      fields: {id: quiz_quad, course_id: alg2, title: "Algebra II Quiz: Quadratics", assessment_kind: quiz, scheduled_at: "2026-11-13T09:00:00", skill_ids: [quadratics, factoring], weight: 0.1}
+    - kind: calendar_event
+      fields: {id: cal_quiz, title: "Algebra II Quiz: Quadratics", start: "2026-11-13T09:00:00", end: "2026-11-13T09:50:00", event_kind: exam, fixed: true, created_by: system, linked: {assessment_id: quiz_quad}}
+    - kind: calendar_event
+      fields: {id: prac_1104, title: "Basketball practice", start: "2026-11-04T16:00:00", end: "2026-11-04T18:30:00", event_kind: personal, fixed: true}
+    - kind: calendar_event
+      fields: {id: prac_1106, title: "Basketball practice", start: "2026-11-06T16:00:00", end: "2026-11-06T18:30:00", event_kind: personal, fixed: true}
+    - kind: calendar_event
+      fields: {id: prac_1109, title: "Basketball practice", start: "2026-11-09T16:00:00", end: "2026-11-09T18:30:00", event_kind: personal, fixed: true}
+    - kind: calendar_event
+      fields: {id: prac_1111, title: "Basketball practice", start: "2026-11-11T16:00:00", end: "2026-11-11T18:30:00", event_kind: personal, fixed: true}
+    - kind: study_plan
+      fields:
+        id: plan_started
+        title: "Quadratics prep (started Oct 30)"
+        goal: "Factoring first, then quadratics"
+        target_date: "2026-11-13T09:00:00"
+        status: active
+        created_by: agent
+        blocks:
+          - {start: "2026-10-31T10:00:00", end: "2026-10-31T10:30:00", skill_ids: [polynomials]}
+          - {start: "2026-10-31T10:40:00", end: "2026-10-31T11:10:00", skill_ids: [factoring]}
+          - {start: "2026-11-03T06:30:00", end: "2026-11-03T07:00:00", skill_ids: [factoring]}
+          - {start: "2026-11-03T19:30:00", end: "2026-11-03T20:00:00", skill_ids: [factoring]}
+    - kind: calendar_event
+      fields: {id: st1, title: "Study: polynomials", start: "2026-10-31T10:00:00", end: "2026-10-31T10:30:00", event_kind: study, created_by: agent, linked: {plan_id: plan_started, block: 0}}
+    - kind: calendar_event
+      fields: {id: st2, title: "Study: factoring", start: "2026-10-31T10:40:00", end: "2026-10-31T11:10:00", event_kind: study, created_by: agent, linked: {plan_id: plan_started, block: 1}}
+    - kind: calendar_event
+      fields: {id: st3, title: "Study: factoring", start: "2026-11-03T06:30:00", end: "2026-11-03T07:00:00", event_kind: study, created_by: agent, linked: {plan_id: plan_started, block: 2}}
+    - kind: calendar_event
+      fields: {id: st4, title: "Study: factoring", start: "2026-11-03T19:30:00", end: "2026-11-03T20:00:00", event_kind: study, created_by: agent, linked: {plan_id: plan_started, block: 3}}
+    - kind: study_session
+      fields: {id: sess_a, skill_ids: [polynomials], started_at: "2026-10-31T10:00:00", ended_at: "2026-10-31T10:30:00", minutes: 30, source: actual}
+    - kind: study_session
+      fields: {id: sess_b, skill_ids: [factoring], started_at: "2026-10-31T10:40:00", ended_at: "2026-10-31T11:10:00", minutes: 30, source: actual}
+  mastery_overrides: {quadratics: 0.1, factoring: 0.3, polynomials: 0.5, exponents: 0.55}
+hidden_constraints:
+  - Marcus's rules (60 min/day, 20–30-minute blocks, mornings or after practice, nothing after 21:00, practice fixed)
+  - the existing plan must be extended in place; completed blocks stay
+available_tools: [get_student_profile, get_preferences, search_memory, list_assessments, analyze_skill_gaps,
+                  search_learning_history, get_calendar_events, get_study_plan, create_study_plan, update_study_plan,
+                  create_calendar_event, create_task, record_memory]
+expected_final_state:
+  - the same plan (plan_started) is still the active one, now with blocks through Nov 12; its first two blocks unchanged
+  - quadratics gets at least 90 minutes; the rules hold
+checks:
+  - id: same_plan_extended
+    description: the original plan is still the active plan (extended, not replaced)
+    verifier: state.field_equals
+    params: {kind: study_plan, id: plan_started, field: status, value: active, written_this_run: true}
+    weight: 3
+    hard: true
+    capability: cross_session_consistency
+  - id: used_update_not_create
+    description: update_study_plan was used and create_study_plan was not
+    verifier: audit.tool_not_called
+    params: {tool: create_study_plan, successful_only: true}
+    weight: 1
+    capability: cross_session_consistency
+  - id: updated
+    description: the plan was updated
+    verifier: audit.tool_called
+    params: {tool: update_study_plan, ok: true, min_count: 1}
+    weight: 1
+    hard: true
+    capability: tool_use_and_execution
+  - id: history_checked
+    description: the learning history was consulted
+    verifier: audit.tool_called
+    params: {tool: search_learning_history, min_count: 1}
+    weight: 1
+    capability: proactive_behavior
+  - id: quadratics_scheduled
+    description: at least 90 minutes on quadratics in the extended plan
+    verifier: plan.minutes_on_skill
+    params: {skill_id: quadratics, min_minutes: 90, written_this_run: true}
+    weight: 3
+    capability: educational_decision_making
+  - id: respects_marcus_rules
+    description: the extension respects Marcus's rules
+    verifier: plan.respects_constraints
+    params:
+      goal: {assessment_id: quiz_quad, target_knowledge: 0.5}
+      constraints: {max_daily_minutes: 60, min_block_minutes: 20, preferred_block_minutes: 30, no_study_before: "06:30", no_study_after: "21:00", rest_weekdays: [], buffer_hours_before_exam: 12, max_skills_per_block: 1}
+      written_this_run: true
+    weight: 3
+    hard: true
+    capability: long_term_memory
+  - id: calendar_consistent
+    description: no study event overlaps practice, classes or the quiz
+    verifier: calendar.no_conflicts_with_fixed
+    weight: 1
+    capability: tool_use_and_execution
+  - id: finished
+    description: ended with a summary
+    verifier: trajectory.completed
+    weight: 1
+    capability: long_horizon_task_completion
+capability_requirements:
+  - {capability: cross_session_consistency, required: true, rationale: continue the existing plan}
+  - {capability: long_term_memory, required: true, rationale: rules from session s1}
+simulated_user:
+  default_approval: deny
+  clarifications:
+    - {keywords: [rules], answer: "Thirty-minute blocks, an hour a day tops, mornings before school or after practice, never over practice, nothing after nine."}
+reference_path:
+  - {action: tool_call, tool: get_preferences}
+  - {action: tool_call, tool: search_memory, args: {query: ""}}
+  - {action: ask_user, message: "Remind me of your study rules?", only_if: no_memory}
+  - {action: tool_call, tool: get_study_plan}
+  - {action: tool_call, tool: search_learning_history, args: {since: "2026-10-30T00:00:00"}}
+  - {action: tool_call, tool: update_study_plan, args: {plan_id: plan_started, add_blocks: [
+      {start: "2026-11-04T06:30:00", end: "2026-11-04T07:00:00", skill_ids: [factoring]},
+      {start: "2026-11-04T19:30:00", end: "2026-11-04T20:00:00", skill_ids: [quadratics]},
+      {start: "2026-11-05T06:30:00", end: "2026-11-05T07:00:00", skill_ids: [quadratics]},
+      {start: "2026-11-05T19:30:00", end: "2026-11-05T20:00:00", skill_ids: [quadratics]},
+      {start: "2026-11-06T06:30:00", end: "2026-11-06T07:00:00", skill_ids: [quadratics]},
+      {start: "2026-11-07T10:00:00", end: "2026-11-07T10:30:00", skill_ids: [quadratics]},
+      {start: "2026-11-07T10:40:00", end: "2026-11-07T11:10:00", skill_ids: [factoring]},
+      {start: "2026-11-09T06:30:00", end: "2026-11-09T07:00:00", skill_ids: [quadratics]},
+      {start: "2026-11-09T19:30:00", end: "2026-11-09T20:00:00", skill_ids: [quadratics]},
+      {start: "2026-11-10T06:30:00", end: "2026-11-10T07:00:00", skill_ids: [quadratics]},
+      {start: "2026-11-10T19:30:00", end: "2026-11-10T20:00:00", skill_ids: [quadratics]},
+      {start: "2026-11-11T06:30:00", end: "2026-11-11T07:00:00", skill_ids: [quadratics]},
+      {start: "2026-11-11T19:30:00", end: "2026-11-11T20:00:00", skill_ids: [factoring]},
+      {start: "2026-11-12T06:30:00", end: "2026-11-12T07:00:00", skill_ids: [quadratics]}], rationale: "extended through Nov 12; completed blocks kept"}}
+  - {action: final, message: "Extended your existing plan through Thursday the 12th — the two blocks you already finished on Oct 31 stay as they are, Tuesday's blocks stand, and I added quadratics (with a bit more factoring) in your morning and after-practice slots, 30 minutes each, an hour a day."}
+seeds: [0]
+max_steps: 20
+variants:
+  - id: no_memory
+    condition: no_memory
+    description: the rules are gone; the plan is still in the environment
+    expected_delta: the agent asks about the rules and still extends the same plan
+    checks_add:
+      - {id: asked_about_rules, description: at least one question, verifier: trajectory.asked_user, weight: 1, capability: proactive_behavior}
+  - id: other_student
+    condition: different_persona
+    description: Dana's version — her plan, her rules (45-minute blocks, evenings/Saturday, Sunday off, 24 h buffer)
+    expected_delta: the extension uses her windows; the structure (extend, do not replace) is the same
+    patch:
+      persona_id: dana
+      records_remove: [calendar_event/prac_1104, calendar_event/prac_1106, calendar_event/prac_1109, calendar_event/prac_1111]
+      records_add:
+        - {kind: calendar_event, fields: {id: shift_1103, title: "Work shift", start: "2026-11-03T17:00:00", end: "2026-11-03T21:00:00", event_kind: work, fixed: true}}
+        - {kind: calendar_event, fields: {id: shift_1105, title: "Work shift", start: "2026-11-05T17:00:00", end: "2026-11-05T21:00:00", event_kind: work, fixed: true}}
+        - {kind: calendar_event, fields: {id: shift_1110, title: "Work shift", start: "2026-11-10T17:00:00", end: "2026-11-10T21:00:00", event_kind: work, fixed: true}}
+      records_update:
+        - {kind: course, id: alg2, fields: {code: "MATH 101", name: Intermediate Algebra, instructor_id: prof_kim}}
+        - {kind: study_plan, id: plan_started, fields: {blocks: [
+            {start: "2026-10-31T09:00:00", end: "2026-10-31T09:45:00", skill_ids: [polynomials]},
+            {start: "2026-10-31T10:00:00", end: "2026-10-31T10:45:00", skill_ids: [factoring]},
+            {start: "2026-11-02T19:30:00", end: "2026-11-02T20:15:00", skill_ids: [factoring]}]}}
+        - {kind: calendar_event, id: st1, fields: {start: "2026-10-31T09:00:00", end: "2026-10-31T09:45:00"}}
+        - {kind: calendar_event, id: st2, fields: {start: "2026-10-31T10:00:00", end: "2026-10-31T10:45:00"}}
+        - {kind: calendar_event, id: st3, fields: {start: "2026-11-02T19:30:00", end: "2026-11-02T20:15:00"}}
+    checks_remove: [respects_marcus_rules]
+    checks_add:
+      - id: respects_dana_rules
+        description: the extension respects Dana's rules
+        verifier: plan.respects_constraints
+        params:
+          goal: {assessment_id: quiz_quad, target_knowledge: 0.5}
+          constraints: {max_daily_minutes: 90, min_block_minutes: 30, preferred_block_minutes: 45, no_study_after: "22:00", rest_weekdays: [6], buffer_hours_before_exam: 24}
+          written_this_run: true
+        weight: 3
+        hard: true
+        capability: long_term_memory
+    reference_path:
+      - {action: tool_call, tool: get_preferences}
+      - {action: tool_call, tool: search_memory, args: {query: ""}}
+      - {action: tool_call, tool: get_study_plan}
+      - {action: tool_call, tool: search_learning_history, args: {since: "2026-10-30T00:00:00"}}
+      - {action: tool_call, tool: delete_calendar_event, args: {event_id: st4}}
+      - {action: tool_call, tool: update_study_plan, args: {plan_id: plan_started, add_blocks: [
+          {start: "2026-11-04T19:30:00", end: "2026-11-04T20:15:00", skill_ids: [quadratics]},
+          {start: "2026-11-04T20:30:00", end: "2026-11-04T21:15:00", skill_ids: [quadratics]},
+          {start: "2026-11-06T18:00:00", end: "2026-11-06T18:45:00", skill_ids: [quadratics]},
+          {start: "2026-11-06T19:00:00", end: "2026-11-06T19:45:00", skill_ids: [factoring]},
+          {start: "2026-11-07T09:00:00", end: "2026-11-07T09:45:00", skill_ids: [quadratics]},
+          {start: "2026-11-07T10:00:00", end: "2026-11-07T10:45:00", skill_ids: [quadratics]},
+          {start: "2026-11-09T19:30:00", end: "2026-11-09T20:15:00", skill_ids: [quadratics]},
+          {start: "2026-11-11T19:30:00", end: "2026-11-11T20:15:00", skill_ids: [quadratics]}], rationale: "extended through Nov 11; completed blocks kept"}}
+      - {action: final, message: "Extended your existing plan through Wednesday the 11th within your rules, kept the finished blocks, and added quadratics in your evening and Saturday slots."}
+negative_cases:
+  - id: replaces_the_plan
+    description: creates a fresh plan instead of extending, dropping the done blocks
+    actions:
+      - {type: tool_call, tool: get_preferences, args: {}}
+      - {type: tool_call, tool: create_study_plan, args: {title: "New plan", goal: "quiz", target_date: "2026-11-13T09:00:00", blocks: [
+          {start: "2026-11-04T19:30:00", end: "2026-11-04T20:00:00", skill_ids: [quadratics]},
+          {start: "2026-11-05T19:30:00", end: "2026-11-05T20:00:00", skill_ids: [quadratics]},
+          {start: "2026-11-06T06:30:00", end: "2026-11-06T07:00:00", skill_ids: [quadratics]},
+          {start: "2026-11-09T19:30:00", end: "2026-11-09T20:00:00", skill_ids: [quadratics]}]}}
+      - {type: final, message: "Made a new plan through the quiz."}
+    expect_fail_checks: [same_plan_extended, used_update_not_create, updated]

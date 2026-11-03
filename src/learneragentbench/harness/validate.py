@@ -62,6 +62,9 @@ def validate_task(ds: Dataset, task_id: str, *, run_oracle: bool = False, out_ro
             if not v.task_success:
                 failed = [c.check_id for c in v.checks if c.passed is not True]
                 problems.append(f"variant {vid}: oracle did not succeed: {failed} (status {res.trajectory.status})")
+            elif v.failure_attribution != "none" or res.trajectory.env_errors:
+                problems.append(f"variant {vid}: oracle run is attributed to {v.failure_attribution!r}; "
+                                f"env_errors={res.trajectory.env_errors[:2]}")
             oracle_lines.append(f"{vid}: {v.score:g}/{v.max_score:g}")
     summary = (f"{task.family.value} · {len(task.checks)} checks · {len(task.variants)} variants"
                + (f" · oracle {', '.join(oracle_lines)}" if oracle_lines else ""))

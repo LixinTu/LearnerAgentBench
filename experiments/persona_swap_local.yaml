@@ -1,0 +1,11 @@
+# Persona swap: every task that has a different_persona variant, base vs swapped, same model.
+name: persona_swap_local
+model: qwen2.5:7b-instruct
+adapter: openai_compatible
+adapter_params: {base_url: "http://127.0.0.1:11434/v1", max_tokens: 900}
+tasks: [all]
+variants: [base, other_student, quick_hint_student]
+seeds: [0]
+max_steps: 25
+conditions:
+  tool_agent: {memory_access: tools, tool_profile: full}

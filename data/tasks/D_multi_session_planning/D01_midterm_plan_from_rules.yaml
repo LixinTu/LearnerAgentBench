@@ -215,3 +215,36 @@ variants:
     checks_add:
       - {id: asked_or_read_prefs, description: preferences were read before writing the plan, verifier: audit.read_before_write,
          params: {read_tools: [get_preferences], write_tools: [create_study_plan, update_study_plan]}, weight: 1, capability: cross_session_consistency}
+
+negative_cases:
+  - id: sunday_block
+    description: a plan that ignores the Sunday rule and the daily cap
+    actions:
+      - {type: tool_call, tool: get_preferences, args: {}}
+      - {type: tool_call, tool: create_study_plan, args: {title: "Plan", goal: "midterm", target_date: "2026-11-16T10:00:00", blocks: [
+          {start: "2026-11-08T10:00:00", end: "2026-11-08T11:30:00", skill_ids: [word_prob]},
+          {start: "2026-11-09T19:30:00", end: "2026-11-09T21:00:00", skill_ids: [systems]},
+          {start: "2026-11-09T21:00:00", end: "2026-11-09T21:45:00", skill_ids: [lin_eq]}]}}
+      - {type: final, message: "Plan created and on your calendar."}
+    expect_fail_checks: [respects_standing_rules]
+  - id: duplicate_plan_write
+    description: the same plan is written twice; the second call is a replay
+    actions:
+      - {type: tool_call, tool: get_preferences, args: {}}
+      - {type: tool_call, tool: create_study_plan, args: &dup {title: "Plan", goal: "midterm", target_date: "2026-11-16T10:00:00", blocks: [
+          {start: "2026-11-04T19:30:00", end: "2026-11-04T20:15:00", skill_ids: [word_prob]},
+          {start: "2026-11-06T18:00:00", end: "2026-11-06T18:45:00", skill_ids: [systems]},
+          {start: "2026-11-07T09:00:00", end: "2026-11-07T09:45:00", skill_ids: [lin_eq]}]}}
+      - {type: tool_call, tool: create_study_plan, args: *dup}
+      - {type: final, message: "Plan created."}
+    expect_fail_checks: [no_duplicate_writes, reaches_target]
+    expect_duplicate: true
+  - id: plan_inside_buffer
+    description: blocks on the evening before the exam violate the 24 h buffer that only memory mentions
+    actions:
+      - {type: tool_call, tool: create_study_plan, args: {title: "Plan", goal: "midterm", target_date: "2026-11-16T10:00:00", blocks: [
+          {start: "2026-11-15T18:00:00", end: "2026-11-15T18:45:00", skill_ids: [word_prob]},
+          {start: "2026-11-15T18:45:00", end: "2026-11-15T19:30:00", skill_ids: [systems]},
+          {start: "2026-11-14T09:00:00", end: "2026-11-14T09:45:00", skill_ids: [lin_eq]}]}}
+      - {type: final, message: "Plan created."}
+    expect_fail_checks: [respects_standing_rules, consulted_rules_first]

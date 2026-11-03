@@ -75,13 +75,16 @@ def default_adapter_factory(config: RunConfig, task: TaskSpec, world: World, exe
     name = config.adapter
     if name == "oracle":
         from ..baselines import make_oracle
-        return make_oracle(task, world, executor)
+        from ..schema import CounterfactualCondition
+        cond = CounterfactualCondition(config.adapter_params.get("variant_condition", "base"))
+        return make_oracle(task, world, executor, condition=cond)
     if name == "openai_compatible":
         p = dict(config.adapter_params)
         return OpenAICompatibleAdapter(config.model, base_url=p.get("base_url"), api_key=p.get("api_key"),
                                        temperature=config.temperature, max_tokens=int(p.get("max_tokens", 1024)),
                                        json_fallback=bool(p.get("json_fallback", False)),
-                                       extra_body=p.get("extra_body"), timeout=float(p.get("timeout", 180)))
+                                       extra_body=p.get("extra_body"), timeout=float(p.get("timeout", 180)),
+                                       seed=p.get("seed"))
     raise KeyError(f"unknown adapter {name!r} (known: oracle, openai_compatible)")
 
 
@@ -110,6 +113,7 @@ def run_one(dataset: Dataset, task_id: str, variant_id: str, config: RunConfig, 
                                                       "task_id": task_id, "variant_id": variant_id}, indent=2), encoding="utf-8")
     (out_dir / "task_effective.json").write_text(task.model_dump_json(indent=2), encoding="utf-8")
 
+    config = config.model_copy(update={"adapter_params": {**config.adapter_params, "variant_condition": variant.condition.value, "seed": seed}})
     adapter = adapter_factory(config, task, world, executor)
     loop = AgentLoop(world, executor, adapter, spec, out_dir)
     trajectory = loop.run()

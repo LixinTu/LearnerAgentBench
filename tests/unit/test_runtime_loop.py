@@ -212,6 +212,37 @@ def test_event_applies_once_even_if_due_repeatedly(tmp_path: Path) -> None:
     assert isinstance(w.calendar()[0], CalendarEvent)
 
 
+def test_calendar_change_update_parses_string_dates_and_records_the_step(tmp_path: Path) -> None:
+    """Regression: a calendar_change ``update`` with ISO strings in ``fields`` used to raise inside
+    the handler every step (the oracle run was then attributed to the environment). Events also
+    record the loop step they were delivered at, which verifiers use to order agent writes."""
+    w = _world()
+    add = ScheduledEvent(id="cal_add", event_kind=EventKind.CALENDAR_CHANGE, after_step=0, notify=False,
+                         payload={"op": "add", "event": {"id": "meet", "title": "Meet", "start": (T0 + timedelta(days=1)).isoformat(),
+                                                         "end": (T0 + timedelta(days=1, hours=2)).isoformat(), "fixed": True}})
+    move = ScheduledEvent(id="cal_move", event_kind=EventKind.CALENDAR_CHANGE, after_step=2, notify=False,
+                          payload={"op": "update", "id": "meet", "fields": {"start": (T0 + timedelta(days=3)).isoformat(),
+                                                                           "end": (T0 + timedelta(days=3, hours=2)).isoformat(),
+                                                                           "title": "Meet (moved)"}})
+    actions = [Action.call("get_student_profile")] * 3 + [Action.final("x")]
+    traj = _loop(w, ActionListAdapter(actions), _spec(events=[add, move]), tmp_path).run()
+    assert traj.env_errors == []
+    meet = next(e for e in w.calendar() if e.id == "meet")
+    assert meet.title == "Meet (moved)" and meet.start == T0 + timedelta(days=3)
+    assert w.store.kv_get("event_applied:cal_add")["step"] == 0
+    assert w.store.kv_get("event_applied:cal_move")["step"] == 2
+
+
+def test_events_the_agent_never_reached_are_stamped_after_its_last_step(tmp_path: Path) -> None:
+    w = _world()
+    late = ScheduledEvent(id="late", event_kind=EventKind.CALENDAR_CHANGE, after_step=5, notify=False,
+                          payload={"op": "add", "event": {"id": "late_ev", "title": "Late", "start": (T0 + timedelta(days=2)).isoformat(),
+                                                          "end": (T0 + timedelta(days=2, hours=1)).isoformat(), "fixed": True}})
+    traj = _loop(w, ActionListAdapter([Action.call("get_student_profile"), Action.final("x")]), _spec(events=[late]), tmp_path).run()
+    assert traj.post_finish_events and traj.env_errors == []
+    assert w.store.kv_get("event_applied:late")["step"] == 2  # one past the final step (index 1)
+
+
 def test_usage_is_carried_into_the_trajectory(tmp_path: Path) -> None:
     class Counting(ActionListAdapter):
         def usage(self) -> ModelUsage:

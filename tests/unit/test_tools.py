@@ -316,3 +316,17 @@ class TestMemoryAndPreferences:
         r = _exec(w).call("create_study_plan", {"title": "x", "goal": "y", "blocks": [BLOCK]})
         json.dumps(r.for_agent())
         assert isinstance(w.require(StudyPlan, r.result["plan"]["id"]), StudyPlan)
+
+
+class TestTimezones:
+    def test_timezone_suffixed_datetimes_are_rejected_as_validation_errors(self) -> None:
+        w = _world()
+        ex = _exec(w)
+        r = ex.call("get_calendar_events", {"start": "2026-11-02T19:00:00Z", "end": "2026-11-16T19:00:00Z"})
+        assert r.status == "error" and "timezone suffix" in (r.error or "")
+        assert w.tool_calls()[-1].error_type == "validation"
+        r2 = ex.call("create_study_plan", {"title": "x", "goal": "y", "blocks": [
+            {"start": "2026-11-04T18:00:00+00:00", "end": "2026-11-04T18:45:00+00:00", "skill_ids": ["lin_eq"]}]})
+        assert r2.status == "error" and "blocks[0].start" in (r2.error or "")
+        ok = ex.call("get_calendar_events", {"start": "2026-11-02T19:00:00", "end": "2026-11-16T19:00:00"})
+        assert ok.ok

@@ -104,7 +104,7 @@ class AgentLoop:
         notices = []
         for ev in self._due_events(step):
             try:
-                text = apply_event(self.world, ev)
+                text = apply_event(self.world, ev, step=step)
             except Exception as exc:
                 self.trajectory.env_errors.append(f"event {ev.id}: {type(exc).__name__}: {exc}")
                 continue
@@ -178,9 +178,26 @@ class AgentLoop:
         finally:
             self.trajectory.usage = self.adapter.usage()
             if self.trajectory.status != "interrupted":
+                self.trajectory.post_finish_events = self._deliver_pending_step_events()
                 self.trajectory.ended_at = self.world.now
             self.recorder.flush()
         return self.trajectory
+
+    def _deliver_pending_step_events(self) -> list[str]:
+        """The environment does not stop when the agent does: step-triggered events the agent never
+        reached (because it finished early) still happen, so verifiers judge the world the student
+        actually ends up in. Time-triggered events in the future are left alone."""
+        out: list[str] = []
+        done = set(applied_events(self.world))
+        post_step = (self.trajectory.steps[-1].index + 1) if self.trajectory.steps else 0
+        for ev in self.spec.events:
+            if ev.id in done or ev.after_step is None:
+                continue
+            try:
+                out.append(apply_event(self.world, ev, step=post_step))
+            except Exception as exc:
+                self.trajectory.env_errors.append(f"event {ev.id} (after finish): {type(exc).__name__}: {exc}")
+        return out
 
     # ------------------------------------------------------------ interruption
     def save_state(self) -> Path:

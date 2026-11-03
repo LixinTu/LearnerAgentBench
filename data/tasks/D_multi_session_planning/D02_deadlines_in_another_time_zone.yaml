@@ -1,0 +1,166 @@
+# Family D — a unit-conversion rule from memory: course deadlines are stated in Eastern time;
+# Priya is in Pacific. "Put the deadlines on my calendar" is only right if 23:59 ET becomes
+# 20:59 local — and the work blocks must finish before that.
+task_id: D02_deadlines_in_another_time_zone
+family: D_multi_session_study_planning
+title: Put this week's deadlines on the calendar in the student's own time zone and plan the work before them
+version: "1.0"
+persona_id: priya
+user_goal: >
+  Two things due this week in Biostatistics — can you put the deadlines on my calendar and plan
+  when I'll do the work? Problem Set 6 and the lab report.
+initial_state:
+  now: "2026-11-02T06:00:00"
+  skill_graph: statistics
+  records:
+    - kind: course
+      fields: {id: stat201, code: "STAT 201", name: Biostatistics (remote), instructor_id: prof_adler, term: Fall 2026, skill_ids: [distributions, sampling, conf_intervals]}
+    - kind: assignment
+      fields: {id: ps6, course_id: stat201, title: "Problem Set 6", due_at: "2026-11-05T23:59:00", skill_ids: [distributions], weight: 0.05, description: "Due 23:59 Eastern"}
+    - kind: assignment
+      fields: {id: lab_report, course_id: stat201, title: "Lab report 2", due_at: "2026-11-07T23:59:00", skill_ids: [sampling], weight: 0.1, description: "Due 23:59 Eastern"}
+    - kind: assessment
+      fields: {id: mid_stat, course_id: stat201, title: "STAT 201 Midterm", assessment_kind: exam, scheduled_at: "2026-11-14T06:00:00", skill_ids: [sampling, conf_intervals], weight: 0.3}
+    - kind: calendar_event
+      fields: {id: lab_w1, title: "Lab", start: "2026-11-03T10:00:00", end: "2026-11-03T16:00:00", event_kind: work, fixed: true}
+    - kind: calendar_event
+      fields: {id: lab_w2, title: "Lab", start: "2026-11-04T10:00:00", end: "2026-11-04T16:00:00", event_kind: work, fixed: true}
+    - kind: calendar_event
+      fields: {id: lab_w3, title: "Lab", start: "2026-11-05T10:00:00", end: "2026-11-05T16:00:00", event_kind: work, fixed: true}
+    - kind: calendar_event
+      fields: {id: lab_w4, title: "Lab", start: "2026-11-06T10:00:00", end: "2026-11-06T16:00:00", event_kind: work, fixed: true}
+  mastery_overrides: {distributions: 0.5, sampling: 0.3}
+hidden_constraints:
+  - deadlines are Eastern time; the LMS shows 23:59 — locally that is 20:59 (session s1 memory; preference deadline_timezone)
+  - the usual limits (150 min/day, 60-minute blocks, 05:30–21:00)
+available_tools: [get_student_profile, get_preferences, search_memory, list_assignments, list_assessments,
+                  get_calendar_events, create_calendar_event, update_calendar_event, delete_calendar_event,
+                  get_study_plan, create_study_plan, update_study_plan, create_task, record_memory]
+expected_final_state:
+  - two deadline events on the calendar at 20:59 local (Nov 5 and Nov 7), not 23:59
+  - work blocks for each assignment that end before its local deadline
+checks:
+  - id: ps6_deadline_local
+    description: a deadline event for Problem Set 6 ends at 20:59 local on Nov 5
+    verifier: calendar.event_exists
+    params: {title_contains: "Problem Set 6", kind: deadline, start_after: "2026-11-05T20:00:00", start_before: "2026-11-05T21:00:00", created_by: agent}
+    weight: 3
+    hard: true
+    capability: long_term_memory
+  - id: lab_deadline_local
+    description: a deadline event for the lab report at 20:59 local on Nov 7
+    verifier: calendar.event_exists
+    params: {title_contains: "Lab report", kind: deadline, start_after: "2026-11-07T20:00:00", start_before: "2026-11-07T21:00:00", created_by: agent}
+    weight: 3
+    hard: true
+    capability: long_term_memory
+  - id: no_deadline_at_2359
+    description: no deadline event was created at the unconverted 23:59
+    verifier: state.record_absent
+    params: {kind: calendar_event, where: {event_kind: deadline, start: "T23:"}}
+    weight: 2
+    capability: cross_session_consistency
+  - id: work_before_ps6
+    description: at least 60 minutes on distributions scheduled, and none after the Nov 5 local deadline for that skill
+    verifier: plan.minutes_on_skill
+    params: {skill_id: distributions, min_minutes: 60}
+    weight: 1
+    capability: personalized_planning
+  - id: work_before_lab_report
+    description: at least 60 minutes on sampling
+    verifier: plan.minutes_on_skill
+    params: {skill_id: sampling, min_minutes: 60}
+    weight: 1
+    capability: personalized_planning
+  - id: plan_respects_rules
+    description: the work blocks respect Priya's limits and the lab
+    verifier: plan.respects_constraints
+    params:
+      goal: {assessment_id: mid_stat, target_knowledge: 0.3}
+      constraints: {max_daily_minutes: 150, min_block_minutes: 40, preferred_block_minutes: 60, no_study_before: "05:30", no_study_after: "21:00", rest_weekdays: [], buffer_hours_before_exam: 6}
+    weight: 2
+    hard: true
+    capability: long_term_memory
+  - id: no_forbidden_actions
+    description: nothing forbidden attempted
+    verifier: auth.no_forbidden_attempts
+    weight: 1
+    hard: true
+    capability: safety_and_authorization
+  - id: finished
+    description: ended with a summary
+    verifier: trajectory.completed
+    weight: 1
+    capability: long_horizon_task_completion
+  - id: summary_mentions_conversion
+    description: the summary states the local deadline time
+    verifier: trajectory.final_mentions
+    params: {any_of: ["20:59", "8:59", "pacific", "local time", "eastern"]}
+    weight: 1
+    capability: proactive_behavior
+capability_requirements:
+  - {capability: long_term_memory, required: true, rationale: the time-zone rule lives in session s1}
+  - {capability: cross_session_consistency, required: true, rationale: the rule must be applied to every deadline}
+simulated_user:
+  default_approval: deny
+  clarifications:
+    - {keywords: [time zone], answer: "The course is on Eastern time, three hours ahead — 23:59 ET is 8:59 pm for me."}
+    - {keywords: [timezone], answer: "Eastern time, three hours ahead of me. Convert everything."}
+    - {keywords: [eastern], answer: "Yes, deadlines are Eastern; 23:59 ET is 20:59 here."}
+    - {keywords: [rules], answer: "Hour blocks, up to 150 minutes a day, from 5:30 am to 9 pm, lab is blocked. And the course deadlines are Eastern time — three hours ahead."}
+reference_path:
+  - {action: tool_call, tool: search_memory, args: {query: "deadline time zone eastern"}}
+  - {action: tool_call, tool: get_preferences, args: {scope: stat201}}
+  - {action: ask_user, message: "Which time zone are the course deadlines in, and what are your study rules (minutes per day, hours)?", only_if: no_memory}
+  - {action: tool_call, tool: list_assignments, args: {status: open}}
+  - {action: tool_call, tool: create_calendar_event, args: {title: "Deadline: Problem Set 6 (23:59 ET)", start: "2026-11-05T20:44:00", end: "2026-11-05T20:59:00", event_kind: deadline, note: "23:59 Eastern = 20:59 Pacific"}}
+  - {action: tool_call, tool: create_calendar_event, args: {title: "Deadline: Lab report 2 (23:59 ET)", start: "2026-11-07T20:44:00", end: "2026-11-07T20:59:00", event_kind: deadline, note: "23:59 Eastern = 20:59 Pacific"}}
+  - {action: tool_call, tool: create_study_plan, args: {title: "Problem Set 6 and lab report", goal: "Finish both before their Pacific deadlines", target_date: "2026-11-07T20:59:00", blocks: [
+      {start: "2026-11-03T05:30:00", end: "2026-11-03T06:30:00", skill_ids: [distributions]},
+      {start: "2026-11-04T05:30:00", end: "2026-11-04T06:30:00", skill_ids: [distributions]},
+      {start: "2026-11-05T05:30:00", end: "2026-11-05T06:30:00", skill_ids: [distributions]},
+      {start: "2026-11-06T05:30:00", end: "2026-11-06T06:30:00", skill_ids: [sampling]},
+      {start: "2026-11-07T08:00:00", end: "2026-11-07T09:00:00", skill_ids: [sampling]}]}}
+  - {action: final, message: "Both deadlines are on your calendar in your local time — 20:59 Pacific on Nov 5 and Nov 7 (23:59 Eastern) — and the work blocks finish before each one."}
+seeds: [0]
+max_steps: 25
+variants:
+  - id: no_memory
+    condition: no_memory
+    description: the time-zone rule is gone; the agent must ask
+    expected_delta: the agent asks about the time zone and still converts
+    checks_add:
+      - {id: asked_about_timezone, description: the agent asked about the time zone or rules, verifier: trajectory.asked_user, weight: 1, capability: proactive_behavior}
+  - id: course_moved_to_pacific
+    condition: outdated_memory
+    description: a newer memory says the course switched to Pacific-time deadlines; 23:59 is now local
+    expected_delta: deadlines belong at 23:59 local; the old 20:59 conversion is wrong
+    patch:
+      memory_add:
+        - {memory_kind: update, text: "Update: Dr. Adler moved all STAT 201 deadlines to Pacific time from November — 23:59 on the LMS now really is 23:59 for me.", stated_at: "2026-10-31T07:00:00", session_id: s4, scope: stat201, payload: {key: deadline_timezone, value: "America/Los_Angeles"}}
+      preference_set:
+        - {key: deadline_timezone, value: "America/Los_Angeles", scope: stat201, stated_at: "2026-10-31T07:00:00", source_session: s4}
+    checks_remove: [ps6_deadline_local, lab_deadline_local, no_deadline_at_2359, summary_mentions_conversion]
+    checks_add:
+      - {id: ps6_deadline_2359, description: the Problem Set 6 deadline is at 23:59 local, verifier: calendar.event_exists, params: {title_contains: "Problem Set 6", kind: deadline, start_after: "2026-11-05T23:00:00", start_before: "2026-11-06T00:00:00", created_by: agent}, weight: 3, hard: true, capability: cross_session_consistency}
+      - {id: no_stale_conversion, description: no deadline event at the old 20:59, verifier: state.record_absent, params: {kind: calendar_event, where: {event_kind: deadline, start: "T20:"}}, weight: 2, capability: cross_session_consistency}
+    reference_path:
+      - {action: tool_call, tool: search_memory, args: {query: "deadline time zone"}}
+      - {action: tool_call, tool: list_assignments, args: {status: open}}
+      - {action: tool_call, tool: create_calendar_event, args: {title: "Deadline: Problem Set 6", start: "2026-11-05T23:44:00", end: "2026-11-05T23:59:00", event_kind: deadline}}
+      - {action: tool_call, tool: create_calendar_event, args: {title: "Deadline: Lab report 2", start: "2026-11-07T23:44:00", end: "2026-11-07T23:59:00", event_kind: deadline}}
+      - {action: tool_call, tool: create_study_plan, args: {title: "Problem Set 6 and lab report", goal: "Finish both before the deadlines", target_date: "2026-11-07T23:59:00", blocks: [
+          {start: "2026-11-03T05:30:00", end: "2026-11-03T06:30:00", skill_ids: [distributions]},
+          {start: "2026-11-04T05:30:00", end: "2026-11-04T06:30:00", skill_ids: [distributions]},
+          {start: "2026-11-06T05:30:00", end: "2026-11-06T06:30:00", skill_ids: [sampling]},
+          {start: "2026-11-07T08:00:00", end: "2026-11-07T09:00:00", skill_ids: [sampling]}]}}
+      - {action: final, message: "Deadlines are on your calendar at 23:59 local (the course is on Pacific time now) and the work is planned before them."}
+negative_cases:
+  - id: unconverted_deadlines
+    description: deadlines copied as 23:59 without converting
+    actions:
+      - {type: tool_call, tool: list_assignments, args: {status: open}}
+      - {type: tool_call, tool: create_calendar_event, args: {title: "Deadline: Problem Set 6", start: "2026-11-05T23:44:00", end: "2026-11-05T23:59:00", event_kind: deadline}}
+      - {type: tool_call, tool: create_calendar_event, args: {title: "Deadline: Lab report 2", start: "2026-11-07T23:44:00", end: "2026-11-07T23:59:00", event_kind: deadline}}
+      - {type: final, message: "Deadlines added at 23:59."}
+    expect_fail_checks: [ps6_deadline_local, lab_deadline_local, no_deadline_at_2359]

@@ -1,0 +1,170 @@
+# Family A — two personal rules that shape an exam plan: one full mock-exam block two or three
+# days before every exam, and no study on the day after a swim meet. The meet on Saturday Nov 7
+# is on the calendar; Sunday Nov 8 must stay empty; the mock must exist and sit on Nov 10 or 11.
+task_id: A05_mock_exam_and_the_day_after_a_meet
+family: A_personalized_exam_preparation
+title: Plan for a stats exam with a mock-exam block and a blocked day after the meet
+version: "1.0"
+persona_id: jun
+user_goal: >
+  Stats exam on Friday the 13th at 8. Set up the prep and get it on my calendar — you know my routine.
+initial_state:
+  now: "2026-11-02T19:00:00"
+  skill_graph: statistics
+  records:
+    - kind: course
+      fields: {id: stat201, code: "STAT 201", name: Introductory Statistics, instructor_id: prof_adler, term: Fall 2026, skill_ids: [distributions, sampling, conf_intervals, hyp_tests]}
+    - kind: assessment
+      fields: {id: exam2, course_id: stat201, title: "STAT 201 Exam 2", assessment_kind: exam, scheduled_at: "2026-11-13T08:00:00", skill_ids: [sampling, conf_intervals], weight: 0.3}
+    - kind: calendar_event
+      fields: {id: cal_exam2, title: "STAT 201 Exam 2", start: "2026-11-13T08:00:00", end: "2026-11-13T10:00:00", event_kind: exam, fixed: true, created_by: system, linked: {assessment_id: exam2}}
+    - kind: calendar_event
+      fields: {id: meet_1107, title: "Swim meet (away)", start: "2026-11-07T07:00:00", end: "2026-11-07T22:00:00", event_kind: personal, fixed: true}
+    - kind: calendar_event
+      fields: {id: prac_mon, title: "Swim practice", start: "2026-11-02T14:00:00", end: "2026-11-02T17:00:00", event_kind: personal, fixed: true}
+  mastery_overrides: {sampling: 0.35, conf_intervals: 0.25, distributions: 0.5}
+hidden_constraints:
+  - "no study the day after a meet (Sunday Nov 8 is blocked; session s1)"
+  - "one full mock-exam block (≥ 60 min) two or three days before the exam (session s1)"
+  - "100 min/day, 50-minute blocks (30 min minimum), 06:00–21:00"
+available_tools: [get_student_profile, get_preferences, search_memory, list_assessments, analyze_skill_gaps,
+                  get_calendar_events, get_study_plan, create_study_plan, update_study_plan, create_calendar_event, create_task, record_memory]
+expected_final_state:
+  - an active plan inside Jun's rules with no block on Nov 8, a mock_exam block of ≥ 60 min on Nov 10 or 11, and sampling + confidence intervals at ≥ 0.6 by the exam
+checks:
+  - id: plan_exists
+    description: an active plan with at least five blocks
+    verifier: plan.exists
+    params: {min_blocks: 5}
+    weight: 1
+    hard: true
+    capability: tool_use_and_execution
+  - id: respects_jun_rules
+    description: blocks respect the cap, block length, hours and the meet day
+    verifier: plan.respects_constraints
+    params: &goal
+      goal: {assessment_id: exam2, target_knowledge: 0.6, include_prerequisites: false}
+      constraints: {max_daily_minutes: 100, min_block_minutes: 30, preferred_block_minutes: 50, no_study_before: "06:00", no_study_after: "21:00", rest_weekdays: [], buffer_hours_before_exam: 12}
+    weight: 3
+    hard: true
+    capability: long_term_memory
+  - id: day_after_meet_empty
+    description: no block on Sunday Nov 8 (day after the meet)
+    verifier: plan.no_blocks_in_window
+    params: {start: "2026-11-08T00:00:00", end: "2026-11-09T00:00:00"}
+    weight: 3
+    hard: true
+    capability: long_term_memory
+  - id: mock_exam_scheduled
+    description: a mock-exam calendar event of at least 60 minutes on Nov 10 or 11
+    verifier: calendar.event_exists
+    params: {title_contains: "mock", created_by: agent, start_after: "2026-11-10T00:00:00", start_before: "2026-11-11T23:59:00", min_count: 1}
+    weight: 2
+    capability: personalized_planning
+  - id: reaches_target
+    description: sampling and confidence intervals reach 0.6
+    verifier: plan.reaches_target
+    params: {<<: *goal, mastery_from: initial}
+    weight: 2
+    capability: educational_decision_making
+  - id: calendar_consistent
+    description: no study event overlaps the meet, practice or the exam
+    verifier: calendar.no_conflicts_with_fixed
+    weight: 1
+    capability: tool_use_and_execution
+  - id: consulted_rules_first
+    description: preferences or memory read before writing
+    verifier: audit.read_before_write
+    params: {read_tools: [get_preferences, search_memory], write_tools: [create_study_plan, update_study_plan, create_calendar_event]}
+    weight: 1
+    capability: cross_session_consistency
+  - id: finished
+    description: ended with a summary
+    verifier: trajectory.completed
+    weight: 1
+    capability: long_horizon_task_completion
+capability_requirements:
+  - {capability: long_term_memory, required: true, rationale: "mock-exam and day-after-meet rules are only in memory"}
+  - {capability: personalized_planning, required: true, rationale: "the mock block is a personal routine"}
+simulated_user:
+  default_approval: deny
+  clarifications:
+    - {keywords: [routine], answer: "Mornings six to eight and evenings till nine, fifty-minute blocks, a hundred minutes a day, never the day after a meet, and one full mock exam two or three days before."}
+    - {keywords: [rules], answer: "Fifty-minute blocks, a hundred minutes a day, six to eight and evenings till nine, nothing the day after a meet, and a mock exam two or three days before the real one."}
+reference_path:
+  - {action: tool_call, tool: get_preferences}
+  - {action: tool_call, tool: search_memory, args: {query: ""}}
+  - {action: ask_user, message: "Remind me of your routine — blocks, hours, meet rule, mock exam?", only_if: no_memory}
+  - {action: tool_call, tool: get_calendar_events, args: {start: "2026-11-02T00:00:00", end: "2026-11-14T00:00:00"}}
+  - {action: tool_call, tool: create_study_plan, args: {title: "Exam 2 prep", goal: "Sampling and confidence intervals; mock on Nov 10", target_date: "2026-11-13T08:00:00", blocks: [
+      {start: "2026-11-02T19:20:00", end: "2026-11-02T20:10:00", skill_ids: [sampling]},
+      {start: "2026-11-03T06:00:00", end: "2026-11-03T06:50:00", skill_ids: [sampling]},
+      {start: "2026-11-03T19:00:00", end: "2026-11-03T19:50:00", skill_ids: [sampling]},
+      {start: "2026-11-04T06:00:00", end: "2026-11-04T06:50:00", skill_ids: [conf_intervals]},
+      {start: "2026-11-04T19:00:00", end: "2026-11-04T19:50:00", skill_ids: [conf_intervals]},
+      {start: "2026-11-05T06:00:00", end: "2026-11-05T06:50:00", skill_ids: [sampling]},
+      {start: "2026-11-05T19:00:00", end: "2026-11-05T19:50:00", skill_ids: [conf_intervals]},
+      {start: "2026-11-06T06:00:00", end: "2026-11-06T06:50:00", skill_ids: [conf_intervals]},
+      {start: "2026-11-09T06:00:00", end: "2026-11-09T06:50:00", skill_ids: [sampling]},
+      {start: "2026-11-09T19:00:00", end: "2026-11-09T19:50:00", skill_ids: [conf_intervals]},
+      {start: "2026-11-10T19:00:00", end: "2026-11-10T20:00:00", skill_ids: [sampling, conf_intervals], activity: mock_exam},
+      {start: "2026-11-11T06:00:00", end: "2026-11-11T06:50:00", skill_ids: [conf_intervals]},
+      {start: "2026-11-11T19:00:00", end: "2026-11-11T19:50:00", skill_ids: [sampling]},
+      {start: "2026-11-12T06:00:00", end: "2026-11-12T06:50:00", skill_ids: [conf_intervals]}]}}
+  - {action: tool_call, tool: create_calendar_event, args: {title: "Mock exam: STAT 201 Exam 2 (full run)", start: "2026-11-10T19:00:00", end: "2026-11-10T20:00:00", event_kind: study, allow_overlap: true, note: "full mock, timed"}}
+  - {action: final, message: "Exam 2 prep is on your calendar: fifty-minute blocks mornings and evenings through the 12th, nothing on Sunday after the meet, and a full mock exam on Tuesday the 10th at 7pm."}
+seeds: [0]
+max_steps: 25
+variants:
+  - id: no_memory
+    condition: no_memory
+    description: the routine is gone; the agent must ask
+    expected_delta: the agent asks and then follows the answered routine
+    checks_add:
+      - {id: asked_about_routine, description: at least one question, verifier: trajectory.asked_user, weight: 1, capability: proactive_behavior}
+  - id: meet_moved
+    condition: updated_calendar_event
+    description: the meet is moved to Tuesday Nov 10 right as the session starts; Wednesday Nov 11 becomes the blocked day and the mock must shift to Nov 10 morning or Nov 11 is out — only Nov 10 before the meet remains for the mock
+    expected_delta: no block on Nov 11; the mock sits on Nov 10 (morning, before the meet) ; Nov 8 is free again
+    patch:
+      events_add:
+        - {id: meet_moved, event_kind: calendar_change, after_step: 0, description: "meet rescheduled", payload: {op: update, id: meet_1107, fields: {start: "2026-11-10T12:00:00", end: "2026-11-10T22:00:00", title: "Swim meet (away, moved)"}}}
+    checks_remove: [day_after_meet_empty, mock_exam_scheduled]
+    checks_add:
+      - {id: day_after_moved_meet_empty, description: no block on Wednesday Nov 11, verifier: plan.no_blocks_in_window, params: {start: "2026-11-11T00:00:00", end: "2026-11-12T00:00:00"}, weight: 3, hard: true, capability: event_driven_replanning}
+      - {id: mock_before_meet, description: a mock-exam event on Nov 10 before the meet, verifier: calendar.event_exists, params: {title_contains: "mock", created_by: agent, start_after: "2026-11-10T00:00:00", start_before: "2026-11-10T12:00:00", min_count: 1}, weight: 2, capability: event_driven_replanning}
+    reference_path:
+      - {action: tool_call, tool: get_preferences}
+      - {action: tool_call, tool: search_memory, args: {query: ""}}
+      - {action: tool_call, tool: get_calendar_events, args: {start: "2026-11-02T00:00:00", end: "2026-11-14T00:00:00"}}
+      - {action: tool_call, tool: create_study_plan, args: {title: "Exam 2 prep (meet moved)", goal: "Mock on the morning of the 10th; nothing on the 11th", target_date: "2026-11-13T08:00:00", blocks: [
+          {start: "2026-11-02T19:20:00", end: "2026-11-02T20:10:00", skill_ids: [sampling]},
+          {start: "2026-11-03T06:00:00", end: "2026-11-03T06:50:00", skill_ids: [sampling]},
+          {start: "2026-11-03T19:00:00", end: "2026-11-03T19:50:00", skill_ids: [sampling]},
+          {start: "2026-11-04T06:00:00", end: "2026-11-04T06:50:00", skill_ids: [conf_intervals]},
+          {start: "2026-11-04T19:00:00", end: "2026-11-04T19:50:00", skill_ids: [conf_intervals]},
+          {start: "2026-11-05T06:00:00", end: "2026-11-05T06:50:00", skill_ids: [sampling]},
+          {start: "2026-11-05T19:00:00", end: "2026-11-05T19:50:00", skill_ids: [conf_intervals]},
+          {start: "2026-11-06T06:00:00", end: "2026-11-06T06:50:00", skill_ids: [conf_intervals]},
+          {start: "2026-11-08T09:00:00", end: "2026-11-08T09:50:00", skill_ids: [sampling]},
+          {start: "2026-11-08T15:00:00", end: "2026-11-08T15:50:00", skill_ids: [conf_intervals]},
+          {start: "2026-11-09T06:00:00", end: "2026-11-09T06:50:00", skill_ids: [sampling]},
+          {start: "2026-11-09T19:00:00", end: "2026-11-09T19:50:00", skill_ids: [conf_intervals]},
+          {start: "2026-11-10T06:00:00", end: "2026-11-10T07:00:00", skill_ids: [sampling, conf_intervals], activity: mock_exam},
+          {start: "2026-11-12T06:00:00", end: "2026-11-12T06:50:00", skill_ids: [conf_intervals]},
+          {start: "2026-11-12T19:00:00", end: "2026-11-12T19:50:00", skill_ids: [sampling]}]}}
+      - {action: tool_call, tool: create_calendar_event, args: {title: "Mock exam: STAT 201 Exam 2 (full run)", start: "2026-11-10T06:00:00", end: "2026-11-10T07:00:00", event_kind: study, allow_overlap: true}}
+      - {action: final, message: "Your meet moved to Tuesday the 10th, so Wednesday is off and the full mock is Tuesday morning before you leave; Sunday is back in play."}
+negative_cases:
+  - id: studies_after_the_meet_no_mock
+    description: a block on Sunday after the meet and no mock exam
+    actions:
+      - {type: tool_call, tool: get_preferences, args: {}}
+      - {type: tool_call, tool: create_study_plan, args: {title: "Prep", goal: "exam", target_date: "2026-11-13T08:00:00", blocks: [
+          {start: "2026-11-03T06:00:00", end: "2026-11-03T06:50:00", skill_ids: [sampling]},
+          {start: "2026-11-04T06:00:00", end: "2026-11-04T06:50:00", skill_ids: [conf_intervals]},
+          {start: "2026-11-08T09:00:00", end: "2026-11-08T09:50:00", skill_ids: [sampling]},
+          {start: "2026-11-09T06:00:00", end: "2026-11-09T06:50:00", skill_ids: [conf_intervals]},
+          {start: "2026-11-11T06:00:00", end: "2026-11-11T06:50:00", skill_ids: [sampling]}]}}
+      - {type: final, message: "Prep set."}
+    expect_fail_checks: [day_after_meet_empty, mock_exam_scheduled]

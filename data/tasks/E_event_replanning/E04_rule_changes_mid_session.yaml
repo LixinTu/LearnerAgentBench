@@ -1,0 +1,144 @@
+# Family E — the student changes a standing rule while the agent is working. The old rule
+# (study until 21:00) is in memory; the new one arrives as a message mid-session ("mornings
+# only from now on"). The newest statement wins, and the plan being built must follow it.
+task_id: E04_rule_changes_mid_session
+family: E_event_driven_replanning_and_follow_up
+title: A rule changes during the session; the plan must follow the newest statement
+version: "1.0"
+persona_id: priya
+user_goal: >
+  Set up my plan for the midterm on the 14th and put it on the calendar.
+initial_state:
+  now: "2026-11-02T06:00:00"
+  skill_graph: statistics
+  records:
+    - kind: course
+      fields: {id: stat201, code: "STAT 201", name: Biostatistics (remote), instructor_id: prof_adler, term: Fall 2026, skill_ids: [distributions, sampling, conf_intervals]}
+    - kind: assessment
+      fields: {id: mid_stat, course_id: stat201, title: "STAT 201 Midterm", assessment_kind: exam, scheduled_at: "2026-11-14T06:00:00", skill_ids: [sampling, conf_intervals], weight: 0.3}
+    - kind: calendar_event
+      fields: {id: cal_mid, title: "STAT 201 Midterm (online)", start: "2026-11-14T06:00:00", end: "2026-11-14T08:00:00", event_kind: exam, fixed: true, created_by: system, linked: {assessment_id: mid_stat}}
+    - kind: calendar_event
+      fields: {id: lab_w1, title: "Lab", start: "2026-11-03T10:00:00", end: "2026-11-03T16:00:00", event_kind: work, fixed: true}
+    - kind: calendar_event
+      fields: {id: lab_w2, title: "Lab", start: "2026-11-04T10:00:00", end: "2026-11-04T16:00:00", event_kind: work, fixed: true}
+    - kind: calendar_event
+      fields: {id: lab_w3, title: "Lab", start: "2026-11-05T10:00:00", end: "2026-11-05T16:00:00", event_kind: work, fixed: true}
+    - kind: calendar_event
+      fields: {id: lab_w4, title: "Lab", start: "2026-11-06T10:00:00", end: "2026-11-06T16:00:00", event_kind: work, fixed: true}
+    - kind: calendar_event
+      fields: {id: lab_w5, title: "Lab", start: "2026-11-09T10:00:00", end: "2026-11-09T16:00:00", event_kind: work, fixed: true}
+    - kind: calendar_event
+      fields: {id: lab_w6, title: "Lab", start: "2026-11-10T10:00:00", end: "2026-11-10T16:00:00", event_kind: work, fixed: true}
+    - kind: calendar_event
+      fields: {id: lab_w7, title: "Lab", start: "2026-11-11T10:00:00", end: "2026-11-11T16:00:00", event_kind: work, fixed: true}
+    - kind: calendar_event
+      fields: {id: lab_w8, title: "Lab", start: "2026-11-12T10:00:00", end: "2026-11-12T16:00:00", event_kind: work, fixed: true}
+  mastery_overrides: {sampling: 0.35, conf_intervals: 0.25, distributions: 0.6}
+hidden_constraints:
+  - the old rule allows evenings until 21:00; the new message (step 1) says mornings only — nothing after 08:30
+  - 150 min/day, 60-minute blocks, 6 h buffer
+event_timeline:
+  - id: mornings_only
+    event_kind: preference_update
+    after_step: 1
+    description: "Priya messages a rule change"
+    payload: {key: no_study_after, value: "08:30", scope: global, session_id: s5, text: "Change of plan: no more evening study from today — I'm wiped after lab. Mornings only, before 8:30."}
+available_tools: [get_student_profile, get_preferences, search_memory, list_assessments, analyze_skill_gaps,
+                  get_calendar_events, search_email, get_study_plan, create_study_plan, update_study_plan,
+                  create_calendar_event, delete_calendar_event, record_memory]
+expected_final_state:
+  - an active plan with no block after 08:30 on any day, inside Priya's other rules, reaching 0.55 on the midterm skills
+checks:
+  - id: plan_after_update
+    description: the active plan was written after the rule change arrived
+    verifier: event.state_after
+    params: {event_id: mornings_only, kind: study_plan, where: {status: active}}
+    weight: 2
+    hard: true
+    capability: event_driven_replanning
+  - id: follows_the_new_rule
+    description: every block ends by 08:30 (the new rule) and the other rules hold
+    verifier: plan.respects_constraints
+    params: &goal
+      goal: {assessment_id: mid_stat, target_knowledge: 0.55}
+      constraints: {max_daily_minutes: 150, min_block_minutes: 40, preferred_block_minutes: 60, no_study_before: "05:30", no_study_after: "08:30", rest_weekdays: [], buffer_hours_before_exam: 6}
+    weight: 3
+    hard: true
+    capability: cross_session_consistency
+  - id: reaches_target
+    description: sampling and confidence intervals reach 0.55 with mornings only
+    verifier: plan.reaches_target
+    params: {<<: *goal, mastery_from: initial}
+    weight: 2
+    capability: educational_decision_making
+  - id: calendar_consistent
+    description: no study event overlaps lab or the exam
+    verifier: calendar.no_conflicts_with_fixed
+    weight: 1
+    capability: tool_use_and_execution
+  - id: summary_mentions_change
+    description: the summary acknowledges the change
+    verifier: trajectory.final_mentions
+    params: {any_of: [morning, "no evening", "8:30", "08:30", "rule"]}
+    weight: 1
+    capability: proactive_behavior
+  - id: finished
+    description: ended with a summary
+    verifier: trajectory.completed
+    weight: 1
+    capability: long_horizon_task_completion
+capability_requirements:
+  - {capability: cross_session_consistency, required: true, rationale: newest statement wins over the remembered rule}
+  - {capability: event_driven_replanning, required: true, rationale: the change arrives mid-task}
+simulated_user:
+  default_approval: deny
+  clarifications:
+    - {keywords: [rules], answer: "Mornings only from now on, 5:30 to 8:30, hour blocks, up to 150 minutes, lab blocked, six hours clear before the exam."}
+reference_path:
+  - {action: tool_call, tool: get_preferences}
+  - {action: tool_call, tool: search_memory, args: {query: ""}}
+  - {action: ask_user, message: "Remind me of your study rules?", only_if: no_memory}
+  - {action: tool_call, tool: search_email, args: {unread_only: true}}
+  - {action: tool_call, tool: get_preferences}
+  - {action: plan_for, assessment_id: mid_stat, skill_ids: [sampling, conf_intervals], target_knowledge: 0.55, title: "Midterm plan (mornings only)", goal: "Sampling and confidence intervals, mornings before 8:30"}
+  - {action: final, message: "You switched to mornings only, so the plan uses 5:30–8:30 blocks only — nothing in the evenings — lab untouched, six hours clear before the midterm on the 14th."}
+seeds: [0]
+max_steps: 25
+variants:
+  - id: no_change
+    condition: correct_memory
+    description: no rule change arrives; evenings until 21:00 remain allowed
+    expected_delta: evening blocks are fine; the paired run isolates the effect of the update
+    patch:
+      events_remove: [mornings_only]
+    checks_remove: [plan_after_update, follows_the_new_rule, reaches_target, summary_mentions_change]
+    checks_add:
+      - id: follows_the_standing_rule
+        description: blocks respect the standing rules (evenings allowed until 21:00)
+        verifier: plan.respects_constraints
+        params: &goal2
+          goal: {assessment_id: mid_stat, target_knowledge: 0.6}
+          constraints: {max_daily_minutes: 150, min_block_minutes: 40, preferred_block_minutes: 60, no_study_before: "05:30", no_study_after: "21:00", rest_weekdays: [], buffer_hours_before_exam: 6}
+        weight: 3
+        hard: true
+        capability: long_term_memory
+      - {id: reaches_target_standing, description: target 0.6 under the standing rules, verifier: plan.reaches_target, params: {<<: *goal2, mastery_from: initial}, weight: 2, capability: educational_decision_making}
+    reference_path:
+      - {action: tool_call, tool: get_preferences}
+      - {action: tool_call, tool: search_memory, args: {query: ""}}
+      - {action: tool_call, tool: search_email, args: {unread_only: true}}
+      - {action: plan_for, assessment_id: mid_stat, skill_ids: [sampling, conf_intervals], target_knowledge: 0.6, title: "Midterm plan"}
+      - {action: final, message: "Plan set within your usual windows, lab untouched, six hours clear before the midterm."}
+negative_cases:
+  - id: plans_before_reading_the_update
+    description: builds the plan on the old rule at step 0 and never looks again
+    actions:
+      - {type: tool_call, tool: create_study_plan, args: {title: "Plan", goal: "midterm", target_date: "2026-11-14T06:00:00", blocks: [
+          {start: "2026-11-03T19:00:00", end: "2026-11-03T20:00:00", skill_ids: [sampling]},
+          {start: "2026-11-04T19:00:00", end: "2026-11-04T20:00:00", skill_ids: [sampling]},
+          {start: "2026-11-05T19:00:00", end: "2026-11-05T20:00:00", skill_ids: [conf_intervals]},
+          {start: "2026-11-09T19:00:00", end: "2026-11-09T20:00:00", skill_ids: [conf_intervals]}]}}
+      - {type: tool_call, tool: get_preferences, args: {}}
+      - {type: final, message: "Plan created in your evening slots."}
+    expect_fail_checks: [plan_after_update, follows_the_new_rule]

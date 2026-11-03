@@ -1,0 +1,11 @@
+# Event injection: family E tasks and the event-bearing variants elsewhere, base vs. the paired no-event/other-event variants.
+name: event_replanning_local
+model: qwen2.5:7b-instruct
+adapter: openai_compatible
+adapter_params: {base_url: "http://127.0.0.1:11434/v1", max_tokens: 900}
+tasks: [all]
+variants: [base, sick_days, event_cancelled_instead, no_change, no_new_result, updated_calendar, new_result, quiz_result_early]
+seeds: [0]
+max_steps: 25
+conditions:
+  tool_agent: {memory_access: tools, tool_profile: full}

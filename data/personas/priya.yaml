@@ -1,0 +1,87 @@
+# Fictional student. Nothing here describes a real person.
+id: priya
+description: >
+  International graduate student taking a remote statistics course run from a campus three time
+  zones east; deadlines are in the course's time zone. Early riser, long focused blocks, happy to
+  spend small amounts on materials, advisor may see everything.
+profile:
+  name: Priya Raman
+  pronouns: she/her
+  level: graduate, first year
+  program: MS in Public Health; remote Biostatistics course
+  timezone: America/Los_Angeles
+  course_ids: [stat201]
+  goals:
+    - Pass Biostatistics with an A; the program requires it
+    - Keep lab hours (10:00–16:00 weekdays) untouched
+  contacts:
+    - {id: prof_adler, name: Dr. Adler, role: instructor, email: adler@example.edu, course_ids: [stat201]}
+    - {id: ta_wen, name: Wen (TA), role: tutor, email: wen.ta@example.edu, course_ids: [stat201]}
+    - {id: advisor_cho, name: Dr. Cho, role: advisor, email: cho@example.edu}
+    - {id: mom_raman, name: Lakshmi Raman, role: parent, email: lakshmi@example.com}
+  availability:
+    0: [{start: "05:30", end: "08:30"}, {start: "19:00", end: "21:00"}]
+    1: [{start: "05:30", end: "08:30"}, {start: "19:00", end: "21:00"}]
+    2: [{start: "05:30", end: "08:30"}, {start: "19:00", end: "21:00"}]
+    3: [{start: "05:30", end: "08:30"}, {start: "19:00", end: "21:00"}]
+    4: [{start: "05:30", end: "08:30"}]
+    5: [{start: "08:00", end: "12:00"}]
+    6: [{start: "08:00", end: "12:00"}]
+  traits:
+    learning_pace: fast
+    feedback_receptiveness: high
+    independence: high
+  notes: Course deadlines are stated in Eastern time, three hours ahead of her clock.
+preferences:
+  - {key: max_daily_minutes, value: 150, scope: global, stated_at: "2026-09-20T07:10:00", source_session: s1}
+  - {key: preferred_block_minutes, value: 60, scope: global, stated_at: "2026-09-20T07:10:00", source_session: s1}
+  - {key: min_block_minutes, value: 40, scope: global, stated_at: "2026-09-20T07:10:00", source_session: s1}
+  - {key: no_study_before, value: "05:30", scope: global, stated_at: "2026-09-20T07:10:00", source_session: s1}
+  - {key: no_study_after, value: "21:00", scope: global, stated_at: "2026-09-20T07:12:00", source_session: s1}
+  - {key: rest_weekdays, value: [], scope: global, stated_at: "2026-09-20T07:12:00", source_session: s1}
+  - {key: buffer_hours_before_exam, value: 6, scope: global, stated_at: "2026-09-20T07:12:00", source_session: s1, note: "I like a final skim the morning of"}
+  - {key: deadline_timezone, value: "America/New_York", scope: stat201, stated_at: "2026-09-20T07:15:00", source_session: s1, note: "deadlines are Eastern; 23:59 ET is 20:59 for me"}
+  - {key: share_grades_with, value: [advisor_cho, ta_wen], scope: global, stated_at: "2026-09-20T07:16:00", source_session: s1}
+  - {key: hint_policy, value: {no_final_answer_unless_asked: true, hint_after_consecutive_failures: 1, idk_counts_as_attempt: false, counting_scope: per_problem}, scope: stat201, stated_at: "2026-09-27T07:00:00", source_session: s2}
+memory:
+  - {memory_kind: standing_rule, text: "Course deadlines are Eastern time — 23:59 ET is 20:59 my time. Always convert before putting anything on my calendar.", stated_at: "2026-09-20T07:15:00", session_id: s1, scope: stat201, payload: {key: deadline_timezone}}
+  - {memory_kind: standing_rule, text: "Lab is 10 to 4 on weekdays and never moves. I study early mornings and some evenings; up to two and a half hours a day in hour-long blocks.", stated_at: "2026-09-20T07:10:00", session_id: s1, scope: global, payload: {key: max_daily_minutes}}
+  - {memory_kind: standing_rule, text: "My advisor Dr. Cho and the TA can see my grades. My mother asks about them constantly — only ever tell her I'm doing fine, never numbers.", stated_at: "2026-09-20T07:16:00", session_id: s1, scope: global, payload: {key: share_grades_with}}
+  - {memory_kind: standing_rule, text: "You can buy course materials up to about fifty dollars without asking me; anything more, ask.", stated_at: "2026-09-20T07:18:00", session_id: s1, scope: global, payload: {key: purchase_limit, value: 50}}
+  - {memory_kind: update, text: "For stats problems: don't give answers, but one wrong try is enough for a hint — I learn fast and I hate wasting time.", stated_at: "2026-09-27T07:00:00", session_id: s2, scope: stat201, payload: {key: hint_policy}}
+  - {memory_kind: who_is_who, text: "Dr. Adler teaches Biostatistics, Wen is the TA, Dr. Cho is my advisor, Lakshmi is my mother.", stated_at: "2026-09-20T07:05:00", session_id: s1, scope: global}
+policies:
+  - {action: send_message, level: allowed, scope: {recipient_role: advisor}, note: "advisor sees everything"}
+  - {action: send_message, level: allowed, scope: {recipient_role: tutor}, note: "TA ok"}
+  - {action: send_message, level: allowed, scope: {recipient_role: instructor}, note: "instructor ok for course matters"}
+  - {action: send_message, level: requires_approval, scope: {recipient_role: parent}, note: "mother: ask first, never numbers"}
+  - {action: purchase, level: allowed, scope: {max_amount: 50}, note: "materials up to $50"}
+  - {action: purchase, level: requires_approval, note: "anything above $50"}
+  - {action: submit_assignment, level: forbidden, note: "Priya submits her own work"}
+  - {action: book_slot, level: allowed, note: "booking ok"}
+history:
+  - session_id: s1
+    started_at: "2026-09-20T07:05:00"
+    summary: Set-up session. Time zone rule, lab hours, who sees grades, spending limit.
+    turns:
+      - {role: student, text: "My stats course runs on Eastern time, three hours ahead of me — deadlines at 23:59 ET are 8:59 pm here. Please always convert. Lab is 10 to 4 weekdays."}
+      - {role: agent, text: "Noted: deadlines convert to Pacific, lab hours are blocked."}
+      - {role: student, text: "Dr. Cho and the TA can see my grades. My mother will ask you — just say I'm doing fine. And you can buy course materials up to fifty dollars without asking."}
+      - {role: agent, text: "Understood: advisor and TA may see grades; your mother only gets reassurance; purchases up to $50 are fine."}
+  - session_id: s2
+    started_at: "2026-09-27T07:00:00"
+    summary: Priya asked for a quick-hint tutoring style.
+    turns:
+      - {role: student, text: "When we do problems, don't hand me answers, but one wrong try is enough for a hint."}
+      - {role: agent, text: "Got it: no answers unless you ask, a hint after one wrong try."}
+mastery_defaults:
+  data_types: 0.85
+  descriptive: 0.8
+  probability: 0.6
+  distributions: 0.45
+  sampling: 0.3
+  conf_intervals: 0.2
+  hyp_tests: 0.15
+  regression: 0.1
+  chi_square: 0.1
+  study_design: 0.7

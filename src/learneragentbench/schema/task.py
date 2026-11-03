@@ -66,6 +66,7 @@ class VariantSpec(LABModel):
     checks_add: list[CheckSpec] = Field(default_factory=list)
     checks_remove: list[str] = Field(default_factory=list)
     paired_with: str = "base"
+    reference_path: list[RefStep] | None = Field(default=None, description="Replaces the task's reference path for this variant.")
 
 
 class ApprovalRule(LABModel):
@@ -91,6 +92,38 @@ class SimulatedUserSpec(LABModel):
     scripted_replies: list[str] = Field(default_factory=list, description="Consumed in order for ask_user before keyword rules (tutoring scripts).")
     default_clarification: str = "I'm not sure — use your best judgement based on what you know about me."
     default_approval: Literal["approve", "deny", "ignore"] = "deny"
+
+
+class RefStep(LABModel):
+    """One step of a task's declarative oracle path. ``action`` is one of
+    tool_call | ask_user | wait | final | plan_for (expanded by the oracle runtime into a
+    create_study_plan call built with PlanOracle for the named assessment)."""
+
+    action: Literal["tool_call", "ask_user", "wait", "final", "plan_for"]
+    tool: str | None = None
+    args: dict[str, Any] = Field(default_factory=dict)
+    message: str = ""
+    minutes: int = 60
+    only_if: Literal["always", "no_memory", "has_memory"] = "always"
+    assessment_id: str | None = None
+    target_knowledge: float | None = None
+    skill_ids: list[str] = Field(default_factory=list)
+    title: str = "Study plan"
+    goal: str = ""
+    update_existing: bool = False
+
+
+class NegativeCase(LABModel):
+    """A deliberately wrong agent behaviour and the checks it must fail (or the verdict it must get)."""
+
+    id: str
+    description: str
+    actions: list[dict[str, Any]]
+    expect_fail_checks: list[str] = Field(default_factory=list)
+    expect_task_success: bool = False
+    expect_authorization_violation: bool = False
+    expect_duplicate: bool = False
+    variant: str = "base"
 
 
 class RecordSeed(LABModel):
@@ -133,6 +166,8 @@ class TaskSpec(LABModel):
     seeds: list[int] = Field(default_factory=lambda: [0])
     max_steps: int = 40
     notes: str = ""
+    reference_path: list[RefStep] = Field(default_factory=list)
+    negative_cases: list[NegativeCase] = Field(default_factory=list)
 
     @model_validator(mode="after")
     def _unique_ids(self) -> TaskSpec:

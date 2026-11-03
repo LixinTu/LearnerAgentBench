@@ -1,0 +1,9 @@
+# Oracle reference row: every task and variant, no model. Proves satisfiability; never reported as a model result.
+name: oracle_reference
+model: oracle
+adapter: oracle
+tasks: [all]
+variants: [all]
+seeds: [0]
+conditions:
+  oracle: {memory_access: tools, tool_profile: full}

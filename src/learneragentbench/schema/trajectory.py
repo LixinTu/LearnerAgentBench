@@ -85,6 +85,7 @@ class Trajectory(LABModel):
     usage: ModelUsage = Field(default_factory=ModelUsage)
     errors: list[str] = Field(default_factory=list)
     env_errors: list[str] = Field(default_factory=list)
+    post_finish_events: list[str] = Field(default_factory=list)
 
     def tool_calls(self) -> list[ToolCall]:
         return [s.action.tool_call for s in self.steps if s.action.tool_call is not None]

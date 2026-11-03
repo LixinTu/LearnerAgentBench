@@ -71,6 +71,18 @@ class VerifyContext:
         info = self.world.store.kv_get(f"event_applied:{event_id}")
         return datetime.fromisoformat(info["at"]) if info else None
 
+    def event_step(self, event_id: str) -> int | None:
+        """Loop step at which the event was delivered (None for runs recorded before this was logged)."""
+        info = self.world.store.kv_get(f"event_applied:{event_id}")
+        return info.get("step") if info else None
+
+    def agent_writes(self, kind: str, rec_id: str, *, from_step: int | None = None) -> list[ToolCallRecord]:
+        """Successful tool calls of this run that wrote ``kind/rec_id`` (from the executor's touched
+        list), optionally only those at or after ``from_step``. This is how verifiers tell "the agent
+        changed it" from "it was already like that" or "an event changed it"."""
+        tag = f"{kind}/{rec_id}"
+        return [r for r in self.audit(ok=True) if tag in r.records_touched and (from_step is None or r.step >= from_step)]
+
 
 def result(check: CheckSpec, passed: bool | None, evidence: str = "", verifier_name: str = "") -> CheckResult:
     return CheckResult(check_id=check.id, passed=passed, evidence=evidence, weight=check.weight, hard=check.hard,

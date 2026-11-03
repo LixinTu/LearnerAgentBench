@@ -26,11 +26,13 @@ TASK_ID = "D01_midterm_plan_from_rules"
 class TestDataset:
     def test_index_and_loading(self) -> None:
         assert TASK_ID in DS.task_ids()
-        assert DS.task_ids([TaskFamily.D_MULTI_SESSION_PLANNING]) == [TASK_ID]
-        assert DS.task_ids([TaskFamily.F_AUTHORIZATION_SAFETY]) == ["F01_share_progress_with_the_right_people"]
-        assert DS.task_ids([TaskFamily.A_EXAM_PREP]) == ["A01_quadratics_quiz_short_blocks"]
-        # every family has at least one task
-        assert all(DS.task_ids([fam]) for fam in TaskFamily)
+        assert TASK_ID in DS.task_ids([TaskFamily.D_MULTI_SESSION_PLANNING])
+        assert "F01_share_progress_with_the_right_people" in DS.task_ids([TaskFamily.F_AUTHORIZATION_SAFETY])
+        assert "A01_quadratics_quiz_short_blocks" in DS.task_ids([TaskFamily.A_EXAM_PREP])
+        # every family has at least four tasks, and the index covers every task file on disk
+        assert all(len(DS.task_ids([fam])) >= 4 for fam in TaskFamily)
+        on_disk = sorted(p.stem for p in (DS.data_dir / "tasks").rglob("*.yaml"))
+        assert sorted(DS.task_ids()) == on_disk
         t = DS.load_task(TASK_ID)
         assert t.persona_id == "dana" and len(t.variants) == 5
         with pytest.raises(KeyError):
@@ -116,6 +118,16 @@ def _run(actions: list[Action], checks: list[CheckSpec], tmp_path, *, all_tools:
 
 
 class TestVerifiers:
+    def test_an_agent_that_never_finishes_fails_completion(self, tmp_path) -> None:
+        """``trajectory.completed`` is the only check a looping agent fails on its own: 25 reads
+        against a 20-step budget end in ``max_steps`` and the run is attributed to the agent."""
+        t = DS.load_task(TASK_ID)
+        verdict, _ = _run([Action.call("get_student_profile")] * 25, t.checks, tmp_path)
+        by_id = {c.check_id: c for c in verdict.checks}
+        assert by_id["finished"].passed is False and "max_steps" in by_id["finished"].evidence
+        assert verdict.task_success is False and verdict.failure_attribution == "agent"
+        assert "trajectory status: max_steps" in verdict.notes
+
     def test_verdict_for_a_do_nothing_agent(self, tmp_path) -> None:
         t = DS.load_task(TASK_ID)
         verdict, _ = _run([Action.final("I did nothing.")], t.checks, tmp_path)
@@ -203,3 +215,12 @@ def test_variant_spec_round_trip() -> None:
                     patch=StatePatch(tools_remove=["search_memory"]))
     assert VariantSpec.model_validate(v.model_dump(mode="json")) == v
     assert timedelta(days=1).days == 1
+
+
+def test_variant_simulated_user_patch_is_revalidated() -> None:
+    from learneragentbench.schema import ApprovalRule
+    t = DS.load_task("B03_follow_up_reimbursement")
+    eff = effective_task(t, resolve_variant(t, "approval_denied"))
+    assert eff.simulated_user.approval_rules and isinstance(eff.simulated_user.approval_rules[0], ApprovalRule)
+    assert eff.simulated_user.approval_rules[0].decision == "deny"
+    assert eff.simulated_user.clarifications == []

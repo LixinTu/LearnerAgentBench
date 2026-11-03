@@ -364,9 +364,11 @@ def _sync_plan_calendar(ctx: ToolContext, plan: StudyPlan) -> list[str]:
     for i, b in enumerate(plan.blocks):
         if b.activity == "rest":
             continue
+        label = {"mock_exam": "Mock exam", "flashcards": "Flashcards", "review": "Review", "read": "Reading",
+                 "office_hours": "Office hours"}.get(b.activity, "Study")
         e = CalendarEvent(id=new_id("cal", f"{plan.id}|{plan.version}|{i}"), created_at=world.now, updated_at=world.now,
-                          title=f"Study: {', '.join(b.skill_ids) or b.activity}", start=b.start, end=b.end,
-                          event_kind="study", created_by=Actor.AGENT, linked={"plan_id": plan.id, "block": i})
+                          title=f"{label}: {', '.join(b.skill_ids) or b.activity}", start=b.start, end=b.end,
+                          event_kind="study", created_by=Actor.AGENT, linked={"plan_id": plan.id, "block": i, "activity": b.activity})
         world.add(e)
         ids.append(e.id)
     return ids

@@ -1,0 +1,16 @@
+# Four systems from one model, every base task, one seed. Local Ollama; no cost.
+name: baselines_local
+model: qwen2.5:7b-instruct
+adapter: openai_compatible
+adapter_params: {base_url: "http://127.0.0.1:11434/v1", max_tokens: 900}
+tasks: [all]
+variants: [base]
+seeds: [0]
+max_steps: 25
+# Order matters for a resumable sweep: the two tool-enabled systems run first so the
+# first hours of GPU time produce acting-agent evidence; the two talk-only floors are fast.
+conditions:
+  tool_agent:       {memory_access: tools, tool_profile: full}
+  full_agent:       {memory_access: full,  tool_profile: full}
+  chatbot:          {memory_access: none,  tool_profile: none}
+  memory_assistant: {memory_access: full,  tool_profile: none}

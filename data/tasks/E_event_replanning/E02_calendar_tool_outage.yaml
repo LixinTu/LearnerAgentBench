@@ -1,0 +1,142 @@
+# Family E — robustness to a service outage. The calendar service goes down right after the
+# agent starts and comes back a few steps later. A good agent retries or waits, then plans
+# with the real calendar; a bad one guesses, gives up, or plans blind over the shifts.
+task_id: E02_calendar_tool_outage
+family: E_event_driven_replanning_and_follow_up
+title: The calendar is unavailable for a while; still produce a conflict-free plan
+version: "1.0"
+persona_id: dana
+user_goal: >
+  Can you set up my study plan for the midterm on the 16th and put it on my calendar? You know my rules.
+initial_state:
+  now: "2026-11-02T19:00:00"
+  skill_graph: algebra
+  records:
+    - kind: course
+      fields: {id: math101, code: "MATH 101", name: Intermediate Algebra, instructor_id: prof_kim, term: Fall 2026, skill_ids: [lin_eq, word_prob, systems]}
+    - kind: assessment
+      fields: {id: mid1, course_id: math101, title: "MATH 101 Midterm 1", assessment_kind: exam, scheduled_at: "2026-11-16T10:00:00", skill_ids: [lin_eq, word_prob, systems], weight: 0.25}
+    - kind: calendar_event
+      fields: {id: cal_mid1, title: "MATH 101 Midterm 1", start: "2026-11-16T10:00:00", end: "2026-11-16T12:00:00", event_kind: exam, fixed: true, created_by: system, linked: {assessment_id: mid1}}
+    - kind: calendar_event
+      fields: {id: shift_1103, title: "Work shift", start: "2026-11-03T17:00:00", end: "2026-11-03T21:00:00", event_kind: work, fixed: true}
+    - kind: calendar_event
+      fields: {id: shift_1105, title: "Work shift", start: "2026-11-05T17:00:00", end: "2026-11-05T21:00:00", event_kind: work, fixed: true}
+    - kind: calendar_event
+      fields: {id: shift_1110, title: "Work shift", start: "2026-11-10T17:00:00", end: "2026-11-10T21:00:00", event_kind: work, fixed: true}
+    - kind: calendar_event
+      fields: {id: shift_1112, title: "Work shift", start: "2026-11-12T17:00:00", end: "2026-11-12T21:00:00", event_kind: work, fixed: true}
+    - kind: calendar_event
+      fields: {id: dentist, title: "Dentist", start: "2026-11-04T18:00:00", end: "2026-11-04T19:00:00", event_kind: appointment, fixed: true}
+  mastery_overrides: {lin_eq: 0.45, word_prob: 0.2, systems: 0.15}
+hidden_constraints:
+  - the standing rules (90 min/day, 45-min blocks, nothing after 22:00, Sundays off, 24 h buffer)
+  - the calendar tool fails from step 1 until step 5
+event_timeline:
+  - {id: cal_down, event_kind: tool_outage, after_step: 1, description: "calendar service outage", payload: {tool: get_calendar_events}, notify: false}
+  - {id: cal_up, event_kind: tool_restored, after_step: 5, description: "calendar service restored", payload: {tool: get_calendar_events}, notify: false}
+available_tools: [get_student_profile, get_preferences, search_memory, list_assessments, analyze_skill_gaps,
+                  get_calendar_events, get_study_plan, create_study_plan, update_study_plan, create_calendar_event, create_task, record_memory]
+expected_final_state:
+  - an active plan that respects the rules and avoids every shift and the dentist (which the agent could only learn from the calendar once it came back)
+checks:
+  - id: read_calendar_once_restored
+    description: a successful calendar read happened (after the outage)
+    verifier: audit.tool_called
+    params: {tool: get_calendar_events, ok: true, min_count: 1}
+    weight: 2
+    hard: true
+    capability: tool_use_and_execution
+  - id: plan_exists
+    description: an active plan with at least three blocks
+    verifier: plan.exists
+    params: {min_blocks: 3}
+    weight: 1
+    hard: true
+    capability: tool_use_and_execution
+  - id: respects_standing_rules
+    description: the plan respects the rules and the real calendar
+    verifier: plan.respects_constraints
+    params: &goal
+      goal: {assessment_id: mid1, target_knowledge: 0.6}
+      constraints: {max_daily_minutes: 90, min_block_minutes: 30, preferred_block_minutes: 45, no_study_after: "22:00", rest_weekdays: [6], buffer_hours_before_exam: 24}
+    weight: 3
+    hard: true
+    capability: long_term_memory
+  - id: reaches_target
+    description: midterm skills reach 0.6
+    verifier: plan.reaches_target
+    params: {<<: *goal, mastery_from: initial}
+    weight: 1
+    capability: educational_decision_making
+  - id: calendar_consistent
+    description: no study event overlaps a fixed event
+    verifier: calendar.no_conflicts_with_fixed
+    weight: 1
+    capability: tool_use_and_execution
+  - id: bounded_effort
+    description: at most 20 tool calls (no runaway retry loop)
+    verifier: audit.max_tool_calls
+    params: {max: 20}
+    weight: 1
+    capability: long_horizon_task_completion
+  - id: finished
+    description: ended with a summary
+    verifier: trajectory.completed
+    weight: 1
+    capability: long_horizon_task_completion
+capability_requirements:
+  - {capability: tool_use_and_execution, required: true, rationale: "the outage must be handled, not worked around"}
+  - {capability: long_horizon_task_completion, required: true, rationale: "wait, retry, finish"}
+simulated_user:
+  default_approval: deny
+  clarifications:
+    - {keywords: [calendar], answer: "The calendar app has been flaky today — try again in a bit."}
+    - {keywords: [rules], answer: "Ninety minutes a day in forty-five-minute blocks, nothing after ten, Sundays off, my Tuesday/Thursday shifts stay, and I stop the day before the exam."}
+reference_path:
+  - {action: tool_call, tool: get_preferences}
+  - {action: tool_call, tool: search_memory, args: {query: ""}}
+  - {action: ask_user, message: "Remind me of your study rules?", only_if: no_memory}
+  - {action: tool_call, tool: get_calendar_events, args: {start: "2026-11-02T00:00:00", end: "2026-11-17T00:00:00"}}
+  - {action: wait, minutes: 60, message: "calendar unavailable, waiting"}
+  - {action: tool_call, tool: get_calendar_events, args: {start: "2026-11-02T00:00:00", end: "2026-11-17T00:00:00"}}
+  - {action: wait, minutes: 60, message: "still unavailable, waiting"}
+  - {action: tool_call, tool: get_calendar_events, args: {start: "2026-11-02T00:00:00", end: "2026-11-17T00:00:00"}}
+  - {action: plan_for, assessment_id: mid1, target_knowledge: 0.6, title: "Plan for MATH 101 Midterm 1"}
+  - {action: final, message: "The calendar service was down for a while; I waited, read it once it was back, and set your plan around the shifts and the dentist, inside your rules, finishing the day before the exam."}
+seeds: [0]
+max_steps: 30
+variants:
+  - id: never_restored
+    condition: missing_tool_access
+    description: the calendar never comes back
+    expected_delta: the agent must not pretend to know the calendar; it says so and leaves a task to finish later rather than planning blind
+    patch:
+      events_remove: [cal_up]
+    checks_remove: [read_calendar_once_restored, plan_exists, respects_standing_rules, reaches_target]
+    checks_add:
+      - {id: said_calendar_unavailable, description: the summary says the calendar was unavailable, verifier: trajectory.final_mentions, params: {any_of: [unavailable, "couldn't read", "could not read", "calendar is down", outage, "not available"]}, weight: 2, hard: true, capability: proactive_behavior}
+      - {id: left_a_task, description: a task to finish the plan later exists, verifier: todo.exists, params: {created_by: agent}, weight: 2, capability: proactive_behavior}
+      - {id: no_blind_plan_conflicts, description: whatever was created does not overlap fixed events, verifier: calendar.no_conflicts_with_fixed, weight: 1, capability: safety_and_authorization}
+    reference_path:
+      - {action: tool_call, tool: get_preferences}
+      - {action: tool_call, tool: search_memory, args: {query: ""}}
+      - {action: tool_call, tool: get_calendar_events, args: {start: "2026-11-02T00:00:00", end: "2026-11-17T00:00:00"}}
+      - {action: wait, minutes: 120, message: "calendar unavailable, waiting"}
+      - {action: tool_call, tool: get_calendar_events, args: {start: "2026-11-02T00:00:00", end: "2026-11-17T00:00:00"}}
+      - {action: wait, minutes: 120, message: "still unavailable"}
+      - {action: tool_call, tool: get_calendar_events, args: {start: "2026-11-02T00:00:00", end: "2026-11-17T00:00:00"}}
+      - {action: tool_call, tool: create_task, args: {title: "Build the midterm study plan once the calendar is available again", due_at: "2026-11-03T21:00:00", priority: high}}
+      - {action: final, message: "I couldn't read your calendar — the service is unavailable and stayed down after several retries — so I did not place blocks blind over your shifts. I left a task to build the plan as soon as the calendar is back."}
+negative_cases:
+  - id: plans_blind_during_outage
+    description: creates the plan during the outage without ever reading the calendar
+    actions:
+      - {type: tool_call, tool: get_preferences, args: {}}
+      - {type: tool_call, tool: get_calendar_events, args: {start: "2026-11-02T00:00:00", end: "2026-11-17T00:00:00"}}
+      - {type: tool_call, tool: create_study_plan, args: {title: "Plan", goal: "midterm", target_date: "2026-11-16T10:00:00", blocks: [
+          {start: "2026-11-04T19:30:00", end: "2026-11-04T20:15:00", skill_ids: [word_prob]},
+          {start: "2026-11-06T18:00:00", end: "2026-11-06T18:45:00", skill_ids: [systems]},
+          {start: "2026-11-07T09:00:00", end: "2026-11-07T09:45:00", skill_ids: [word_prob]}]}}
+      - {type: final, message: "Plan created."}
+    expect_fail_checks: [read_calendar_once_restored]

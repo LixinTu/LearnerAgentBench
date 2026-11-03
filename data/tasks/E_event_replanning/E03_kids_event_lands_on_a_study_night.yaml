@@ -1,0 +1,167 @@
+# Family E — a fixed personal event appears mid-session on a planned study evening. The agent
+# must move that evening's blocks (kids' events always win) without breaking the other rules.
+# The paired variant cancels a fixed event instead: freed time may be used, nothing must move.
+task_id: E03_kids_event_lands_on_a_study_night
+family: E_event_driven_replanning_and_follow_up
+title: A school play is added on a planned study night; move the blocks
+version: "1.0"
+persona_id: theo
+user_goal: >
+  Evening check-in: is this week's plan still fine? Keep it current for me.
+initial_state:
+  now: "2026-11-02T20:30:00"
+  skill_graph: statistics
+  records:
+    - kind: course
+      fields: {id: stat201, code: "STAT 201", name: Statistics for analysts, instructor_id: prof_adler, term: Fall 2026, skill_ids: [probability, distributions, sampling]}
+    - kind: assessment
+      fields: {id: quiz_dist, course_id: stat201, title: "Quiz: Distributions", assessment_kind: quiz, scheduled_at: "2026-11-12T20:30:00", skill_ids: [distributions], weight: 0.1}
+    - kind: calendar_event
+      fields: {id: cal_quiz, title: "Quiz: Distributions (online)", start: "2026-11-12T20:30:00", end: "2026-11-12T21:30:00", event_kind: exam, fixed: true, created_by: system, linked: {assessment_id: quiz_dist}}
+    - kind: calendar_event
+      fields: {id: recital, title: "Kids' recital", start: "2026-11-05T18:30:00", end: "2026-11-05T21:00:00", event_kind: personal, fixed: true}
+    - kind: study_plan
+      fields:
+        id: plan_week
+        title: "This week: distributions"
+        goal: "Ready for the distributions quiz"
+        target_date: "2026-11-12T20:30:00"
+        status: active
+        created_by: agent
+        blocks:
+          - {start: "2026-11-02T20:45:00", end: "2026-11-02T21:15:00", skill_ids: [distributions]}
+          - {start: "2026-11-03T20:30:00", end: "2026-11-03T21:00:00", skill_ids: [distributions]}
+          - {start: "2026-11-03T21:10:00", end: "2026-11-03T21:40:00", skill_ids: [distributions]}
+          - {start: "2026-11-04T20:30:00", end: "2026-11-04T21:00:00", skill_ids: [distributions]}
+          - {start: "2026-11-04T21:10:00", end: "2026-11-04T21:40:00", skill_ids: [probability]}
+          - {start: "2026-11-07T07:00:00", end: "2026-11-07T07:30:00", skill_ids: [distributions]}
+          - {start: "2026-11-07T07:40:00", end: "2026-11-07T08:10:00", skill_ids: [distributions]}
+          - {start: "2026-11-09T20:30:00", end: "2026-11-09T21:00:00", skill_ids: [distributions]}
+    - kind: calendar_event
+      fields: {id: stA, title: "Study: distributions", start: "2026-11-02T20:45:00", end: "2026-11-02T21:15:00", event_kind: study, created_by: agent, linked: {plan_id: plan_week, block: 0}}
+    - kind: calendar_event
+      fields: {id: stB, title: "Study: distributions", start: "2026-11-03T20:30:00", end: "2026-11-03T21:00:00", event_kind: study, created_by: agent, linked: {plan_id: plan_week, block: 1}}
+    - kind: calendar_event
+      fields: {id: stC, title: "Study: distributions", start: "2026-11-03T21:10:00", end: "2026-11-03T21:40:00", event_kind: study, created_by: agent, linked: {plan_id: plan_week, block: 2}}
+    - kind: calendar_event
+      fields: {id: stD, title: "Study: distributions", start: "2026-11-04T20:30:00", end: "2026-11-04T21:00:00", event_kind: study, created_by: agent, linked: {plan_id: plan_week, block: 3}}
+    - kind: calendar_event
+      fields: {id: stE, title: "Study: probability", start: "2026-11-04T21:10:00", end: "2026-11-04T21:40:00", event_kind: study, created_by: agent, linked: {plan_id: plan_week, block: 4}}
+    - kind: calendar_event
+      fields: {id: stF, title: "Study: distributions", start: "2026-11-07T07:00:00", end: "2026-11-07T07:30:00", event_kind: study, created_by: agent, linked: {plan_id: plan_week, block: 5}}
+    - kind: calendar_event
+      fields: {id: stG, title: "Study: distributions", start: "2026-11-07T07:40:00", end: "2026-11-07T08:10:00", event_kind: study, created_by: agent, linked: {plan_id: plan_week, block: 6}}
+    - kind: calendar_event
+      fields: {id: stH, title: "Study: distributions", start: "2026-11-09T20:30:00", end: "2026-11-09T21:00:00", event_kind: study, created_by: agent, linked: {plan_id: plan_week, block: 7}}
+  mastery_overrides: {probability: 0.55, distributions: 0.3}
+hidden_constraints:
+  - "kids' events always win (session s1); Theo's limits (60 min/day, 30-min blocks, 20:30–22:30, Saturday morning, Sundays off, 48 h buffer)"
+  - the school play is added to the calendar after the session starts
+event_timeline:
+  - id: school_play
+    event_kind: calendar_change
+    after_step: 1
+    description: "Mia added 'School play' to the family calendar"
+    payload: {op: add, event: {id: play, title: "School play (kids)", start: "2026-11-04T18:00:00", end: "2026-11-04T22:00:00", event_kind: personal, fixed: true}}
+available_tools: [get_student_profile, get_preferences, search_memory, list_assessments, analyze_skill_gaps,
+                  get_calendar_events, search_email, get_study_plan, create_study_plan, update_study_plan,
+                  create_calendar_event, update_calendar_event, delete_calendar_event, create_task, record_memory]
+expected_final_state:
+  - no study block or study calendar event during the school play (Nov 4 18:00–22:00); the plan still respects the rules; distributions still reaches 0.5 by the quiz
+checks:
+  - id: plan_changed_after_event
+    description: the active plan was written after the play was added
+    verifier: event.state_after
+    params: {event_id: school_play, kind: study_plan, where: {status: active}}
+    weight: 2
+    hard: true
+    capability: event_driven_replanning
+  - id: nothing_during_the_play
+    description: no block during the school play
+    verifier: plan.no_blocks_in_window
+    params: {start: "2026-11-04T18:00:00", end: "2026-11-04T22:00:00"}
+    weight: 3
+    hard: true
+    capability: event_driven_replanning
+  - id: calendar_consistent
+    description: no study event overlaps the play, the recital or the quiz
+    verifier: calendar.no_conflicts_with_fixed
+    weight: 2
+    capability: tool_use_and_execution
+  - id: still_respects_rules
+    description: the reworked plan respects Theo's rules against the quiz date
+    verifier: plan.respects_constraints
+    params: &goal
+      goal: {assessment_id: quiz_dist, target_knowledge: 0.5}
+      constraints: {max_daily_minutes: 60, min_block_minutes: 25, preferred_block_minutes: 30, no_study_after: "22:30", rest_weekdays: [6], buffer_hours_before_exam: 48}
+    weight: 3
+    hard: true
+    capability: long_term_memory
+  - id: still_reaches_target
+    description: distributions reaches 0.5 by the quiz
+    verifier: plan.reaches_target
+    params: {<<: *goal, mastery_from: initial}
+    weight: 1
+    capability: educational_decision_making
+  - id: summary_mentions_play
+    description: the summary mentions the play
+    verifier: trajectory.final_mentions
+    params: {any_of: [play, wednesday, "nov 4", moved]}
+    weight: 1
+    capability: proactive_behavior
+  - id: finished
+    description: ended with a summary
+    verifier: trajectory.completed
+    weight: 1
+    capability: long_horizon_task_completion
+capability_requirements:
+  - {capability: event_driven_replanning, required: true, rationale: the event arrives mid-session}
+  - {capability: long_term_memory, required: true, rationale: "the rule that kids' events win is a standing rule"}
+simulated_user:
+  default_approval: deny
+  clarifications:
+    - {keywords: [rules], answer: "Weeknights 8:30 to 10:30, Saturday mornings, an hour a day in half-hour chunks, Sundays off, two clear days before any exam, and the kids' events always win."}
+reference_path:
+  - {action: tool_call, tool: get_preferences}
+  - {action: tool_call, tool: search_memory, args: {query: ""}}
+  - {action: ask_user, message: "Remind me of your study rules?", only_if: no_memory}
+  - {action: tool_call, tool: search_email, args: {unread_only: true}}
+  - {action: tool_call, tool: get_calendar_events, args: {start: "2026-11-02T00:00:00", end: "2026-11-13T00:00:00"}}
+  - {action: plan_for, assessment_id: quiz_dist, skill_ids: [distributions], target_knowledge: 0.5, title: "This week: distributions (reworked)", goal: "Ready for the distributions quiz, around the school play"}
+  - {action: final, message: "Mia added the school play on Wednesday Nov 4 evening, which clashed with two study blocks — I moved them (kids' events win), kept everything inside your rules, and the plan still finishes two days before the quiz."}
+seeds: [0]
+max_steps: 25
+variants:
+  - id: no_memory
+    condition: no_memory
+    description: the rules are gone; the agent must ask
+    expected_delta: the agent asks about the rules
+    checks_add:
+      - {id: asked_about_rules, description: at least one question, verifier: trajectory.asked_user, weight: 1, capability: proactive_behavior}
+  - id: event_cancelled_instead
+    condition: updated_calendar_event
+    description: no play; instead the recital on Nov 5 is cancelled, freeing that evening
+    expected_delta: nothing needs to move; the plan may use Thursday evening; the checks about the play are replaced
+    patch:
+      events_remove: [school_play]
+      events_add:
+        - {id: recital_cancelled, event_kind: calendar_change, after_step: 1, description: "recital cancelled", payload: {op: cancel, id: recital}}
+    checks_remove: [plan_changed_after_event, nothing_during_the_play, summary_mentions_play]
+    checks_add:
+      - {id: reacted_to_cancellation, description: the plan was written after the cancellation (the freed evening is usable), verifier: event.state_after, params: {event_id: recital_cancelled, kind: study_plan, where: {status: active}}, weight: 1, capability: event_driven_replanning}
+      - {id: summary_mentions_recital, description: the summary mentions the freed evening, verifier: trajectory.final_mentions, params: {any_of: [recital, cancelled, canceled, thursday, "freed"]}, weight: 1, capability: proactive_behavior}
+    reference_path:
+      - {action: tool_call, tool: get_preferences}
+      - {action: tool_call, tool: search_memory, args: {query: ""}}
+      - {action: tool_call, tool: search_email, args: {unread_only: true}}
+      - {action: tool_call, tool: get_calendar_events, args: {start: "2026-11-02T00:00:00", end: "2026-11-13T00:00:00"}}
+      - {action: plan_for, assessment_id: quiz_dist, skill_ids: [distributions], target_knowledge: 0.5, title: "This week: distributions (recital cancelled)", goal: "Ready for the distributions quiz; Thursday evening is free again"}
+      - {action: final, message: "The kids' recital on Thursday was cancelled, which frees that evening; I refreshed the plan within your rules (it can use Thursday now) and it still finishes two days before the quiz."}
+negative_cases:
+  - id: ignores_the_play
+    description: confirms the plan is fine without reading inbox or calendar after the event
+    actions:
+      - {type: tool_call, tool: get_preferences, args: {}}
+      - {type: tool_call, tool: get_study_plan, args: {}}
+      - {type: final, message: "Your plan is fine, nothing to change."}
+    expect_fail_checks: [plan_changed_after_event, nothing_during_the_play, calendar_consistent]

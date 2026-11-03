@@ -1,0 +1,182 @@
+# Family E — a calendar event whose consequence is a *rule*, not just the slot it occupies. A
+# meet is added for Saturday Nov 7 mid-session; Jun's standing rule blocks the entire next day.
+# The active plan has Sunday blocks; they must move, and the mock-exam rule must survive.
+task_id: E05_meet_added_blocks_the_next_day
+family: E_event_driven_replanning_and_follow_up
+title: A meet appears mid-session; clear the day after it, keep the mock exam
+version: "1.0"
+persona_id: jun
+user_goal: >
+  Check my exam plan is still good for the week and keep it current.
+initial_state:
+  now: "2026-11-02T19:00:00"
+  skill_graph: statistics
+  records:
+    - kind: course
+      fields: {id: stat201, code: "STAT 201", name: Introductory Statistics, instructor_id: prof_adler, term: Fall 2026, skill_ids: [distributions, sampling, conf_intervals]}
+    - kind: assessment
+      fields: {id: exam2, course_id: stat201, title: "STAT 201 Exam 2", assessment_kind: exam, scheduled_at: "2026-11-13T08:00:00", skill_ids: [sampling, conf_intervals], weight: 0.3}
+    - kind: calendar_event
+      fields: {id: cal_exam2, title: "STAT 201 Exam 2", start: "2026-11-13T08:00:00", end: "2026-11-13T10:00:00", event_kind: exam, fixed: true, created_by: system, linked: {assessment_id: exam2}}
+    - kind: study_plan
+      fields:
+        id: plan_exam2
+        title: "Exam 2 prep"
+        goal: "Sampling and confidence intervals; mock on the 10th"
+        target_date: "2026-11-13T08:00:00"
+        status: active
+        created_by: agent
+        blocks:
+          - {start: "2026-11-03T06:00:00", end: "2026-11-03T06:50:00", skill_ids: [sampling]}
+          - {start: "2026-11-04T06:00:00", end: "2026-11-04T06:50:00", skill_ids: [conf_intervals]}
+          - {start: "2026-11-05T19:00:00", end: "2026-11-05T19:50:00", skill_ids: [sampling]}
+          - {start: "2026-11-06T06:00:00", end: "2026-11-06T06:50:00", skill_ids: [conf_intervals]}
+          - {start: "2026-11-08T09:00:00", end: "2026-11-08T09:50:00", skill_ids: [sampling]}
+          - {start: "2026-11-08T15:00:00", end: "2026-11-08T15:50:00", skill_ids: [conf_intervals]}
+          - {start: "2026-11-09T06:00:00", end: "2026-11-09T06:50:00", skill_ids: [sampling]}
+          - {start: "2026-11-10T19:00:00", end: "2026-11-10T20:00:00", skill_ids: [sampling, conf_intervals], activity: mock_exam}
+          - {start: "2026-11-11T06:00:00", end: "2026-11-11T06:50:00", skill_ids: [conf_intervals]}
+          - {start: "2026-11-12T06:00:00", end: "2026-11-12T06:50:00", skill_ids: [sampling]}
+    - kind: calendar_event
+      fields: {id: s1, title: "Study: sampling", start: "2026-11-03T06:00:00", end: "2026-11-03T06:50:00", event_kind: study, created_by: agent, linked: {plan_id: plan_exam2, block: 0}}
+    - kind: calendar_event
+      fields: {id: s2, title: "Study: conf_intervals", start: "2026-11-04T06:00:00", end: "2026-11-04T06:50:00", event_kind: study, created_by: agent, linked: {plan_id: plan_exam2, block: 1}}
+    - kind: calendar_event
+      fields: {id: s3, title: "Study: sampling", start: "2026-11-05T19:00:00", end: "2026-11-05T19:50:00", event_kind: study, created_by: agent, linked: {plan_id: plan_exam2, block: 2}}
+    - kind: calendar_event
+      fields: {id: s4, title: "Study: conf_intervals", start: "2026-11-06T06:00:00", end: "2026-11-06T06:50:00", event_kind: study, created_by: agent, linked: {plan_id: plan_exam2, block: 3}}
+    - kind: calendar_event
+      fields: {id: s5, title: "Study: sampling", start: "2026-11-08T09:00:00", end: "2026-11-08T09:50:00", event_kind: study, created_by: agent, linked: {plan_id: plan_exam2, block: 4}}
+    - kind: calendar_event
+      fields: {id: s6, title: "Study: conf_intervals", start: "2026-11-08T15:00:00", end: "2026-11-08T15:50:00", event_kind: study, created_by: agent, linked: {plan_id: plan_exam2, block: 5}}
+    - kind: calendar_event
+      fields: {id: s7, title: "Study: sampling", start: "2026-11-09T06:00:00", end: "2026-11-09T06:50:00", event_kind: study, created_by: agent, linked: {plan_id: plan_exam2, block: 6}}
+    - kind: calendar_event
+      fields: {id: s8, title: "Mock exam: STAT 201 Exam 2", start: "2026-11-10T19:00:00", end: "2026-11-10T20:00:00", event_kind: study, created_by: agent, linked: {plan_id: plan_exam2, block: 7}}
+    - kind: calendar_event
+      fields: {id: s9, title: "Study: conf_intervals", start: "2026-11-11T06:00:00", end: "2026-11-11T06:50:00", event_kind: study, created_by: agent, linked: {plan_id: plan_exam2, block: 8}}
+    - kind: calendar_event
+      fields: {id: s10, title: "Study: sampling", start: "2026-11-12T06:00:00", end: "2026-11-12T06:50:00", event_kind: study, created_by: agent, linked: {plan_id: plan_exam2, block: 9}}
+  mastery_overrides: {sampling: 0.4, conf_intervals: 0.3}
+hidden_constraints:
+  - "no study the day after a meet (session s1) — the meet added for Nov 7 blocks all of Nov 8"
+  - "one mock-exam block two or three days before the exam (session s1)"
+event_timeline:
+  - id: meet_added
+    event_kind: calendar_change
+    after_step: 1
+    description: "Coach posted a meet for Saturday"
+    payload: {op: add, event: {id: meet_1107, title: "Swim meet (home)", start: "2026-11-07T08:00:00", end: "2026-11-07T18:00:00", event_kind: personal, fixed: true}}
+available_tools: [get_student_profile, get_preferences, search_memory, list_assessments, analyze_skill_gaps,
+                  get_calendar_events, search_email, get_study_plan, create_study_plan, update_study_plan,
+                  create_calendar_event, update_calendar_event, delete_calendar_event, create_task, record_memory]
+expected_final_state:
+  - the active plan has no block on Nov 8; the Sunday minutes are moved elsewhere within the rules; the mock-exam block remains on Nov 10 or 11
+checks:
+  - id: plan_changed_after_event
+    description: the active plan was written after the meet was posted
+    verifier: event.state_after
+    params: {event_id: meet_added, kind: study_plan, where: {status: active}}
+    weight: 2
+    hard: true
+    capability: event_driven_replanning
+  - id: day_after_meet_cleared
+    description: no block on Sunday Nov 8
+    verifier: plan.no_blocks_in_window
+    params: {start: "2026-11-08T00:00:00", end: "2026-11-09T00:00:00", written_this_run: true}
+    weight: 3
+    hard: true
+    capability: long_term_memory
+  - id: mock_kept
+    description: a mock-exam block still exists on Nov 10 or 11
+    verifier: calendar.event_exists
+    params: {title_contains: "mock", start_after: "2026-11-10T00:00:00", start_before: "2026-11-11T23:59:00", min_count: 1}
+    weight: 2
+    capability: cross_session_consistency
+  - id: still_respects_rules
+    description: the reworked plan respects Jun's rules
+    verifier: plan.respects_constraints
+    params: &goal
+      goal: {assessment_id: exam2, target_knowledge: 0.55, include_prerequisites: false}
+      constraints: {max_daily_minutes: 100, min_block_minutes: 30, preferred_block_minutes: 50, no_study_before: "06:00", no_study_after: "21:00", rest_weekdays: [], buffer_hours_before_exam: 12}
+      written_this_run: true
+    weight: 3
+    hard: true
+    capability: long_term_memory
+  - id: still_reaches_target
+    description: the exam skills reach 0.55 despite the lost day
+    verifier: plan.reaches_target
+    params: {<<: *goal, mastery_from: initial}
+    weight: 1
+    capability: educational_decision_making
+  - id: calendar_consistent
+    description: no study event overlaps the meet or the exam
+    verifier: calendar.no_conflicts_with_fixed
+    weight: 1
+    capability: tool_use_and_execution
+  - id: summary_mentions_meet
+    description: the summary mentions the meet
+    verifier: trajectory.final_mentions
+    params: {any_of: [meet, saturday, "day after", sunday]}
+    weight: 1
+    capability: proactive_behavior
+  - id: finished
+    description: ended with a summary
+    verifier: trajectory.completed
+    weight: 1
+    capability: long_horizon_task_completion
+capability_requirements:
+  - {capability: event_driven_replanning, required: true, rationale: "the consequence of the new event is a blocked day, not a slot"}
+  - {capability: long_term_memory, required: true, rationale: "the day-after rule only lives in memory"}
+simulated_user:
+  default_approval: deny
+  clarifications:
+    - {keywords: [rules], answer: "Fifty-minute blocks, a hundred minutes a day, six to eight and evenings till nine, never the day after a meet, and a mock exam a couple of days before the real one."}
+reference_path:
+  - {action: tool_call, tool: get_preferences}
+  - {action: tool_call, tool: search_memory, args: {query: ""}}
+  - {action: ask_user, message: "Remind me of your routine — hours, blocks, meet rule, mock exam?", only_if: no_memory}
+  - {action: tool_call, tool: search_email, args: {unread_only: true}}
+  - {action: tool_call, tool: get_calendar_events, args: {start: "2026-11-02T00:00:00", end: "2026-11-14T00:00:00"}}
+  - {action: tool_call, tool: update_study_plan, args: {plan_id: plan_exam2, remove_block_indices: [4, 5], add_blocks: [
+      {start: "2026-11-06T07:00:00", end: "2026-11-06T07:50:00", skill_ids: [sampling]},
+      {start: "2026-11-09T19:00:00", end: "2026-11-09T19:50:00", skill_ids: [conf_intervals]},
+      {start: "2026-11-11T19:00:00", end: "2026-11-11T19:50:00", skill_ids: [sampling]}], rationale: "meet on Nov 7: Sunday cleared, minutes moved to Fri morning and Mon/Wed evenings"}}
+  - {action: final, message: "Coach posted a home meet for Saturday the 7th, so Sunday is now off (your day-after rule). I moved the two Sunday blocks to Friday morning and Monday and Wednesday evenings; the mock exam on Tuesday the 10th stays."}
+seeds: [0]
+max_steps: 25
+variants:
+  - id: no_memory
+    condition: no_memory
+    description: the day-after rule and the rest are gone; the agent must ask
+    expected_delta: the agent asks, then clears Sunday
+    checks_add:
+      - {id: asked_about_rules, description: at least one question, verifier: trajectory.asked_user, weight: 1, capability: proactive_behavior}
+  - id: meet_on_a_study_free_day
+    condition: updated_calendar_event
+    description: the meet lands on Friday Nov 6 instead, so Saturday Nov 7 is blocked and Sunday stays
+    expected_delta: Saturday must be cleared (there is nothing planned there anyway) and Sunday blocks may stay — a plan that leaves Sunday alone is correct
+    patch:
+      events_remove: [meet_added]
+      events_add:
+        - {id: meet_added_fri, event_kind: calendar_change, after_step: 1, description: "meet on Friday", payload: {op: add, event: {id: meet_1106, title: "Swim meet (away)", start: "2026-11-06T10:00:00", end: "2026-11-06T20:00:00", event_kind: personal, fixed: true}}}
+    checks_remove: [plan_changed_after_event, day_after_meet_cleared, summary_mentions_meet]
+    checks_add:
+      - {id: saturday_cleared, description: no block on Saturday Nov 7, verifier: plan.no_blocks_in_window, params: {start: "2026-11-07T00:00:00", end: "2026-11-08T00:00:00"}, weight: 3, hard: true, capability: long_term_memory}
+      - {id: friday_morning_block_moved, description: "no block overlaps the Friday meet (the 6am block before it may stay)", verifier: plan.no_blocks_in_window, params: {start: "2026-11-06T10:00:00", end: "2026-11-06T20:00:00"}, weight: 2, hard: true, capability: event_driven_replanning}
+    reference_path:
+      - {action: tool_call, tool: get_preferences}
+      - {action: tool_call, tool: search_memory, args: {query: ""}}
+      - {action: tool_call, tool: search_email, args: {unread_only: true}}
+      - {action: tool_call, tool: get_calendar_events, args: {start: "2026-11-02T00:00:00", end: "2026-11-14T00:00:00"}}
+      - {action: tool_call, tool: update_study_plan, args: {plan_id: plan_exam2, rationale: "meet on Friday: nothing planned Saturday; Friday morning block is before the meet, kept"}}
+      - {action: final, message: "The meet is Friday the 6th; Saturday is off by your rule and nothing was planned there, Friday's 6am block is before you leave, so the plan stands."}
+negative_cases:
+  - id: leaves_sunday_in_place
+    description: notices the meet but only adds a note; Sunday blocks stay
+    actions:
+      - {type: tool_call, tool: get_preferences, args: {}}
+      - {type: tool_call, tool: search_email, args: {unread_only: true}}
+      - {type: tool_call, tool: update_study_plan, args: {plan_id: plan_exam2, rationale: "meet noted"}}
+      - {type: final, message: "There's a meet Saturday; your plan is otherwise fine."}
+    expect_fail_checks: [day_after_meet_cleared]

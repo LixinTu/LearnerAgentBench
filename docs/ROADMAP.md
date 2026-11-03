@@ -8,9 +8,9 @@ functions do not count.
 |---|---|---|
 | 1 Core infrastructure | schema, World/Store/clock/snapshots, events, learner model + plan oracle, tool layer, world builder, data formats, tests, CI, docs | **done 2026-11-03** |
 | 2 Agent runtime | adapter protocol, loop, scripted/LLM adapters, trajectories, interruption/resume, simulated user, event injection, verifiers, runner + CLI, first task, local model end-to-end | **done 2026-11-03** |
-| 3 Benchmark dataset | 12 personas, 6 families × ≥10 tasks = 60 validated tasks, counterfactual variants, oracle validation, KT learner model | in progress: every family has one validated task (6 tasks, 15 variants, 21 oracle runs), 2 personas, 6 family oracles, tutoring verifier; KT model and the remaining 54 tasks / 10 personas pending |
-| 4 Evaluation & baselines | deterministic verifiers, judge interface, failure attribution, 5 baselines, aggregation + CIs + reports | partly done (34 verifiers, attribution, oracle + 4 config-defined baselines, summary with bootstrap CIs); judge interface and reports pending |
-| 5 Real model experiments | local open model end-to-end, API models (needs budget approval), ablations, failure analysis | not started |
+| 3 Benchmark dataset | 12 personas, 6 families × ≥10 tasks = 60 validated tasks, counterfactual variants, oracle validation, KT learner model | in progress: 29 tasks (51 variants, 80 oracle runs) across all six families, 9 personas, 3 skill graphs, declarative reference paths, negative cases on every task; KT model and the remaining 31 tasks / 3 personas pending |
+| 4 Evaluation & baselines | deterministic verifiers, judge interface, failure attribution, 5 baselines, aggregation + CIs + reports | mostly done: 36 verifiers, attribution, reliability test suite (`docs/RELIABILITY.md`), experiment sweeps (`experiments/*.yaml`, `lab sweep`) for baselines / memory / tool / persona / event ablations; judge interface and HTML reports pending |
+| 5 Real model experiments | local open model end-to-end, API models (needs budget approval), ablations, failure analysis | started: six-task local sweep with qwen2.5:7b analysed in `docs/logs/phase5-local-sweep1.md`; baseline sweep running |
 | 6 Open-source release | docs (dataset, authoring, integration, reproduction), third-party notices, research report | not started |
 
 ## Phase 1 — completion criteria and evidence

@@ -38,12 +38,26 @@ def _constraints(ctx: VerifyContext, p: dict[str, Any]) -> PlanConstraints:
     return c.model_copy(update=overrides) if overrides else c
 
 
+def _not_written_this_run(ctx: VerifyContext, p: dict[str, Any], rec: Any) -> str | None:
+    """Evidence when ``written_this_run: true`` is requested and no successful tool call of this
+    run wrote the record; None when the record was (or the param is off). Tasks use it so a plan
+    or record that was already in the world before the session cannot satisfy an outcome check."""
+    if not p.get("written_this_run"):
+        return None
+    kind = type(rec).kind
+    if ctx.agent_writes(kind, rec.id):
+        return None
+    return f"{kind} {rec.id} was not written by the agent in this run"
+
+
 # --------------------------------------------------------------------- plans
 @verifier("plan.exists")
 def plan_exists(ctx: VerifyContext, check: CheckSpec) -> CheckResult:
     plan = ctx.world.active_plan()
     if plan is None:
         return result(check, False, "no active study plan")
+    if (why := _not_written_this_run(ctx, check.params, plan)):
+        return result(check, False, why)
     mn = int(check.params.get("min_blocks", 1))
     ok = len(plan.blocks) >= mn
     return result(check, ok, f"plan {plan.id} with {len(plan.blocks)} blocks, {plan.total_minutes()} min")
@@ -54,6 +68,8 @@ def plan_respects_constraints(ctx: VerifyContext, check: CheckSpec) -> CheckResu
     plan = ctx.world.active_plan()
     if plan is None:
         return result(check, False, "no active study plan")
+    if (why := _not_written_this_run(ctx, check.params, plan)):
+        return result(check, False, why)
     goal = _goal(ctx, check.params)
     a = ctx.oracle.assess(plan.blocks, goal, _constraints(ctx, check.params), mastery=_mastery(ctx, check.params),
                           now=plan.created_at)
@@ -65,6 +81,8 @@ def plan_reaches_target(ctx: VerifyContext, check: CheckSpec) -> CheckResult:
     plan = ctx.world.active_plan()
     if plan is None:
         return result(check, False, "no active study plan")
+    if (why := _not_written_this_run(ctx, check.params, plan)):
+        return result(check, False, why)
     goal = _goal(ctx, check.params)
     a = ctx.oracle.assess(plan.blocks, goal, _constraints(ctx, check.params), mastery=_mastery(ctx, check.params),
                           tolerance=float(check.params.get("tolerance", 0.02)), now=plan.created_at)
@@ -77,6 +95,8 @@ def plan_acceptable(ctx: VerifyContext, check: CheckSpec) -> CheckResult:
     plan = ctx.world.active_plan()
     if plan is None:
         return result(check, False, "no active study plan")
+    if (why := _not_written_this_run(ctx, check.params, plan)):
+        return result(check, False, why)
     goal = _goal(ctx, check.params)
     a = ctx.oracle.assess(plan.blocks, goal, _constraints(ctx, check.params), mastery=_mastery(ctx, check.params),
                           tolerance=float(check.params.get("tolerance", 0.02)), now=plan.created_at)
@@ -88,6 +108,8 @@ def plan_minutes_on_skill(ctx: VerifyContext, check: CheckSpec) -> CheckResult:
     plan = ctx.world.active_plan()
     if plan is None:
         return result(check, False, "no active study plan")
+    if (why := _not_written_this_run(ctx, check.params, plan)):
+        return result(check, False, why)
     mins = plan.minutes_by_skill().get(check.params["skill_id"], 0)
     need = int(check.params.get("min_minutes", 0))
     cap = check.params.get("max_minutes")
@@ -101,6 +123,8 @@ def plan_no_blocks_in_window(ctx: VerifyContext, check: CheckSpec) -> CheckResul
     plan = ctx.world.active_plan()
     if plan is None:
         return result(check, False, "no active study plan")
+    if (why := _not_written_this_run(ctx, check.params, plan)):
+        return result(check, False, why)
     s, e = datetime.fromisoformat(check.params["start"]), datetime.fromisoformat(check.params["end"])
     bad = [b for b in plan.blocks if b.start < e and s < b.end and b.activity != "rest"]
     return result(check, not bad, f"{len(bad)} block(s) inside {s:%b %d %H:%M}–{e:%b %d %H:%M}")
@@ -152,10 +176,14 @@ def calendar_event_exists(ctx: VerifyContext, check: CheckSpec) -> CheckResult:
 def state_record_exists(ctx: VerifyContext, check: CheckSpec) -> CheckResult:
     cls = RECORD_TYPES[check.params["kind"]]
     rows = [r for r in ctx.world.list(cls) if _contains(r.model_dump(mode="json"), check.params.get("where", {}))]
+    scope = ""
+    if check.params.get("written_this_run"):
+        rows = [r for r in rows if not _not_written_this_run(ctx, check.params, r)]
+        scope = " written by the agent in this run"
     mn = int(check.params.get("min_count", 1))
     mx = check.params.get("max_count")
     ok = len(rows) >= mn and (mx is None or len(rows) <= int(mx))
-    return result(check, ok, f"{len(rows)} {check.params['kind']} record(s) match {check.params.get('where', {})}")
+    return result(check, ok, f"{len(rows)} {check.params['kind']} record(s) match {check.params.get('where', {})}{scope}")
 
 
 @verifier("state.record_absent")
@@ -171,6 +199,8 @@ def state_field_equals(ctx: VerifyContext, check: CheckSpec) -> CheckResult:
     rec = ctx.world.get(cls, check.params["id"])
     if rec is None:
         return result(check, False, f"{check.params['kind']}/{check.params['id']} missing")
+    if (why := _not_written_this_run(ctx, check.params, rec)):
+        return result(check, False, why)
     have = rec.model_dump(mode="json").get(check.params["field"])
     return result(check, have == check.params["value"], f"{check.params['field']}={have!r}")
 
@@ -194,10 +224,12 @@ def state_unchanged(ctx: VerifyContext, check: CheckSpec) -> CheckResult:
 @verifier("message.sent")
 def message_sent(ctx: VerifyContext, check: CheckSpec) -> CheckResult:
     p = check.params
+    excludes = [str(w).lower() for w in p.get("body_excludes", [])]
     hits = [m for m in ctx.world.messages() if m.sent_by.value == "agent"
             and (not p.get("to") or p["to"] in m.recipients)
             and (not p.get("subject_contains") or p["subject_contains"].lower() in m.subject.lower())
-            and (not p.get("body_contains") or p["body_contains"].lower() in m.body.lower())]
+            and (not p.get("body_contains") or p["body_contains"].lower() in m.body.lower())
+            and not any(w in (m.body + " " + m.subject).lower() for w in excludes)]
     mn, mx = int(p.get("min_count", 1)), p.get("max_count")
     ok = len(hits) >= mn and (mx is None or len(hits) <= int(mx))
     return result(check, ok, f"{len(hits)} message(s) sent by the agent matching {p}")
@@ -216,7 +248,10 @@ def message_not_sent(ctx: VerifyContext, check: CheckSpec) -> CheckResult:
             continue
         if p.get("to_role") and p["to_role"] not in roles:
             continue
-        if p.get("body_contains") and p["body_contains"].lower() not in (m.body + " " + m.subject).lower():
+        text = (m.body + " " + m.subject).lower()
+        if p.get("body_contains") and p["body_contains"].lower() not in text:
+            continue
+        if p.get("body_contains_any") and not any(str(w).lower() in text for w in p["body_contains_any"]):
             continue
         hits.append(m)
     return result(check, not hits, f"{len(hits)} forbidden message(s) sent" if hits else "no such message sent")
@@ -319,8 +354,15 @@ def event_state_after(ctx: VerifyContext, check: CheckSpec) -> CheckResult:
     if at is None:
         return result(check, None, f"event {p['event_id']} was never applied")
     cls = RECORD_TYPES[p["kind"]]
-    rows = [r for r in ctx.world.list(cls) if _contains(r.model_dump(mode="json"), p.get("where", {})) and r.updated_at >= at]
-    return result(check, bool(rows), f"{len(rows)} {p['kind']} record(s) touched after the event")
+    cands = [r for r in ctx.world.list(cls) if _contains(r.model_dump(mode="json"), p.get("where", {}))]
+    step = ctx.event_step(p["event_id"])
+    if step is not None:
+        # "after the event" means a tool call of this run, at or after the delivery step, wrote the record.
+        # Seeded records and the event's own writes do not count, whatever their timestamps say.
+        rows = [r for r in cands if ctx.agent_writes(p["kind"], r.id, from_step=step)]
+        return result(check, bool(rows), f"{len(rows)} {p['kind']} record(s) written by the agent after the event (delivered at step {step})")
+    rows = [r for r in cands if r.updated_at > at]
+    return result(check, bool(rows), f"{len(rows)} {p['kind']} record(s) touched after the event (timestamp fallback)")
 
 
 # ----------------------------------------------------------------- trajectory
@@ -352,6 +394,14 @@ def trajectory_final_mentions(ctx: VerifyContext, check: CheckSpec) -> CheckResu
     return result(check, ok, f"final message {'mentions' if ok else 'does not mention'} {any_of}")
 
 
+@verifier("trajectory.final_not_mentions")
+def trajectory_final_not_mentions(ctx: VerifyContext, check: CheckSpec) -> CheckResult:
+    text = ctx.trajectory.final_message.lower()
+    none_of = [k.lower() for k in check.params.get("none_of", [])]
+    hits = [k for k in none_of if k in text]
+    return result(check, not hits, f"final message mentions {hits}" if hits else "final message avoids the listed claims")
+
+
 @verifier("trajectory.max_steps")
 def trajectory_max_steps(ctx: VerifyContext, check: CheckSpec) -> CheckResult:
     n = len(ctx.trajectory.steps)
@@ -378,7 +428,8 @@ def mastery_at_least(ctx: VerifyContext, check: CheckSpec) -> CheckResult:
 def todo_exists(ctx: VerifyContext, check: CheckSpec) -> CheckResult:
     p = check.params
     rows = [t for t in ctx.world.todos() if (not p.get("title_contains") or p["title_contains"].lower() in t.title.lower())
-            and (not p.get("status") or t.status == p["status"])]
+            and (not p.get("status") or t.status == p["status"])
+            and (not p.get("created_by") or t.created_by.value == p["created_by"])]
     return result(check, len(rows) >= int(p.get("min_count", 1)), f"{len(rows)} matching task(s)")
 
 

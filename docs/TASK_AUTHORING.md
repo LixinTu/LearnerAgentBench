@@ -37,6 +37,20 @@ A task is one YAML file under `data/tasks/<family>/<task_id>.yaml` validated by
 5. **The oracle must pass every variant.** `lab validate --oracle` proves the conditions are
    jointly satisfiable. If the oracle cannot pass, the task is miscalibrated, not the agents.
 6. **Capability tags** on checks drive the per-capability scores; tag every check.
+7. **State that predates the session must not pass an outcome check.** Worlds are seeded with
+   last week's plans, tasks and messages. Any `plan.*`, `state.record_exists` or
+   `state.field_equals` check that is about *this session's* work carries
+   `written_this_run: true`: it then passes only for a record that a successful tool call of this
+   run wrote (the executor's touched-record list), never for a seeded record.
+   `event.state_after` likewise counts only agent writes at or after the step the event was
+   delivered (events are stamped with that step), so neither seeded records nor the event's own
+   writes satisfy it.
+8. **Talk is worth nothing.** The positive outcome checks of a task must carry more than half of
+   its weight; "absence" checks (`auth.not_executed`, `message.not_sent`, `auth.no_forbidden_attempts`)
+   pass vacuously for an agent that does nothing, so keep them light or fold them into a positive
+   check (`message.sent` with `body_excludes: [...]`). `tests/e2e/test_negative_cases.py` enforces
+   this on every task: a do-nothing agent must fail a hard check and an agent that only claims
+   success must score ≤ 50 %.
 
 ## Verifiers
 
@@ -48,6 +62,14 @@ max_tool_calls), `auth.*` (no_forbidden_attempts, approval_obtained, not_execute
 requested_approval), `event.*` (responded_with_tool, state_after), `trajectory.*`,
 `progress.recorded`, `mastery.at_least`, `todo.exists`, `preference.recorded`.
 Add new ones in `verify/builtin.py` with `@verifier("family.name")`.
+
+Parameters worth knowing: `written_this_run: true` (plan.*, state.record_exists,
+state.field_equals — see design rule 7); `message.sent` takes `to`, `subject_contains`,
+`body_contains`, `body_excludes: [...]`, `min_count`, `max_count`; `message.not_sent` takes `to`,
+`to_role`, `body_contains` or `body_contains_any: [...]`; `plan.respects_constraints` accepts every
+`PlanConstraints` field under `constraints` (`max_daily_minutes`, `min_block_minutes`,
+`preferred_block_minutes`, `max_block_minutes`, `min_gap_minutes`, `max_skills_per_block`,
+`no_study_before`, `no_study_after`, `rest_weekdays`, `buffer_hours_before_exam`).
 
 ## Counterfactual variants
 

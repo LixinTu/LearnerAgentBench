@@ -61,7 +61,7 @@ checks:
     verifier: plan.respects_constraints
     params: &goal
       goal: {assessment_id: quiz_quad, target_knowledge: 0.5}
-      constraints: {max_daily_minutes: 60, min_block_minutes: 20, preferred_block_minutes: 30, no_study_after: "21:00", rest_weekdays: [], buffer_hours_before_exam: 12, max_skills_per_block: 1}
+      constraints: {max_daily_minutes: 60, min_block_minutes: 20, preferred_block_minutes: 30, no_study_before: "06:30", no_study_after: "21:00", rest_weekdays: [], buffer_hours_before_exam: 12, max_skills_per_block: 1}
     weight: 3
     hard: true
     capability: long_term_memory
@@ -148,3 +148,16 @@ variants:
         params: {<<: *goald, mastery_from: initial}
         weight: 2
         capability: educational_decision_making
+
+negative_cases:
+  - id: long_blocks_over_practice
+    description: 90-minute blocks, one over practice, and quadratics only (no prerequisite time)
+    actions:
+      - {type: tool_call, tool: get_preferences, args: {}}
+      - {type: tool_call, tool: create_study_plan, args: {title: "Quiz plan", goal: "quadratics", target_date: "2026-11-13T09:00:00", blocks: [
+          {start: "2026-11-04T16:30:00", end: "2026-11-04T18:00:00", skill_ids: [quadratics]},
+          {start: "2026-11-05T19:30:00", end: "2026-11-05T21:00:00", skill_ids: [quadratics]},
+          {start: "2026-11-10T19:30:00", end: "2026-11-10T21:00:00", skill_ids: [quadratics]},
+          {start: "2026-11-11T19:30:00", end: "2026-11-11T21:00:00", skill_ids: [quadratics]}]}}
+      - {type: final, message: "Plan ready."}
+    expect_fail_checks: [respects_marcus_rules, prerequisites_first]

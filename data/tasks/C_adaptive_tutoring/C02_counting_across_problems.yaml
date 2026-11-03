@@ -1,0 +1,206 @@
+# Family C — the scope of counting. Dana's rule counts attempts per problem and keeps counting
+# when she returns to a problem later. The script interleaves two problems: P1 wrong, P2 wrong,
+# back to P1 wrong again (second failure on P1 → hint due now), P1 solved, P2 second failure
+# (hint due), P2 solved, then an explicit request on P3. A tutor that resets the count on every
+# switch gives the P1 hint too late; one that counts globally gives it too early.
+task_id: C02_counting_across_problems
+family: C_adaptive_tutoring_and_intervention
+title: Keep the attempt count per problem while the student switches between problems
+version: "1.0"
+persona_id: dana
+user_goal: >
+  Two problems tonight. First: "A climbing gym charges a $25 sign-up fee plus $15 per month. Maya
+  has paid $130 in total so far. For how many months has she been a member?" My try: 130 ÷ 15 is
+  about 8.67, so 8 months?
+initial_state:
+  now: "2026-11-02T20:00:00"
+  skill_graph: algebra
+  records:
+    - kind: course
+      fields: {id: math101, code: "MATH 101", name: Intermediate Algebra, instructor_id: prof_kim, term: Fall 2026, skill_ids: [lin_eq, word_prob]}
+  mastery_overrides: {word_prob: 0.3}
+hidden_constraints:
+  - no final answer unless asked; a step-level hint after two consecutive failed attempts; attempts count per problem and carry over when the student returns to a problem (session s2)
+available_tools: [get_preferences, search_memory, get_student_profile, record_learning_progress, record_memory]
+expected_final_state:
+  - the hint for P1 arrives exactly at the student's second P1 attempt (after the detour to P2), the hint for P2 at its second attempt; no final answers before the student solves them; the taxi solution on request
+checks:
+  - id: every_line_answered
+    description: the tutor replied to every student line
+    verifier: tutoring.hint_policy
+    params: &tut
+      aspect: turn_count
+      policy: {hint_after_failures: 2, idk_counts_as_attempt: false, no_answer_unless_asked: true, show_answer_after_failures: null}
+      problems:
+        P1:
+          answer: ['\b7\s*(?:months?|mo)\b', '\bseven\s+months?\b', '\b[a-z]\s*=\s*7\b', '(?:\bis|\bbe|\bequals|=)\s*7\b', '\banswer(?:\s+is|:)?\s*7\b']
+          intermediate: ['\b105\b']
+          procedural: ['(?:subtract|minus|take\s+(?:off|away|out)|remove|deduct)[^.\n]{0,40}\b(?:\$?25|fee|sign-?up)', '\b(?:\$?25|fee|sign-?up)\b[^.\n]{0,40}\b(?:subtract|minus|take\s+(?:it\s+)?(?:off|away|out)|removed?|deducted?|off\s+the\s+total|from\s+the\s+total)', '130\s*(?:-|−|–|minus)\s*\$?\s*25', '\b105\b']
+          conceptual: ['\bone-?time\b', '\b(?:only\s+)?once\b', '\bsign-?up\s+fee\b', '\b\$?25\b']
+          steps: ['130\s*(?:-|−|–|minus)\s*\$?\s*25', '\b105\b']
+        P2:
+          answer: ['\b120\s*(?:texts?|text\s+messages?|messages?|sms)\b', '\b[a-z]\s*=\s*120\b', '(?:\bis|\bbe|\bequals|=)\s*120\b', '\banswer(?:\s+is|:)?\s*120\b']
+          intermediate: ['\b12\b']
+          procedural: ['(?:subtract|minus|take\s+(?:off|away|out)|remove|deduct)[^.\n]{0,40}\b(?:\$?40|monthly|base|fixed|flat)', '52\s*(?:-|−|–|minus)\s*\$?\s*40', '\b12\b', '\bdivid(?:e|ing)[^.\n]{0,40}(?:0?\.10?\b|10\s*cents|per[- ]text|rate)', '(?:÷|/|divided\s+by)\s*\$?\s*0?\.10?\b']
+          conceptual: ['\bflat\b', '\bfixed\b', '\bper\s+text\b', '\b\$?40\b', '\bevery\s+month\b']
+          steps: ['52\s*(?:-|−|–|minus)\s*\$?\s*40', '\b12\b']
+        P3:
+          answer: ['\b8\s*miles?\b', '\beight\s+miles?\b', '(?:\bis|\bbe|\bequals|=)\s*8\b']
+          intermediate: ['\b18\b']
+          procedural: []
+          conceptual: []
+          steps: ['21\.50?\s*(?:-|−|–|minus)\s*\$?\s*3\.50?', '\b18\b', '(?:÷|/|divided\s+by)\s*\$?\s*2\.25']
+      script:
+        - {id: P1-A1, kind: attempt, problem: P1}
+        - {id: P2-A1, kind: attempt, problem: P2}
+        - {id: P1-A2, kind: attempt, problem: P1}
+        - {id: P1-OK, kind: correct, problem: P1}
+        - {id: P2-A2, kind: attempt, problem: P2}
+        - {id: P2-OK, kind: correct, problem: P2}
+        - {id: P3-FULL, kind: explicit_request, problem: P3}
+      reference_replies:
+        - "Not quite. Before dividing by 15, look at the $25 — is that charged every month?"
+        - "Sure, let's look at the second one. 520 would mean the whole $52 went to texts — what does the $40 part of the plan cover?"
+        - "That's your second go at the gym problem, so here's the step: the $25 sign-up fee was paid once and is already inside the $130, so take it off the total first — 130 minus 25 — then divide by 15."
+        - "Exactly right — 7 months. Nice work."
+        - "Second try on the phone one: the $40 is the flat monthly part, so 52 − 40 = 12 went to texts — and each text is $0.10, so divide 12 by 0.10 rather than multiplying."
+        - "Correct — 120 texts."
+        - "Here's the full solution, as you asked: the $3.50 is a fixed charge, so 21.50 − 3.50 = 18 is the distance part; each mile is $2.25, so 18 ÷ 2.25 = 8. The ride was 8 miles."
+    weight: 1
+    hard: true
+    capability: long_horizon_task_completion
+  - id: no_early_answer
+    description: no final answer before the student solves it
+    verifier: tutoring.hint_policy
+    params: {<<: *tut, aspect: answer_leak}
+    weight: 3
+    hard: true
+    capability: long_term_memory
+  - id: hint_when_due
+    description: step-level hints at the second attempt of each problem (P1-A2 after the detour, P2-A2)
+    verifier: tutoring.hint_policy
+    params: {<<: *tut, aspect: hint_due}
+    weight: 3
+    capability: cross_session_consistency
+  - id: no_premature_hint
+    description: no step-level hint at P1-A1 or P2-A1 (first attempt of each problem)
+    verifier: tutoring.hint_policy
+    params: {<<: *tut, aspect: hint_early}
+    weight: 2
+    capability: educational_decision_making
+  - id: confirms_correct
+    description: correct answers confirmed
+    verifier: tutoring.hint_policy
+    params: {<<: *tut, aspect: confirmation}
+    weight: 1
+    capability: educational_decision_making
+  - id: full_solution_on_request
+    description: the taxi solution is given with steps when asked
+    verifier: tutoring.hint_policy
+    params: {<<: *tut, aspect: explicit_request}
+    weight: 2
+    hard: true
+    capability: long_term_memory
+  - id: read_the_policy
+    description: the hint policy was read
+    verifier: audit.tool_called
+    params: {tool: get_preferences, min_count: 1}
+    weight: 1
+    capability: cross_session_consistency
+capability_requirements:
+  - {capability: cross_session_consistency, required: true, rationale: per-problem counting across a detour}
+  - {capability: long_term_memory, required: true, rationale: the policy is from earlier sessions}
+simulated_user:
+  default_approval: deny
+  scripted_replies:
+    - "Hmm, let me try the second one first and come back. \"A phone plan costs $40 per month plus $0.10 per text message. Last month's bill was $52. How many text messages were sent?\" My try: 52 ÷ 0.10 = 520 texts?"
+    - "Back to the gym one. Second try: maybe add the fee: (130 + 25) ÷ 15 is about 10.33, so 10 months?"
+    - "Oh — subtract it. 130 − 25 = 105, and 105 ÷ 15 = 7. So 7 months."
+    - "Phone one again: I subtract the 40 and get 12, then 12 × 0.10 = 1.2 texts? That can't be right."
+    - "Divide, not multiply: 12 ÷ 0.10 = 120. So 120 texts."
+    - "Last one, out of time — just show me the full solution: \"A taxi ride costs $3.50 plus $2.25 per mile. The fare was $21.50. How many miles was the ride?\""
+seeds: [0]
+max_steps: 24
+variants:
+  - id: quick_hint_student
+    condition: different_persona
+    description: Priya's rule is a hint after ONE wrong try — the same script now expects hints at P1-A1 and P2-A1
+    expected_delta: what was premature for Dana is required for Priya
+    patch:
+      persona_id: priya
+      records_update:
+        - {kind: course, id: math101, fields: {code: "STAT 201", name: Biostatistics (remote), instructor_id: prof_adler}}
+    checks_remove: [every_line_answered, no_early_answer, hint_when_due, no_premature_hint, confirms_correct, full_solution_on_request]
+    checks_add:
+      - id: every_line_answered_p
+        description: the tutor replied to every student line
+        verifier: tutoring.hint_policy
+        params: &tutp
+          aspect: turn_count
+          policy: {hint_after_failures: 1, idk_counts_as_attempt: false, no_answer_unless_asked: true, show_answer_after_failures: null}
+          problems:
+            P1:
+              answer: ['\b7\s*(?:months?|mo)\b', '\bseven\s+months?\b', '(?:\bis|\bbe|\bequals|=)\s*7\b', '\banswer(?:\s+is|:)?\s*7\b']
+              intermediate: ['\b105\b']
+              procedural: ['(?:subtract|minus|take\s+(?:off|away|out)|remove|deduct)[^.\n]{0,40}\b(?:\$?25|fee|sign-?up)', '130\s*(?:-|−|–|minus)\s*\$?\s*25', '\b105\b']
+              conceptual: ['\bsign-?up\s+fee\b', '\b\$?25\b']
+              steps: ['130\s*(?:-|−|–|minus)\s*\$?\s*25', '\b105\b']
+            P2:
+              answer: ['\b120\s*(?:texts?|text\s+messages?|messages?|sms)\b', '(?:\bis|\bbe|\bequals|=)\s*120\b']
+              intermediate: ['\b12\b']
+              procedural: ['(?:subtract|minus|take\s+(?:off|away|out)|remove|deduct)[^.\n]{0,40}\b(?:\$?40|monthly|base|fixed|flat)', '52\s*(?:-|−|–|minus)\s*\$?\s*40', '\b12\b', '\bdivid(?:e|ing)[^.\n]{0,40}(?:0?\.10?\b|per[- ]text)']
+              conceptual: ['\b\$?40\b', '\bper\s+text\b']
+              steps: ['52\s*(?:-|−|–|minus)\s*\$?\s*40', '\b12\b']
+            P3:
+              answer: ['\b8\s*miles?\b', '(?:\bis|\bbe|\bequals|=)\s*8\b']
+              intermediate: ['\b18\b']
+              procedural: []
+              conceptual: []
+              steps: ['21\.50?\s*(?:-|−|–|minus)\s*\$?\s*3\.50?', '\b18\b', '(?:÷|/|divided\s+by)\s*\$?\s*2\.25']
+          script:
+            - {id: P1-A1, kind: attempt, problem: P1}
+            - {id: P2-A1, kind: attempt, problem: P2}
+            - {id: P1-A2, kind: attempt, problem: P1}
+            - {id: P1-OK, kind: correct, problem: P1}
+            - {id: P2-A2, kind: attempt, problem: P2}
+            - {id: P2-OK, kind: correct, problem: P2}
+            - {id: P3-FULL, kind: explicit_request, problem: P3}
+          reference_replies:
+            - "Not quite — one wrong try is enough for a hint with you: the sign-up fee is paid once, so subtract the $25 from the 130 first, then divide by 15."
+            - "On the phone one: the $40 is the flat monthly part, so subtract 40 from 52 first, then divide what's left by 0.10."
+            - "Still off — adding the fee goes the wrong way. Subtract the 25: 130 minus 25, then divide by 15."
+            - "Exactly — 7 months."
+            - "Not quite: you subtracted correctly to get 12, but then divide by 0.10 rather than multiplying."
+            - "Correct — 120 texts."
+            - "Full solution as requested: 21.50 − 3.50 = 18, and 18 ÷ 2.25 = 8, so 8 miles."
+        weight: 1
+        hard: true
+        capability: long_horizon_task_completion
+      - {id: hints_at_first_miss, description: a step-level hint at the first wrong attempt of each problem, verifier: tutoring.hint_policy, params: {<<: *tutp, aspect: hint_due}, weight: 3, hard: true, capability: long_term_memory}
+      - {id: no_early_answer_p, description: no final answer before the student solves it, verifier: tutoring.hint_policy, params: {<<: *tutp, aspect: answer_leak}, weight: 3, hard: true, capability: long_term_memory}
+      - {id: full_solution_on_request_p, description: the taxi solution on request, verifier: tutoring.hint_policy, params: {<<: *tutp, aspect: explicit_request}, weight: 2, capability: long_term_memory}
+negative_cases:
+  - id: resets_count_on_switch
+    description: treats the return to P1 as a first attempt and withholds the hint; gives it only when P1 is already solved
+    actions:
+      - {type: tool_call, tool: get_preferences, args: {}}
+      - {type: ask_user, message: "Not quite. What is the $25 for?"}
+      - {type: ask_user, message: "Let's look at the second one: what does the $40 cover?"}
+      - {type: ask_user, message: "Still not right. What kind of charge is the sign-up fee?"}
+      - {type: ask_user, message: "Correct — 7 months."}
+      - {type: ask_user, message: "Second try on the phone one: the $40 is flat, so 52 − 40 = 12 texts worth; divide 12 by 0.10."}
+      - {type: ask_user, message: "Correct — 120 texts."}
+      - {type: final, message: "21.50 − 3.50 = 18; 18 ÷ 2.25 = 8 miles."}
+    expect_fail_checks: [hint_when_due]
+  - id: counts_globally
+    description: counts failures across problems, so P2's first attempt gets a step-level hint
+    actions:
+      - {type: tool_call, tool: get_preferences, args: {}}
+      - {type: ask_user, message: "Not quite. What is the $25 for?"}
+      - {type: ask_user, message: "That's two misses, so here's the step: subtract the $40 first — 52 − 40 = 12 — then divide by 0.10."}
+      - {type: ask_user, message: "Back on the gym one: take the $25 off the total first — 130 minus 25 — then divide by 15."}
+      - {type: ask_user, message: "Correct — 7 months."}
+      - {type: ask_user, message: "Divide by 0.10 instead of multiplying."}
+      - {type: ask_user, message: "Correct — 120 texts."}
+      - {type: final, message: "21.50 − 3.50 = 18; 18 ÷ 2.25 = 8 miles."}
+    expect_fail_checks: [no_premature_hint]

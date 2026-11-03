@@ -34,7 +34,7 @@ class OpenAICompatibleAdapter:
     def __init__(self, model: str, *, base_url: str | None = None, api_key: str | None = None,
                  temperature: float = 0.0, max_tokens: int = 1024, max_history_chars: int = 60_000,
                  retries: int = 3, timeout: float = 180.0, extra_body: dict[str, Any] | None = None,
-                 json_fallback: bool = False) -> None:
+                 json_fallback: bool = False, seed: int | None = None) -> None:
         try:
             from openai import OpenAI
         except ImportError as exc:  # pragma: no cover
@@ -47,6 +47,7 @@ class OpenAICompatibleAdapter:
         self.retries = retries
         self.extra_body = extra_body or {}
         self.json_fallback = json_fallback
+        self.seed = seed
         self.messages: list[dict[str, Any]] = []
         self.tools: list[dict[str, Any]] = []
         self._usage = ModelUsage()
@@ -151,6 +152,8 @@ class OpenAICompatibleAdapter:
                                               max_tokens=self.max_tokens)
                 if self.tools and not self.json_fallback:
                     kwargs["tools"] = self.tools
+                if self.seed is not None:
+                    kwargs["seed"] = int(self.seed)
                 if self.extra_body:
                     kwargs["extra_body"] = self.extra_body
                 return self.client.chat.completions.create(**kwargs)

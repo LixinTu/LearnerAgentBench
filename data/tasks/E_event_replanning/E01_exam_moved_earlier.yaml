@@ -223,3 +223,21 @@ variants:
         capability: educational_decision_making
       - {id: summary_mentions_sick, description: the summary acknowledges the sick days, verifier: trajectory.final_mentions,
          params: {any_of: [sick, flu, "feel better", recover, moved]}, weight: 1, capability: proactive_behavior}
+
+negative_cases:
+  - id: ignores_the_move
+    description: rebuilds the plan before the event and never reacts to the exam move
+    actions:
+      - {type: tool_call, tool: update_study_plan, args: {rationale: "tidy"}}
+      - {type: tool_call, tool: get_preferences, args: {}}
+      - {type: tool_call, tool: search_email, args: {unread_only: true}}
+      - {type: final, message: "Your plan is up to date; nothing to change."}
+    expect_fail_checks: [plan_changed_after_event, nothing_after_new_buffer, no_stale_study_events]
+  - id: keeps_old_blocks_after_new_date
+    description: notices the move but only appends a block, leaving blocks after the new exam
+    actions:
+      - {type: tool_call, tool: get_preferences, args: {}}
+      - {type: tool_call, tool: search_email, args: {unread_only: true}}
+      - {type: tool_call, tool: update_study_plan, args: {add_blocks: [{start: "2026-11-09T20:30:00", end: "2026-11-09T21:15:00", skill_ids: [systems]}]}}
+      - {type: final, message: "The exam moved to Nov 12; I added a block."}
+    expect_fail_checks: [nothing_after_new_buffer, no_stale_study_events]

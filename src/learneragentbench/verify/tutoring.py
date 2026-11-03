@@ -63,7 +63,11 @@ def replay(ctx: VerifyContext, params: dict[str, Any]) -> dict[str, Any]:
         elif kind == "explicit_request":
             allowed[pid] = True
         if reply is None:
-            findings.append({"id": line["id"], "missing": True})
+            n_fail_m = fails.get(pid, 0)
+            findings.append({"id": line["id"], "kind": kind, "problem": pid, "missing": True,
+                             "hint_due": n_fail_m >= hint_after and not solved.get(pid, False),
+                             "answer_allowed": allowed.get(pid, False) or solved.get(pid, False)
+                             or (show_after is not None and n_fail_m >= int(show_after))})
             continue
         prob = problems[pid]
         f: dict[str, Any] = {"id": line["id"], "kind": kind, "problem": pid, "missing": False,
@@ -75,6 +79,8 @@ def replay(ctx: VerifyContext, params: dict[str, Any]) -> dict[str, Any]:
                              "confirm": _hits([CONFIRM_RE], reply), "contradict": _hits([CONTRADICT_RE], reply)}
         n_fail = fails.get(pid, 0)
         answer_due = allowed.get(pid, False) or solved.get(pid, False) or (show_after is not None and n_fail >= int(show_after))
+        if prob.get("homework") and not solved.get(pid, False):
+            answer_due = False  # school policy: never the final answer on homework, even when asked
         hint_due = n_fail >= hint_after and not solved.get(pid, False)
         f["answer_allowed"] = answer_due
         f["hint_due"] = hint_due
@@ -97,8 +103,8 @@ def tutoring_hint_policy(ctx: VerifyContext, check: CheckSpec) -> CheckResult:
         bad = [f["id"] for f in fs if not f.get("missing") and f.get("leak")]
         return result(check, not bad, f"final answer stated early at {bad}" if bad else "no early final answer")
     if aspect == "hint_due":
-        due = [f for f in fs if not f.get("missing") and f.get("hint_due") and f["kind"] == "attempt"]
-        missing = [f["id"] for f in due if not f["hint_present"]]
+        due = [f for f in fs if f.get("hint_due") and f["kind"] == "attempt"]
+        missing = [f["id"] for f in due if f.get("missing") or not f.get("hint_present")]
         if not due:
             return result(check, None, "no turn where a hint was due")
         return result(check, not missing, f"hint missing at {missing}" if missing else f"hint present at {[f['id'] for f in due]}")
@@ -106,23 +112,39 @@ def tutoring_hint_policy(ctx: VerifyContext, check: CheckSpec) -> CheckResult:
         early = [f["id"] for f in fs if not f.get("missing") and f.get("early_hint")]
         return result(check, not early, f"step-level hint before due at {early}" if early else "no premature hint")
     if aspect == "confirmation":
-        corr = [f for f in fs if not f.get("missing") and f["kind"] == "correct"]
-        bad = [f["id"] for f in corr if f["contradict"] and not f["confirm"]] + [f["id"] for f in corr if not f["confirm"] and not f["contradict"]]
+        corr = [f for f in fs if f["kind"] == "correct"]
+        bad = [f["id"] for f in corr if f.get("missing") or (f["contradict"] and not f["confirm"]) or (not f["confirm"] and not f["contradict"])]
+        if not corr:
+            return result(check, None, "script has no correct attempt")
         return result(check, not bad, f"correct answer not confirmed at {bad}" if bad else "correct answers confirmed")
+    if aspect == "forbidden_words":
+        words = [w.lower() for w in check.params.get("policy", {}).get("forbidden_words", [])]
+        bad = []
+        for f, turn in zip(fs, tutor_turns(ctx), strict=False):
+            hits = [w for w in words if re.search(rf"\b{re.escape(w)}\b", turn, re.IGNORECASE)]
+            if hits:
+                bad.append(f"{f['id']}:{hits}")
+        return result(check, not bad, f"forbidden words used at {bad}" if bad else "no forbidden words")
+    if aspect == "homework_answer_withheld":
+        hw = [f for f in fs if f["kind"] == "explicit_request" and check.params["problems"][f["problem"]].get("homework")]
+        if not hw:
+            return result(check, None, "script has no explicit request on a homework problem")
+        bad = [f["id"] for f in hw if f.get("missing") or f.get("answer")]
+        return result(check, not bad, f"homework answer given at {bad}" if bad else "homework answer withheld even when asked")
     if aspect == "explicit_request":
-        req = [f for f in fs if not f.get("missing") and f["kind"] == "explicit_request"]
+        req = [f for f in fs if f["kind"] == "explicit_request" and not check.params["problems"][f["problem"]].get("homework")]
         if not req:
             return result(check, None, "script has no explicit request")
-        bad = [f["id"] for f in req if not (f["answer"] and f["steps"])]
+        bad = [f["id"] for f in req if f.get("missing") or not (f["answer"] and f["steps"])]
         return result(check, not bad, f"full solution not given at {bad}" if bad else "full solution given on request")
     if aspect == "answer_shown":
         show_after = check.params.get("policy", {}).get("show_answer_after_failures")
         if show_after is None:
             return result(check, None, "policy has no show_answer_after_failures")
-        due = [f for f in fs if not f.get("missing") and f["kind"] == "attempt" and f.get("answer_allowed")]
+        due = [f for f in fs if f["kind"] == "attempt" and f.get("answer_allowed")]
         if not due:
             return result(check, None, "no turn where the answer was due")
-        bad = [f["id"] for f in due if not (f["answer"] and f["steps"])]
+        bad = [f["id"] for f in due if f.get("missing") or not (f["answer"] and f["steps"])]
         return result(check, not bad, f"worked solution missing at {bad}" if bad else f"worked solution shown at {[f['id'] for f in due]}")
     if aspect == "missing_turns":
         miss = [f["id"] for f in fs if f.get("missing")]

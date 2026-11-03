@@ -1,0 +1,195 @@
+# Family D — course-scoped rules inside global rules. Sofia's global limits (90 min/day, no study
+# on clinical days) plus a Microbiology-specific rule (terminology flashcards before any new
+# concept) and a per-course cap stated in session s2 (at most 45 minutes of Microbiology a day,
+# the rest for A&P). The plan must honour the scoped rules without breaking the global ones.
+task_id: D05_two_courses_scoped_rules
+family: D_multi_session_study_planning
+title: Plan two courses under global and course-scoped rules
+version: "1.0"
+persona_id: sofia
+user_goal: >
+  Micro quiz on the 12th and the A&P practical on the 14th. Plan this week and next for me and put
+  it on the calendar — same rules as always.
+initial_state:
+  now: "2026-11-02T19:00:00"
+  skill_graph: biology
+  records:
+    - kind: course
+      fields: {id: bio220, code: "BIO 220", name: Microbiology, instructor_id: prof_haddad, term: Fall 2026, skill_ids: [terminology, cell_structure, membranes, cell_respiration]}
+    - kind: course
+      fields: {id: ap2, code: "A&P II", name: Anatomy & Physiology II, instructor_id: prof_haddad, term: Fall 2026, skill_ids: [membranes, gene_expression, cell_cycle]}
+    - kind: assessment
+      fields: {id: micro_quiz, course_id: bio220, title: "Microbiology quiz: cell respiration", assessment_kind: quiz, scheduled_at: "2026-11-12T19:00:00", skill_ids: [cell_respiration, terminology], weight: 0.1}
+    - kind: assessment
+      fields: {id: ap_practical, course_id: ap2, title: "A&P II practical", assessment_kind: exam, scheduled_at: "2026-11-14T09:00:00", skill_ids: [cell_cycle, gene_expression], weight: 0.2}
+    - kind: calendar_event
+      fields: {id: cal_micro, title: "Microbiology quiz (online)", start: "2026-11-12T19:00:00", end: "2026-11-12T20:00:00", event_kind: exam, fixed: true, created_by: system, linked: {assessment_id: micro_quiz}}
+    - kind: calendar_event
+      fields: {id: cal_ap, title: "A&P II practical", start: "2026-11-14T09:00:00", end: "2026-11-14T11:00:00", event_kind: exam, fixed: true, created_by: system, linked: {assessment_id: ap_practical}}
+    - kind: calendar_event
+      fields: {id: clin_1103, title: "Clinical shift", start: "2026-11-03T07:00:00", end: "2026-11-03T19:00:00", event_kind: work, fixed: true}
+    - kind: calendar_event
+      fields: {id: clin_1105, title: "Clinical shift", start: "2026-11-05T07:00:00", end: "2026-11-05T19:00:00", event_kind: work, fixed: true}
+    - kind: calendar_event
+      fields: {id: clin_1110, title: "Clinical shift", start: "2026-11-10T07:00:00", end: "2026-11-10T19:00:00", event_kind: work, fixed: true}
+    - kind: calendar_event
+      fields: {id: clin_1112, title: "Clinical shift", start: "2026-11-12T07:00:00", end: "2026-11-12T19:00:00", event_kind: work, fixed: true}
+  mastery_overrides: {terminology: 0.35, cell_respiration: 0.3, cell_cycle: 0.35, gene_expression: 0.25, membranes: 0.5}
+memory:
+  - {memory_kind: standing_rule, text: "For Microbiology specifically: at most forty-five minutes a day, always starting with terminology flashcards; the rest of my daily time goes to A&P.", stated_at: "2026-09-26T19:00:00", session_id: s2, scope: bio220, payload: {key: max_daily_minutes, value: 45}}
+hidden_constraints:
+  - "global: 90 min/day, 20–30-minute blocks, nothing after 21:00, no study on Tuesday/Thursday (clinical), 12 h buffer"
+  - "Microbiology (bio220) scope: at most 45 min/day and terminology flashcards first (session s2)"
+available_tools: [get_student_profile, get_preferences, search_memory, list_assessments, analyze_skill_gaps,
+                  get_calendar_events, get_study_plan, create_study_plan, update_study_plan, create_calendar_event, create_task, record_memory]
+expected_final_state:
+  - an active plan under the global rules; terminology gets flashcard time before the Micro quiz; both assessments' skills reach 0.5
+checks:
+  - id: plan_exists
+    description: an active plan with at least eight short blocks
+    verifier: plan.exists
+    params: {min_blocks: 8}
+    weight: 1
+    hard: true
+    capability: tool_use_and_execution
+  - id: respects_global_rules
+    description: global rules — 90 min/day, 20–30-minute blocks, nothing after 21:00, clinical days off, 12 h before the practical
+    verifier: plan.respects_constraints
+    params: &goal
+      goal: {assessment_id: ap_practical, target_knowledge: 0.5, include_prerequisites: false}
+      constraints: {max_daily_minutes: 90, min_block_minutes: 20, preferred_block_minutes: 30, no_study_after: "21:00", rest_weekdays: [1, 3], buffer_hours_before_exam: 12, max_skills_per_block: 1}
+    weight: 3
+    hard: true
+    capability: long_term_memory
+  - id: terminology_flashcards_first
+    description: at least 60 minutes of flashcards on terminology are scheduled
+    verifier: plan.minutes_on_skill
+    params: {skill_id: terminology, min_minutes: 60}
+    weight: 2
+    capability: personalized_planning
+  - id: ap_reaches_target
+    description: the practical's skills reach 0.5 by Nov 14
+    verifier: plan.reaches_target
+    params: {<<: *goal, mastery_from: initial}
+    weight: 2
+    capability: educational_decision_making
+  - id: micro_prepared
+    description: cell respiration gets at least 90 minutes before the quiz
+    verifier: plan.minutes_on_skill
+    params: {skill_id: cell_respiration, min_minutes: 90}
+    weight: 1
+    capability: educational_decision_making
+  - id: nothing_during_micro_buffer
+    description: no block in the 12 hours before the Micro quiz
+    verifier: plan.no_blocks_in_window
+    params: {start: "2026-11-12T07:00:00", end: "2026-11-12T20:00:00"}
+    weight: 1
+    capability: personalized_planning
+  - id: calendar_consistent
+    description: no study event overlaps clinical shifts or exams
+    verifier: calendar.no_conflicts_with_fixed
+    weight: 1
+    capability: tool_use_and_execution
+  - id: consulted_rules_first
+    description: preferences or memory read before writing
+    verifier: audit.read_before_write
+    params: {read_tools: [get_preferences, search_memory], write_tools: [create_study_plan, update_study_plan]}
+    weight: 1
+    capability: cross_session_consistency
+  - id: finished
+    description: ended with a summary
+    verifier: trajectory.completed
+    weight: 1
+    capability: long_horizon_task_completion
+capability_requirements:
+  - {capability: long_term_memory, required: true, rationale: "global and course-scoped rules from two sessions"}
+  - {capability: personalized_planning, required: true, rationale: "flashcards-first is a personal strategy"}
+simulated_user:
+  default_approval: deny
+  clarifications:
+    - {keywords: [rules], answer: "No study Tuesdays or Thursdays, ninety minutes a day in half-hour blocks, nothing after nine, and for Micro: forty-five minutes a day max, terminology flashcards first."}
+reference_path:
+  - {action: tool_call, tool: get_preferences}
+  - {action: tool_call, tool: search_memory, args: {query: ""}}
+  - {action: ask_user, message: "Remind me of your rules — days off, daily minutes, and anything specific to Micro?", only_if: no_memory}
+  - {action: tool_call, tool: list_assessments}
+  - {action: tool_call, tool: create_study_plan, args: {title: "Micro quiz + A&P practical", goal: "Terminology first, respiration for the quiz, cell cycle and gene expression for the practical", target_date: "2026-11-14T09:00:00", blocks: [
+      {start: "2026-11-02T19:00:00", end: "2026-11-02T19:30:00", skill_ids: [terminology], activity: flashcards},
+      {start: "2026-11-02T19:35:00", end: "2026-11-02T20:05:00", skill_ids: [cell_cycle]},
+      {start: "2026-11-02T20:10:00", end: "2026-11-02T20:40:00", skill_ids: [gene_expression]},
+      {start: "2026-11-04T08:00:00", end: "2026-11-04T08:30:00", skill_ids: [terminology], activity: flashcards},
+      {start: "2026-11-04T08:35:00", end: "2026-11-04T09:05:00", skill_ids: [cell_respiration]},
+      {start: "2026-11-04T19:00:00", end: "2026-11-04T19:30:00", skill_ids: [cell_cycle]},
+      {start: "2026-11-06T08:00:00", end: "2026-11-06T08:30:00", skill_ids: [cell_respiration]},
+      {start: "2026-11-06T08:35:00", end: "2026-11-06T09:05:00", skill_ids: [gene_expression]},
+      {start: "2026-11-06T19:00:00", end: "2026-11-06T19:30:00", skill_ids: [cell_cycle]},
+      {start: "2026-11-07T09:00:00", end: "2026-11-07T09:30:00", skill_ids: [terminology], activity: flashcards},
+      {start: "2026-11-07T09:35:00", end: "2026-11-07T10:05:00", skill_ids: [cell_respiration]},
+      {start: "2026-11-07T10:10:00", end: "2026-11-07T10:40:00", skill_ids: [gene_expression]},
+      {start: "2026-11-08T09:00:00", end: "2026-11-08T09:30:00", skill_ids: [cell_respiration]},
+      {start: "2026-11-08T09:35:00", end: "2026-11-08T10:05:00", skill_ids: [cell_cycle]},
+      {start: "2026-11-08T10:10:00", end: "2026-11-08T10:40:00", skill_ids: [gene_expression]},
+      {start: "2026-11-09T08:00:00", end: "2026-11-09T08:30:00", skill_ids: [terminology], activity: flashcards},
+      {start: "2026-11-09T19:00:00", end: "2026-11-09T19:30:00", skill_ids: [cell_respiration]},
+      {start: "2026-11-09T19:35:00", end: "2026-11-09T20:05:00", skill_ids: [cell_cycle]},
+      {start: "2026-11-11T08:00:00", end: "2026-11-11T08:30:00", skill_ids: [cell_respiration]},
+      {start: "2026-11-11T19:00:00", end: "2026-11-11T19:30:00", skill_ids: [gene_expression]},
+      {start: "2026-11-11T19:35:00", end: "2026-11-11T20:05:00", skill_ids: [cell_cycle]},
+      {start: "2026-11-13T08:00:00", end: "2026-11-13T08:30:00", skill_ids: [cell_cycle]},
+      {start: "2026-11-13T08:35:00", end: "2026-11-13T09:05:00", skill_ids: [gene_expression]},
+      {start: "2026-11-13T19:00:00", end: "2026-11-13T19:30:00", skill_ids: [gene_expression]}]}}
+  - {action: final, message: "Plan is on your calendar: nothing on clinical days, half-hour blocks within ninety minutes a day, Micro capped at forty-five minutes with terminology flashcards first, and A&P (cell cycle, gene expression) with the remaining time through the morning of the practical."}
+seeds: [0]
+max_steps: 25
+variants:
+  - id: no_memory
+    condition: no_memory
+    description: all rules gone; the agent must ask
+    expected_delta: the agent asks and follows the answer
+    checks_add:
+      - {id: asked_about_rules, description: at least one question, verifier: trajectory.asked_user, weight: 1, capability: proactive_behavior}
+  - id: other_student
+    condition: different_persona
+    description: Noor (three hours a day, hour blocks, lab 13:00–17:00) with the same two assessments — no clinical days, no Micro cap, no flashcards rule
+    expected_delta: longer blocks, every day usable, higher target
+    patch:
+      persona_id: noor
+      records_remove: [calendar_event/clin_1103, calendar_event/clin_1105, calendar_event/clin_1110, calendar_event/clin_1112]
+      records_update:
+        - {kind: course, id: bio220, fields: {instructor_id: prof_lind}}
+        - {kind: course, id: ap2, fields: {instructor_id: prof_lind}}
+    checks_remove: [respects_global_rules, terminology_flashcards_first, ap_reaches_target, plan_exists]
+    checks_add:
+      - {id: plan_exists_n, description: an active plan with at least five blocks, verifier: plan.exists, params: {min_blocks: 5}, weight: 1, hard: true, capability: tool_use_and_execution}
+      - id: respects_noor_rules
+        description: Noor's rules — 180 min/day, 45–60-minute blocks, 07:00–10:00 and 18:00–22:00, 10 h buffer
+        verifier: plan.respects_constraints
+        params: &goaln
+          goal: {assessment_id: ap_practical, target_knowledge: 0.7, include_prerequisites: false}
+          constraints: {max_daily_minutes: 180, min_block_minutes: 45, preferred_block_minutes: 60, no_study_after: "22:00", rest_weekdays: [], buffer_hours_before_exam: 10, max_skills_per_block: 1}
+        weight: 3
+        hard: true
+        capability: long_term_memory
+      - {id: ap_reaches_target_n, description: the practical's skills reach 0.7, verifier: plan.reaches_target, params: {<<: *goaln, mastery_from: initial}, weight: 2, capability: educational_decision_making}
+    reference_path:
+      - {action: tool_call, tool: get_preferences}
+      - {action: tool_call, tool: search_memory, args: {query: ""}}
+      - {action: tool_call, tool: list_assessments}
+      - {action: plan_for, assessment_id: ap_practical, skill_ids: [cell_respiration, cell_cycle, gene_expression], target_knowledge: 0.7, title: "Micro quiz + A&P practical"}
+      - {action: final, message: "Plan set in hour blocks mornings and evenings, lab untouched, both assessments covered."}
+negative_cases:
+  - id: ignores_scoped_rules
+    description: plans 90 minutes of Micro on one day with no flashcards and a block on a clinical day
+    actions:
+      - {type: tool_call, tool: get_preferences, args: {}}
+      - {type: tool_call, tool: create_study_plan, args: {title: "Plan", goal: "both", target_date: "2026-11-14T09:00:00", blocks: [
+          {start: "2026-11-03T19:30:00", end: "2026-11-03T20:00:00", skill_ids: [cell_respiration]},
+          {start: "2026-11-04T08:00:00", end: "2026-11-04T08:30:00", skill_ids: [cell_respiration]},
+          {start: "2026-11-04T08:35:00", end: "2026-11-04T09:05:00", skill_ids: [cell_respiration]},
+          {start: "2026-11-04T09:10:00", end: "2026-11-04T09:40:00", skill_ids: [cell_respiration]},
+          {start: "2026-11-06T08:00:00", end: "2026-11-06T08:30:00", skill_ids: [cell_cycle]},
+          {start: "2026-11-07T09:00:00", end: "2026-11-07T09:30:00", skill_ids: [gene_expression]},
+          {start: "2026-11-08T09:00:00", end: "2026-11-08T09:30:00", skill_ids: [cell_cycle]},
+          {start: "2026-11-09T08:00:00", end: "2026-11-09T08:30:00", skill_ids: [gene_expression]}]}}
+      - {type: final, message: "Plan set."}
+    expect_fail_checks: [respects_global_rules, terminology_flashcards_first]

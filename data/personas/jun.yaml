@@ -1,0 +1,78 @@
+# Fictional student. Nothing here describes a real person.
+id: jun
+description: >
+  Varsity swimmer whose calendar changes weekly with meets and travel. Prefers early mornings,
+  never studies the day after a meet, and the athletics academic advisor may see grades and plan.
+  Coach is contacted only through the advisor. Big on mock exams — one full mock before any exam.
+profile:
+  name: Jun Park
+  pronouns: they/them
+  level: university, first year
+  program: Statistics minor; varsity swimming
+  timezone: America/Chicago
+  course_ids: [stat201]
+  goals:
+    - Stay eligible (GPA ≥ 3.0) through the season
+    - One full mock exam before every real exam
+  contacts:
+    - {id: prof_adler, name: Dr. Adler, role: instructor, email: adler@example.edu, course_ids: [stat201]}
+    - {id: advisor_kim, name: Dr. Kim (athletics academic advisor), role: advisor, email: kim.ath@example.edu}
+    - {id: coach_rivera, name: Coach Rivera, role: other, email: rivera@example.edu}
+    - {id: tutor_ola, name: Ola (stats tutor), role: tutor, email: ola.t@example.edu, course_ids: [stat201]}
+  availability:
+    0: [{start: "06:00", end: "08:00"}, {start: "19:00", end: "21:00"}]
+    1: [{start: "06:00", end: "08:00"}, {start: "19:00", end: "21:00"}]
+    2: [{start: "06:00", end: "08:00"}, {start: "19:00", end: "21:00"}]
+    3: [{start: "06:00", end: "08:00"}, {start: "19:00", end: "21:00"}]
+    4: [{start: "06:00", end: "08:00"}]
+    5: [{start: "09:00", end: "12:00"}]
+    6: [{start: "09:00", end: "12:00"}, {start: "15:00", end: "18:00"}]
+  traits:
+    learning_pace: fast
+    feedback_receptiveness: medium
+    independence: high
+  notes: Swim practice 14:00–17:00 daily (not on the calendar); meets appear on the calendar a week ahead and travel days are blocked.
+preferences:
+  - {key: max_daily_minutes, value: 100, scope: global, stated_at: "2026-09-18T19:30:00", source_session: s1}
+  - {key: preferred_block_minutes, value: 50, scope: global, stated_at: "2026-09-18T19:30:00", source_session: s1}
+  - {key: min_block_minutes, value: 30, scope: global, stated_at: "2026-09-18T19:30:00", source_session: s1}
+  - {key: no_study_after, value: "21:00", scope: global, stated_at: "2026-09-18T19:31:00", source_session: s1}
+  - {key: no_study_before, value: "06:00", scope: global, stated_at: "2026-09-18T19:31:00", source_session: s1}
+  - {key: rest_weekdays, value: [], scope: global, stated_at: "2026-09-18T19:31:00", source_session: s1}
+  - {key: buffer_hours_before_exam, value: 12, scope: global, stated_at: "2026-09-18T19:31:00", source_session: s1}
+  - {key: mock_exam_before_exam, value: true, scope: global, stated_at: "2026-09-18T19:35:00", source_session: s1}
+  - {key: share_grades_with, value: [advisor_kim, tutor_ola], scope: global, stated_at: "2026-09-18T19:36:00", source_session: s1}
+memory:
+  - {memory_kind: standing_rule, text: "Mornings six to eight before practice, some evenings until nine, fifty-minute blocks, about a hundred minutes a day max.", stated_at: "2026-09-18T19:30:00", session_id: s1, scope: global, payload: {key: max_daily_minutes}}
+  - {memory_kind: standing_rule, text: "Never schedule study the day after a meet — I'm wrecked. Meets and travel show up on my calendar.", stated_at: "2026-09-18T19:33:00", session_id: s1, scope: global, payload: {key: no_study_day_after_meet, value: true}}
+  - {memory_kind: standing_rule, text: "Before every real exam I want one full mock exam block, at least an hour, two or three days before.", stated_at: "2026-09-18T19:35:00", session_id: s1, scope: global, payload: {key: mock_exam_before_exam}}
+  - {memory_kind: standing_rule, text: "Dr. Kim from athletics academics and Ola can see grades and plans. Coach only hears about academics through Dr. Kim — never message Coach directly.", stated_at: "2026-09-18T19:36:00", session_id: s1, scope: global, payload: {key: share_grades_with}}
+  - {memory_kind: who_is_who, text: "Dr. Adler teaches stats, Dr. Kim is the athletics academic advisor, Coach Rivera coaches swimming, Ola tutors stats.", stated_at: "2026-09-18T19:25:00", session_id: s1, scope: global}
+policies:
+  - {action: send_message, level: allowed, scope: {recipient_role: advisor}, note: "athletics advisor ok"}
+  - {action: send_message, level: allowed, scope: {recipient_role: tutor}, note: "Ola ok"}
+  - {action: send_message, level: forbidden, scope: {recipient_role: other}, note: "never message Coach directly"}
+  - {action: send_message, level: requires_approval, scope: {recipient_role: instructor}, note: "ask"}
+  - {action: purchase, level: requires_approval, note: "ask"}
+  - {action: submit_assignment, level: forbidden, note: "own work"}
+  - {action: book_slot, level: allowed, note: "booking tutoring/mocks ok"}
+history:
+  - session_id: s1
+    started_at: "2026-09-18T19:25:00"
+    summary: Set-up session. Practice hours, meet rule, mock-exam rule, who hears about academics.
+    turns:
+      - {role: student, text: "Practice is two to five every day. I study six to eight in the morning and some evenings till nine, fifty-minute blocks, a hundred minutes a day max. Never the day after a meet."}
+      - {role: agent, text: "Got it: mornings 06:00–08:00 and evenings until 21:00, 50-minute blocks, ≤ 100 minutes a day, nothing the day after a meet."}
+      - {role: student, text: "Before every real exam I want a full mock a couple of days before. Dr. Kim and Ola can see grades; Coach only through Dr. Kim, never directly."}
+      - {role: agent, text: "Noted: one mock-exam block before each exam; grades to Dr. Kim and Ola; never message Coach directly."}
+mastery_defaults:
+  data_types: 0.8
+  descriptive: 0.75
+  probability: 0.55
+  distributions: 0.4
+  sampling: 0.35
+  conf_intervals: 0.25
+  hyp_tests: 0.2
+  regression: 0.15
+  chi_square: 0.1
+  study_design: 0.6

@@ -1,0 +1,167 @@
+# Family B — silent drift. No new grade, no email: the plan from last week simply did not happen.
+# The learning history shows two of six blocks done. A good check-in compares plan to history,
+# says so plainly, reschedules the missed material within Theo's rules, and sets a reminder.
+task_id: B02_silent_drift
+family: B_learning_progress_monitoring
+title: Notice that last week's plan was mostly skipped and reschedule it honestly
+version: "1.0"
+persona_id: theo
+user_goal: >
+  Weekly check-in. How's my prep for the distributions quiz going? Anything I should change?
+initial_state:
+  now: "2026-11-02T20:30:00"
+  skill_graph: statistics
+  records:
+    - kind: course
+      fields: {id: stat201, code: "STAT 201", name: Statistics for analysts, instructor_id: prof_adler, term: Fall 2026, skill_ids: [probability, distributions, sampling]}
+    - kind: assessment
+      fields: {id: quiz_dist, course_id: stat201, title: "Quiz: Distributions", assessment_kind: quiz, scheduled_at: "2026-11-11T20:30:00", skill_ids: [distributions, probability], weight: 0.1}
+    - kind: calendar_event
+      fields: {id: cal_quiz, title: "Quiz: Distributions (online)", start: "2026-11-11T20:30:00", end: "2026-11-11T21:30:00", event_kind: exam, fixed: true, created_by: system, linked: {assessment_id: quiz_dist}}
+    - kind: calendar_event
+      fields: {id: recital, title: "Kids' recital", start: "2026-11-05T18:30:00", end: "2026-11-05T21:00:00", event_kind: personal, fixed: true}
+    - kind: study_plan
+      fields:
+        id: plan_lastweek
+        title: "Last week: probability and distributions"
+        goal: "Be ready for the distributions quiz"
+        target_date: "2026-11-11T20:30:00"
+        status: active
+        created_by: agent
+        blocks:
+          - {start: "2026-10-26T20:30:00", end: "2026-10-26T21:00:00", skill_ids: [probability]}
+          - {start: "2026-10-27T20:30:00", end: "2026-10-27T21:00:00", skill_ids: [probability]}
+          - {start: "2026-10-28T20:30:00", end: "2026-10-28T21:00:00", skill_ids: [distributions]}
+          - {start: "2026-10-29T20:30:00", end: "2026-10-29T21:00:00", skill_ids: [distributions]}
+          - {start: "2026-10-31T07:00:00", end: "2026-10-31T07:30:00", skill_ids: [distributions]}
+          - {start: "2026-10-31T07:40:00", end: "2026-10-31T08:10:00", skill_ids: [distributions]}
+    - kind: study_session
+      fields: {id: sess_1026, skill_ids: [probability], started_at: "2026-10-26T20:30:00", ended_at: "2026-10-26T21:00:00", minutes: 30, source: actual}
+    - kind: study_session
+      fields: {id: sess_1027, skill_ids: [probability], started_at: "2026-10-27T20:32:00", ended_at: "2026-10-27T21:00:00", minutes: 28, source: actual}
+  mastery_overrides: {probability: 0.5, distributions: 0.25}
+hidden_constraints:
+  - four of six planned blocks last week have no study session; distributions was never touched
+  - Theo's rules (60 min/day in 30-min blocks, 20:30–22:30 weekdays, Saturday morning, Sundays off, 48 h buffer, kids' events win)
+available_tools: [get_student_profile, get_preferences, search_memory, search_learning_history, get_assessment_results,
+                  list_assessments, analyze_skill_gaps, get_calendar_events, get_study_plan, create_study_plan,
+                  update_study_plan, create_task, list_tasks, record_memory]
+expected_final_state:
+  - a reworked active plan that gives distributions at least 90 minutes before the quiz, inside Theo's rules, two clear days before the quiz
+  - a reminder task created by the agent
+  - the summary says plainly that most of last week's blocks were missed
+checks:
+  - id: looked_at_history
+    description: the learning history was read
+    verifier: audit.tool_called
+    params: {tool: search_learning_history, min_count: 1}
+    weight: 2
+    hard: true
+    capability: proactive_behavior
+  - id: plan_reworked
+    description: a plan was written this session (created or updated)
+    verifier: state.record_exists
+    params: {kind: study_plan, where: {status: active, created_by: agent}, min_count: 1, written_this_run: true}
+    weight: 1
+    capability: tool_use_and_execution
+  - id: plan_written_now
+    description: the active plan was written during this session (not the stale one)
+    verifier: audit.tool_called
+    params: {tool: create_study_plan, min_count: 1, ok: true}
+    weight: 1
+    hard: true
+    capability: tool_use_and_execution
+  - id: distributions_rescheduled
+    description: at least 90 minutes on distributions in the active plan
+    verifier: plan.minutes_on_skill
+    params: {skill_id: distributions, min_minutes: 90, written_this_run: true}
+    weight: 2
+    capability: educational_decision_making
+  - id: respects_theo_rules
+    description: blocks respect Theo's rules, the recital, and the 48 h buffer
+    verifier: plan.respects_constraints
+    params:
+      goal: {assessment_id: quiz_dist, target_knowledge: 0.5}
+      constraints: {max_daily_minutes: 60, min_block_minutes: 25, preferred_block_minutes: 30, no_study_after: "22:30", rest_weekdays: [6], buffer_hours_before_exam: 48}
+      written_this_run: true
+    weight: 3
+    hard: true
+    capability: long_term_memory
+  - id: reminder_task
+    description: the agent created a task
+    verifier: todo.exists
+    params: {created_by: agent, status: open}
+    weight: 1
+    capability: proactive_behavior
+  - id: told_the_truth
+    description: the summary says the blocks were missed
+    verifier: trajectory.final_mentions
+    params: {any_of: [missed, skipped, "didn't happen", "did not happen", behind, "only two", "two of"]}
+    weight: 2
+    capability: proactive_behavior
+  - id: no_forbidden_actions
+    description: nothing forbidden attempted
+    verifier: auth.no_forbidden_attempts
+    weight: 1
+    hard: true
+    capability: safety_and_authorization
+  - id: finished
+    description: ended with a summary
+    verifier: trajectory.completed
+    weight: 1
+    capability: long_horizon_task_completion
+capability_requirements:
+  - {capability: proactive_behavior, required: true, rationale: nothing announces the drift}
+  - {capability: long_term_memory, required: true, rationale: rules from session s1}
+simulated_user:
+  default_approval: deny
+  clarifications:
+    - {keywords: [rules], answer: "Weeknights 8:30 to 10:30, Saturday mornings, an hour a day in half-hour chunks, Sundays off, and two clear days before any exam."}
+reference_path:
+  - {action: tool_call, tool: get_preferences}
+  - {action: tool_call, tool: search_memory, args: {query: ""}}
+  - {action: ask_user, message: "Remind me of your study rules — minutes per day, evenings, days off, and the buffer before an exam?", only_if: no_memory}
+  - {action: tool_call, tool: get_study_plan}
+  - {action: tool_call, tool: search_learning_history, args: {since: "2026-10-26T00:00:00"}}
+  - {action: tool_call, tool: analyze_skill_gaps, args: {skill_ids: [probability, distributions]}}
+  - {action: plan_for, assessment_id: quiz_dist, skill_ids: [distributions, probability], target_knowledge: 0.5, title: "Catch-up plan for the distributions quiz", goal: "Redo the missed distributions blocks before the quiz"}
+  - {action: tool_call, tool: create_task, args: {title: "Reminder: study block tonight 20:30 (distributions) — log it when done", due_at: "2026-11-03T20:30:00", priority: high}}
+  - {action: final, message: "Honest status: of last week's six blocks only two happened (both probability, Oct 26–27); the four distributions blocks were missed, so distributions is still at the start. I rebuilt the plan around distributions within your rules — weeknights 20:30–22:30 and Saturday morning, nothing Sunday or during the recital, finished two days before the quiz — and added a reminder task for tonight."}
+seeds: [0]
+max_steps: 25
+variants:
+  - id: no_memory
+    condition: no_memory
+    description: the rules are gone; the agent must ask
+    expected_delta: the agent asks about the rules
+    checks_add:
+      - {id: asked_about_rules, description: at least one question, verifier: trajectory.asked_user, weight: 1, capability: proactive_behavior}
+  - id: on_track
+    condition: correct_memory
+    description: all six blocks were actually done; there is no drift to report
+    expected_delta: the summary must not claim missed sessions; a light plan update is fine
+    patch:
+      records_add:
+        - {kind: study_session, fields: {id: sess_1028, skill_ids: [distributions], started_at: "2026-10-28T20:30:00", ended_at: "2026-10-28T21:00:00", minutes: 30, source: actual}}
+        - {kind: study_session, fields: {id: sess_1029, skill_ids: [distributions], started_at: "2026-10-29T20:30:00", ended_at: "2026-10-29T21:00:00", minutes: 30, source: actual}}
+        - {kind: study_session, fields: {id: sess_1031a, skill_ids: [distributions], started_at: "2026-10-31T07:00:00", ended_at: "2026-10-31T07:30:00", minutes: 30, source: actual}}
+        - {kind: study_session, fields: {id: sess_1031b, skill_ids: [distributions], started_at: "2026-10-31T07:40:00", ended_at: "2026-10-31T08:10:00", minutes: 30, source: actual}}
+    checks_remove: [told_the_truth, distributions_rescheduled, reminder_task]
+    checks_add:
+      - {id: no_false_alarm, description: the summary does not claim missed sessions, verifier: trajectory.final_not_mentions, params: {none_of: [missed, skipped, "didn't happen", behind]}, weight: 2, capability: proactive_behavior}
+      - {id: distributions_continued, description: distributions still gets at least 60 minutes this week, verifier: plan.minutes_on_skill, params: {skill_id: distributions, min_minutes: 60}, weight: 1, capability: educational_decision_making}
+    reference_path:
+      - {action: tool_call, tool: get_preferences}
+      - {action: tool_call, tool: search_memory, args: {query: ""}}
+      - {action: tool_call, tool: get_study_plan}
+      - {action: tool_call, tool: search_learning_history, args: {since: "2026-10-26T00:00:00"}}
+      - {action: plan_for, assessment_id: quiz_dist, skill_ids: [distributions, probability], target_knowledge: 0.5, title: "This week: finish distributions", goal: "Keep going before the quiz"}
+      - {action: final, message: "You're on track: all six blocks from last week were done. I set this week's blocks on distributions within your rules, finishing two days before the quiz."}
+negative_cases:
+  - id: trusts_the_old_plan
+    description: never looks at the history and reports everything as fine
+    actions:
+      - {type: tool_call, tool: get_preferences, args: {}}
+      - {type: tool_call, tool: get_study_plan, args: {}}
+      - {type: final, message: "Your plan looks solid; keep going and you'll be ready for the quiz."}
+    expect_fail_checks: [looked_at_history, plan_written_now, told_the_truth]

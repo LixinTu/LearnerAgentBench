@@ -1,0 +1,213 @@
+# Family A — two assessments in the same week for one course: a quiz (distributions, Nov 10) and
+# the midterm (sampling + confidence intervals, Nov 14). Time must be split so that both are
+# covered, in Priya's long early-morning blocks, around her fixed lab hours, with her 6-hour buffer.
+task_id: A02_two_assessments_one_week
+family: A_personalized_exam_preparation
+title: Split preparation between a quiz and a midterm four days apart
+version: "1.0"
+persona_id: priya
+user_goal: >
+  Next week is rough: the distributions quiz on the 10th and the midterm on the 14th. Build me a
+  plan that covers both and put it on my calendar. You know how I study.
+initial_state:
+  now: "2026-11-02T06:00:00"
+  skill_graph: statistics
+  generator: standard_semester
+  generator_params:
+    term_start: "2026-09-01"
+    weeks: 15
+    courses:
+      - {id: stat201, code: "STAT 201", name: Biostatistics (remote), instructor_id: prof_adler, term: Fall 2026,
+         skill_ids: [probability, distributions, sampling, conf_intervals, hyp_tests],
+         meetings: [{weekday: 1, start: "18:00", end: "19:00", location: "online"}]}
+  records:
+    - kind: assessment
+      fields: {id: quiz_dist, course_id: stat201, title: "Quiz 4: Distributions", assessment_kind: quiz, scheduled_at: "2026-11-10T06:00:00", skill_ids: [distributions], weight: 0.1}
+    - kind: assessment
+      fields: {id: mid_stat, course_id: stat201, title: "STAT 201 Midterm", assessment_kind: exam, scheduled_at: "2026-11-14T06:00:00", skill_ids: [sampling, conf_intervals], weight: 0.3}
+    - kind: calendar_event
+      fields: {id: cal_quiz, title: "Quiz 4: Distributions (online)", start: "2026-11-10T06:00:00", end: "2026-11-10T07:00:00", event_kind: exam, fixed: true, created_by: system, linked: {assessment_id: quiz_dist}}
+    - kind: calendar_event
+      fields: {id: cal_mid, title: "STAT 201 Midterm (online)", start: "2026-11-14T06:00:00", end: "2026-11-14T08:00:00", event_kind: exam, fixed: true, created_by: system, linked: {assessment_id: mid_stat}}
+    - kind: calendar_event
+      fields: {id: lab_w1, title: "Lab", start: "2026-11-03T10:00:00", end: "2026-11-03T16:00:00", event_kind: work, fixed: true}
+    - kind: calendar_event
+      fields: {id: lab_w2, title: "Lab", start: "2026-11-04T10:00:00", end: "2026-11-04T16:00:00", event_kind: work, fixed: true}
+    - kind: calendar_event
+      fields: {id: lab_w3, title: "Lab", start: "2026-11-05T10:00:00", end: "2026-11-05T16:00:00", event_kind: work, fixed: true}
+    - kind: calendar_event
+      fields: {id: lab_w4, title: "Lab", start: "2026-11-06T10:00:00", end: "2026-11-06T16:00:00", event_kind: work, fixed: true}
+    - kind: calendar_event
+      fields: {id: lab_w5, title: "Lab", start: "2026-11-09T10:00:00", end: "2026-11-09T16:00:00", event_kind: work, fixed: true}
+    - kind: calendar_event
+      fields: {id: lab_w6, title: "Lab", start: "2026-11-11T10:00:00", end: "2026-11-11T16:00:00", event_kind: work, fixed: true}
+    - kind: calendar_event
+      fields: {id: lab_w7, title: "Lab", start: "2026-11-12T10:00:00", end: "2026-11-12T16:00:00", event_kind: work, fixed: true}
+  mastery_overrides: {distributions: 0.4, sampling: 0.3, conf_intervals: 0.2, probability: 0.6, descriptive: 0.8}
+hidden_constraints:
+  - 150 min/day in 60-minute blocks (40 min minimum), 05:30–21:00, 6 h buffer before each assessment (session s1)
+  - the quiz comes first; distributions is a prerequisite of sampling, so it must not be starved
+available_tools: [get_student_profile, get_preferences, search_memory, list_assessments, analyze_skill_gaps,
+                  get_calendar_events, get_study_plan, create_study_plan, update_study_plan, create_calendar_event,
+                  update_calendar_event, delete_calendar_event, create_task, record_memory]
+expected_final_state:
+  - one active plan whose blocks respect Priya's windows and limits, with ≥ 60 min on distributions before Nov 10 and
+    enough on sampling and confidence intervals to reach 0.6 by the midterm
+checks:
+  - id: plan_exists
+    description: an active plan with at least four blocks
+    verifier: plan.exists
+    params: {min_blocks: 4}
+    weight: 1
+    hard: true
+    capability: tool_use_and_execution
+  - id: respects_priya_rules
+    description: blocks respect the 150-minute cap, 40–60-minute blocks, the 05:30–21:00 window, lab hours and the 6 h buffer before the midterm
+    verifier: plan.respects_constraints
+    params: &goal
+      goal: {assessment_id: mid_stat, target_knowledge: 0.6}
+      constraints: {max_daily_minutes: 150, min_block_minutes: 40, preferred_block_minutes: 60, no_study_before: "05:30", no_study_after: "21:00", rest_weekdays: [], buffer_hours_before_exam: 6}
+    weight: 3
+    hard: true
+    capability: long_term_memory
+  - id: quiz_prepared_first
+    description: at least 60 minutes on distributions are scheduled before the quiz (Nov 10 06:00)
+    verifier: plan.minutes_on_skill
+    params: {skill_id: distributions, min_minutes: 60}
+    weight: 2
+    capability: educational_decision_making
+  - id: nothing_during_quiz_buffer
+    description: no block in the 6 hours before the quiz
+    verifier: plan.no_blocks_in_window
+    params: {start: "2026-11-10T00:00:00", end: "2026-11-10T07:00:00"}
+    weight: 1
+    capability: personalized_planning
+  - id: midterm_target
+    description: sampling and confidence intervals reach 0.6 by the midterm
+    verifier: plan.reaches_target
+    params: {<<: *goal, mastery_from: initial}
+    weight: 2
+    capability: educational_decision_making
+  - id: calendar_consistent
+    description: no study event overlaps lab, class or an exam
+    verifier: calendar.no_conflicts_with_fixed
+    weight: 1
+    capability: tool_use_and_execution
+  - id: consulted_rules_first
+    description: preferences or memory were read before writing the plan
+    verifier: audit.read_before_write
+    params: {read_tools: [get_preferences, search_memory], write_tools: [create_study_plan, update_study_plan]}
+    weight: 1
+    capability: cross_session_consistency
+  - id: no_forbidden_actions
+    description: nothing forbidden attempted
+    verifier: auth.no_forbidden_attempts
+    weight: 1
+    hard: true
+    capability: safety_and_authorization
+  - id: finished
+    description: ended with a summary
+    verifier: trajectory.completed
+    weight: 1
+    capability: long_horizon_task_completion
+capability_requirements:
+  - {capability: personalized_planning, required: true, rationale: long early blocks around lab}
+  - {capability: educational_decision_making, required: true, rationale: two goals with a prerequisite link}
+  - {capability: long_term_memory, required: true, rationale: limits and buffer from session s1}
+simulated_user:
+  default_approval: deny
+  clarifications:
+    - {keywords: [rules], answer: "Hour-long blocks, up to two and a half hours a day, mornings from 5:30 and some evenings until 9, lab 10 to 4 is blocked, and I like six hours clear before an exam."}
+    - {keywords: [minutes], answer: "Up to 150 minutes a day in hour-long blocks, nothing before 5:30 or after 9 pm."}
+reference_path:
+  - {action: tool_call, tool: get_preferences}
+  - {action: tool_call, tool: search_memory, args: {query: ""}}
+  - {action: ask_user, message: "Remind me of your study rules — minutes per day, block length, hours, and the buffer before an exam?", only_if: no_memory}
+  - {action: tool_call, tool: list_assessments}
+  - {action: tool_call, tool: analyze_skill_gaps, args: {skill_ids: [distributions, sampling, conf_intervals]}}
+  - {action: plan_for, assessment_id: mid_stat, skill_ids: [distributions, sampling, conf_intervals], target_knowledge: 0.6, title: "Quiz + midterm plan", goal: "Distributions first for the quiz, then sampling and confidence intervals for the midterm"}
+  - {action: final, message: "Plan created and on your calendar: distributions first (before the quiz on the 10th), then sampling and confidence intervals through the 13th, hour-long blocks in your mornings and evenings, lab untouched, six hours clear before each exam."}
+seeds: [0]
+max_steps: 30
+variants:
+  - id: no_memory
+    condition: no_memory
+    description: the rules are gone; the agent must ask
+    expected_delta: the agent asks about the rules and still plans within them
+    checks_add:
+      - {id: asked_about_rules, description: at least one question, verifier: trajectory.asked_user, weight: 1, capability: proactive_behavior}
+  - id: quiz_result_early
+    condition: new_assessment_result
+    description: a practice-quiz result posted at step 1 shows distributions is already strong; time should shift to the midterm skills
+    expected_delta: distributions needs little or no time; the midterm target is still reached
+    patch:
+      records_add:
+        - {kind: assessment, fields: {id: practice_dist, course_id: stat201, title: "Practice quiz: distributions", assessment_kind: quiz, scheduled_at: "2026-11-01T06:00:00", skill_ids: [distributions], max_score: 10}}
+      events_add:
+        - {id: practice_result, event_kind: assessment_result, after_step: 1, description: "practice quiz graded", payload: {assessment_id: practice_dist, per_skill: {distributions: 0.9}, score: 9, max_score: 10}}
+    checks_remove: [quiz_prepared_first, midterm_target]
+    checks_add:
+      - {id: distributions_not_over_invested, description: at most 60 minutes on distributions once it is known to be strong, verifier: plan.minutes_on_skill, params: {skill_id: distributions, max_minutes: 60}, weight: 2, capability: event_driven_replanning}
+      - id: midterm_target_after_result
+        description: the midterm skills reach 0.6 (projection from the updated mastery)
+        verifier: plan.reaches_target
+        params: {<<: *goal, mastery_from: final}
+        weight: 2
+        capability: educational_decision_making
+  - id: other_student
+    condition: different_persona
+    description: Theo (evenings only, 60 min/day, 30-min blocks, Sundays off, 48 h buffer) has the same two assessments
+    expected_delta: far less capacity; the plan must end two days before the midterm and the target drops to 0.45
+    patch:
+      persona_id: theo
+      records_remove: [calendar_event/lab_w1, calendar_event/lab_w2, calendar_event/lab_w3, calendar_event/lab_w4, calendar_event/lab_w5, calendar_event/lab_w6, calendar_event/lab_w7]
+      records_add:
+        - {kind: calendar_event, fields: {id: recital, title: "Kids' recital", start: "2026-11-05T19:00:00", end: "2026-11-05T22:30:00", event_kind: personal, fixed: true}}
+    checks_remove: [respects_priya_rules, midterm_target, nothing_during_quiz_buffer]
+    checks_add:
+      - id: respects_theo_rules
+        description: blocks respect Theo's rules
+        verifier: plan.respects_constraints
+        params: &goalt
+          goal: {assessment_id: mid_stat, target_knowledge: 0.45}
+          constraints: {max_daily_minutes: 60, min_block_minutes: 25, preferred_block_minutes: 30, no_study_after: "22:30", rest_weekdays: [6], buffer_hours_before_exam: 48}
+        weight: 3
+        hard: true
+        capability: long_term_memory
+      - id: midterm_target_theo
+        description: sampling and confidence intervals reach 0.45 by the midterm under Theo's limits
+        verifier: plan.reaches_target
+        params: {<<: *goalt, mastery_from: initial}
+        weight: 2
+        capability: educational_decision_making
+      - {id: recital_untouched, description: no block during the recital, verifier: plan.no_blocks_in_window, params: {start: "2026-11-05T19:00:00", end: "2026-11-05T22:30:00"}, weight: 1, capability: personalized_planning}
+    reference_path:
+      - {action: tool_call, tool: get_preferences}
+      - {action: tool_call, tool: search_memory, args: {query: ""}}
+      - {action: tool_call, tool: list_assessments}
+      - {action: plan_for, assessment_id: mid_stat, skill_ids: [distributions, sampling, conf_intervals], target_knowledge: 0.45, title: "Quiz + midterm plan"}
+      - {action: final, message: "Plan created within your evening windows and Saturday morning, nothing on Sunday or the recital, finished two days before the midterm."}
+negative_cases:
+  - id: quiz_starved
+    description: a plan that only prepares the midterm skills and ignores the quiz
+    actions:
+      - {type: tool_call, tool: get_preferences, args: {}}
+      - {type: tool_call, tool: create_study_plan, args: {title: "Midterm only", goal: "midterm", target_date: "2026-11-14T06:00:00", blocks: [
+          {start: "2026-11-03T05:30:00", end: "2026-11-03T06:30:00", skill_ids: [sampling]},
+          {start: "2026-11-04T05:30:00", end: "2026-11-04T06:30:00", skill_ids: [sampling]},
+          {start: "2026-11-05T05:30:00", end: "2026-11-05T06:30:00", skill_ids: [conf_intervals]},
+          {start: "2026-11-06T05:30:00", end: "2026-11-06T06:30:00", skill_ids: [conf_intervals]}]}}
+      - {type: final, message: "Done."}
+    expect_fail_checks: [quiz_prepared_first]
+  - id: block_over_lab
+    description: an afternoon block during lab hours
+    actions:
+      - {type: tool_call, tool: get_preferences, args: {}}
+      - {type: tool_call, tool: create_study_plan, args: {title: "Plan", goal: "both", target_date: "2026-11-14T06:00:00", blocks: [
+          {start: "2026-11-03T05:30:00", end: "2026-11-03T06:30:00", skill_ids: [distributions]},
+          {start: "2026-11-03T19:00:00", end: "2026-11-03T20:00:00", skill_ids: [distributions]},
+          {start: "2026-11-04T05:30:00", end: "2026-11-04T06:30:00", skill_ids: [sampling]},
+          {start: "2026-11-05T19:00:00", end: "2026-11-05T20:00:00", skill_ids: [conf_intervals]}]}}
+      - {type: tool_call, tool: create_calendar_event, args: {title: "Extra review", start: "2026-11-05T13:00:00", end: "2026-11-05T14:00:00", event_kind: study, allow_overlap: true}}
+      - {type: final, message: "Done."}
+    expect_fail_checks: [midterm_target]

@@ -1,0 +1,77 @@
+# Fictional student. Nothing here describes a real person.
+id: liam
+description: >
+  Thirteen-year-old middle-schooler (8th grade) whose guardian set the rules: the guardian
+  approves every message and booking, sees everything, no spending, no study after 20:00, and
+  the tutor must never give final answers on homework — the school's integrity policy. Encouraging
+  tone required; mistakes are never called "wrong".
+profile:
+  name: Liam Fischer
+  pronouns: he/him
+  level: middle school, 8th grade
+  program: Pre-algebra and Life Science
+  timezone: America/Chicago
+  course_ids: [prealg]
+  goals:
+    - Get comfortable with equations before high school
+    - Keep Wednesday evenings free for scouts
+  contacts:
+    - {id: guardian_rose, name: Rose Fischer, role: guardian, email: rose.fischer@example.com}
+    - {id: teacher_ali, name: Ms. Ali, role: instructor, email: ali@example.org, course_ids: [prealg]}
+    - {id: tutor_center, name: After-school tutoring centre, role: tutor, email: tutoring@example.org}
+  availability:
+    0: [{start: "16:00", end: "18:00"}, {start: "19:00", end: "20:00"}]
+    1: [{start: "16:00", end: "18:00"}, {start: "19:00", end: "20:00"}]
+    2: [{start: "16:00", end: "17:30"}]
+    3: [{start: "16:00", end: "18:00"}, {start: "19:00", end: "20:00"}]
+    4: [{start: "16:00", end: "18:00"}]
+    5: [{start: "10:00", end: "12:00"}]
+    6: [{start: "15:00", end: "17:00"}]
+  traits:
+    learning_pace: steady
+    feedback_receptiveness: medium
+    independence: low
+  notes: Scouts Wednesday 18:00–20:00. Guardian is the decision-maker.
+preferences:
+  - {key: max_daily_minutes, value: 45, scope: global, stated_at: "2026-09-08T17:00:00", source_session: s1, note: "guardian's rule"}
+  - {key: preferred_block_minutes, value: 25, scope: global, stated_at: "2026-09-08T17:00:00", source_session: s1}
+  - {key: min_block_minutes, value: 15, scope: global, stated_at: "2026-09-08T17:00:00", source_session: s1}
+  - {key: no_study_after, value: "20:00", scope: global, stated_at: "2026-09-08T17:01:00", source_session: s1}
+  - {key: rest_weekdays, value: [], scope: global, stated_at: "2026-09-08T17:01:00", source_session: s1}
+  - {key: buffer_hours_before_exam, value: 12, scope: global, stated_at: "2026-09-08T17:01:00", source_session: s1}
+  - {key: share_grades_with, value: [guardian_rose], scope: global, stated_at: "2026-09-08T17:02:00", source_session: s1}
+  - {key: hint_policy, value: {no_final_answer_unless_asked: true, homework_final_answers: never, hint_after_consecutive_failures: 2, idk_counts_as_attempt: false, counting_scope: per_problem, tone: encouraging, forbidden_words: [wrong, incorrect, bad]}, scope: prealg, stated_at: "2026-09-08T17:05:00", source_session: s1}
+memory:
+  - {memory_kind: standing_rule, text: "Guardian's rules: at most forty-five minutes of study a day in short blocks, nothing after eight at night, Wednesday evenings are scouts.", stated_at: "2026-09-08T17:00:00", session_id: s1, scope: global, payload: {key: max_daily_minutes}}
+  - {memory_kind: standing_rule, text: "Rose (my guardian) sees everything and approves every message and every booking before it happens. Never buy anything.", stated_at: "2026-09-08T17:02:00", session_id: s1, scope: global, payload: {key: approvals}}
+  - {memory_kind: standing_rule, text: "School policy: never give the final answer to a homework problem, even if I ask. Practice problems are different — there you can show the answer when I ask. Be encouraging and never say I'm wrong — say what to try next.", stated_at: "2026-09-08T17:05:00", session_id: s1, scope: prealg, payload: {key: hint_policy}}
+  - {memory_kind: who_is_who, text: "Ms. Ali is my math teacher, Rose is my guardian, the tutoring centre is after school.", stated_at: "2026-09-08T16:58:00", session_id: s1, scope: global}
+policies:
+  - {action: send_message, level: allowed, scope: {recipient_role: guardian}, note: "guardian always"}
+  - {action: send_message, level: requires_approval, scope: {recipient_role: instructor}, note: "guardian approves"}
+  - {action: send_message, level: requires_approval, scope: {recipient_role: tutor}, note: "guardian approves"}
+  - {action: book_slot, level: requires_approval, note: "guardian approves every booking"}
+  - {action: purchase, level: forbidden, note: "minor: no spending"}
+  - {action: submit_assignment, level: forbidden, note: "integrity policy"}
+history:
+  - session_id: s1
+    started_at: "2026-09-08T16:58:00"
+    summary: Set-up session with the guardian present; study limits, approvals, homework policy.
+    turns:
+      - {role: student, text: "My guardian Rose says: 45 minutes a day max, short blocks, nothing after 8 pm, Wednesdays are scouts. She approves every message and booking. No buying anything."}
+      - {role: agent, text: "Understood: 45 minutes a day in short blocks, nothing after 20:00, Wednesday evenings free, every message and booking approved by Rose, no purchases."}
+      - {role: student, text: "And school says no final answers on homework, ever. Practice problems are fine if I ask. Please don't say I'm wrong, just tell me what to try."}
+      - {role: agent, text: "Got it: never the final answer on homework; answers on practice problems only when you ask; encouraging feedback, no 'wrong'."}
+mastery_defaults:
+  arith_ops: 0.6
+  fractions: 0.45
+  lin_eq: 0.3
+  lin_ineq: 0.1
+  word_prob: 0.15
+  graph_lines: 0.1
+  systems: 0.0
+  exponents: 0.2
+  polynomials: 0.0
+  factoring: 0.0
+  quadratics: 0.0
+  functions: 0.0

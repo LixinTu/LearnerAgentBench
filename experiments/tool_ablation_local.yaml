@@ -1,0 +1,12 @@
+# Tool-access ablation: full tools vs read-only tools vs the task's missing_tool_access variants.
+name: tool_ablation_local
+model: qwen2.5:7b-instruct
+adapter: openai_compatible
+adapter_params: {base_url: "http://127.0.0.1:11434/v1", max_tokens: 900}
+tasks: [all]
+variants: [base, no_memory_tool, no_booking_tool, never_restored]
+seeds: [0]
+max_steps: 25
+conditions:
+  full_tools:  {memory_access: tools, tool_profile: full}
+  read_only:   {memory_access: tools, tool_profile: read_only}

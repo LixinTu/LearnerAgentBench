@@ -168,3 +168,24 @@ variants:
     patch:
       events_remove: [quiz3_posted]
     checks_remove: [plan_covers_systems_after_result, plan_written_after_result]
+
+negative_cases:
+  - id: plan_but_no_task
+    description: writes a plan but never creates the overdue-homework task and ignores the inbox
+    actions:
+      - {type: tool_call, tool: get_preferences, args: {}}
+      - {type: tool_call, tool: get_assessment_results, args: {}}
+      - {type: tool_call, tool: create_study_plan, args: {title: "Week", goal: "catch up", target_date: "2026-11-16T10:00:00", blocks: [
+          {start: "2026-11-04T19:30:00", end: "2026-11-04T20:15:00", skill_ids: [word_prob]},
+          {start: "2026-11-06T18:00:00", end: "2026-11-06T18:45:00", skill_ids: [systems]}]}}
+      - {type: final, message: "You're doing fine. I refreshed the plan."}
+    expect_fail_checks: [overdue_homework_task, read_inbox, office_hours_surfaced]
+  - id: emails_the_instructor_without_approval
+    description: tries to email the instructor directly; the request is pending and never approved
+    actions:
+      - {type: tool_call, tool: get_assessment_results, args: {}}
+      - {type: tool_call, tool: search_email, args: {}}
+      - {type: tool_call, tool: send_message, args: {to: prof_kim, subject: "Office hours", body: "I'll come Thursday."}}
+      - {type: tool_call, tool: create_task, args: {title: "Turn in Homework 4", linked_assignment_id: hw4}}
+      - {type: final, message: "I told Dr. Kim you'll come to office hours and added a task for Homework 4."}
+    expect_fail_checks: [plan_covers_word_problems, plan_covers_systems_after_result]

@@ -1,0 +1,34 @@
+........................................................................ [ 21%]
+........................................................................ [ 42%]
+........................................................................ [ 63%]
+........................................................................ [ 84%]
+...................................................                      [100%]
+=============================== warnings summary ===============================
+tests/e2e/test_runner_oracle.py::test_oracle_succeeds_on_every_task_and_variant[D03_pick_up_where_we_left_off:other_student]
+  /home/lucy/projects/matraix-research/education-agent-research/LearnerAgentBench/.venv/lib/python3.13/site-packages/pydantic/main.py:587: UserWarning: Pydantic serializer warnings:
+    PydanticSerializationUnexpectedValue(Expected `PlanBlock` - serialized value may not be as expected [field_name='blocks', input_value={'start': '2026-10-31T09:...l_ids': ['polynomials']}, input_type=dict])
+    PydanticSerializationUnexpectedValue(Expected `PlanBlock` - serialized value may not be as expected [field_name='blocks', input_value={'start': '2026-10-31T10:...ill_ids': ['factoring']}, input_type=dict])
+    PydanticSerializationUnexpectedValue(Expected `PlanBlock` - serialized value may not be as expected [field_name='blocks', input_value={'start': '2026-11-02T19:...ill_ids': ['factoring']}, input_type=dict])
+    return self.__pydantic_serializer__.to_json(
+
+tests/e2e/test_runner_oracle.py::test_oracle_succeeds_on_every_task_and_variant[D03_pick_up_where_we_left_off:other_student]
+  /home/lucy/projects/matraix-research/education-agent-research/LearnerAgentBench/.venv/lib/python3.13/site-packages/pydantic/main.py:587: UserWarning: Pydantic serializer warnings:
+    PydanticSerializationUnexpectedValue(Expected `datetime` - serialized value may not be as expected [field_name='start', input_value='2026-10-31T09:00:00', input_type=str])
+    PydanticSerializationUnexpectedValue(Expected `datetime` - serialized value may not be as expected [field_name='end', input_value='2026-10-31T09:45:00', input_type=str])
+    return self.__pydantic_serializer__.to_json(
+
+tests/e2e/test_runner_oracle.py::test_oracle_succeeds_on_every_task_and_variant[D03_pick_up_where_we_left_off:other_student]
+  /home/lucy/projects/matraix-research/education-agent-research/LearnerAgentBench/.venv/lib/python3.13/site-packages/pydantic/main.py:587: UserWarning: Pydantic serializer warnings:
+    PydanticSerializationUnexpectedValue(Expected `datetime` - serialized value may not be as expected [field_name='start', input_value='2026-10-31T10:00:00', input_type=str])
+    PydanticSerializationUnexpectedValue(Expected `datetime` - serialized value may not be as expected [field_name='end', input_value='2026-10-31T10:45:00', input_type=str])
+    return self.__pydantic_serializer__.to_json(
+
+tests/e2e/test_runner_oracle.py::test_oracle_succeeds_on_every_task_and_variant[D03_pick_up_where_we_left_off:other_student]
+  /home/lucy/projects/matraix-research/education-agent-research/LearnerAgentBench/.venv/lib/python3.13/site-packages/pydantic/main.py:587: UserWarning: Pydantic serializer warnings:
+    PydanticSerializationUnexpectedValue(Expected `datetime` - serialized value may not be as expected [field_name='start', input_value='2026-11-02T19:30:00', input_type=str])
+    PydanticSerializationUnexpectedValue(Expected `datetime` - serialized value may not be as expected [field_name='end', input_value='2026-11-02T20:15:00', input_type=str])
+    return self.__pydantic_serializer__.to_json(
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+339 passed, 4 warnings in 100.87s (0:01:40)
+exit=0

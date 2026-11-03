@@ -1,0 +1,13 @@
+# Introductory statistics skill graph (fictional course scope).
+subject: statistics
+skills:
+  - {id: data_types, name: Data types and summaries, subject: statistics, difficulty: 0.2}
+  - {id: descriptive, name: "Descriptive statistics (mean, median, spread)", subject: statistics, difficulty: 0.3, prerequisites: [data_types]}
+  - {id: probability, name: Basic probability rules, subject: statistics, difficulty: 0.4, prerequisites: [data_types]}
+  - {id: distributions, name: Normal and binomial distributions, subject: statistics, difficulty: 0.5, prerequisites: [probability, descriptive]}
+  - {id: sampling, name: Sampling distributions and CLT, subject: statistics, difficulty: 0.6, prerequisites: [distributions]}
+  - {id: conf_intervals, name: Confidence intervals, subject: statistics, difficulty: 0.6, prerequisites: [sampling]}
+  - {id: hyp_tests, name: Hypothesis tests, subject: statistics, difficulty: 0.7, prerequisites: [sampling]}
+  - {id: regression, name: Simple linear regression, subject: statistics, difficulty: 0.7, prerequisites: [descriptive, hyp_tests]}
+  - {id: chi_square, name: Chi-square tests, subject: statistics, difficulty: 0.65, prerequisites: [hyp_tests]}
+  - {id: study_design, name: Study design and bias, subject: statistics, difficulty: 0.4, prerequisites: [data_types]}

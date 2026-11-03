@@ -1,0 +1,84 @@
+# Fictional student. Nothing here describes a real person.
+id: theo
+description: >
+  Working parent (two kids) finishing a part-time statistics requirement for a promotion. Only
+  late evenings and Saturday mornings are free; kids' events are sacred; wants two full days off
+  before any exam; partner may see the schedule but not grades; employer's tuition coordinator
+  needs grade confirmations, which Theo must approve first.
+profile:
+  name: Theo Nakamura
+  pronouns: he/him
+  level: adult learner, part-time
+  program: Statistics for business analysts (employer-sponsored)
+  timezone: America/Denver
+  course_ids: [stat201]
+  goals:
+    - Pass the course to qualify for the analyst promotion
+    - Never miss the kids' events
+  contacts:
+    - {id: prof_adler, name: Dr. Adler, role: instructor, email: adler@example.edu, course_ids: [stat201]}
+    - {id: partner_mia, name: Mia Nakamura, role: other, email: mia.n@example.com}
+    - {id: coord_hr, name: Jordan (tuition coordinator), role: other, email: tuition@example.com}
+    - {id: tutor_lee, name: Lee (tutoring centre), role: tutor, email: lee.tutor@example.edu}
+  availability:
+    0: [{start: "20:30", end: "22:30"}]
+    1: [{start: "20:30", end: "22:30"}]
+    2: [{start: "20:30", end: "22:30"}]
+    3: [{start: "20:30", end: "22:30"}]
+    4: [{start: "20:30", end: "22:00"}]
+    5: [{start: "07:00", end: "11:00"}]
+    6: []
+  traits:
+    learning_pace: steady
+    feedback_receptiveness: high
+    independence: medium
+  notes: Kids' events (recitals, games) are fixed calendar entries and always win.
+preferences:
+  - {key: max_daily_minutes, value: 60, scope: global, stated_at: "2026-09-15T21:00:00", source_session: s1}
+  - {key: preferred_block_minutes, value: 30, scope: global, stated_at: "2026-09-15T21:00:00", source_session: s1}
+  - {key: min_block_minutes, value: 25, scope: global, stated_at: "2026-09-15T21:00:00", source_session: s1}
+  - {key: no_study_after, value: "22:30", scope: global, stated_at: "2026-09-15T21:02:00", source_session: s1}
+  - {key: rest_weekdays, value: [6], scope: global, stated_at: "2026-09-15T21:02:00", source_session: s1, note: "Sunday is family"}
+  - {key: buffer_hours_before_exam, value: 48, scope: global, stated_at: "2026-09-15T21:05:00", source_session: s1, note: "two clear days before an exam"}
+  - {key: share_grades_with, value: [], scope: global, stated_at: "2026-09-15T21:06:00", source_session: s1, note: "nobody by default; HR only with approval"}
+  - {key: share_schedule_with, value: [partner_mia], scope: global, stated_at: "2026-09-15T21:06:00", source_session: s1}
+memory:
+  - {memory_kind: standing_rule, text: "I can only study after the kids are down — 8:30 to 10:30 at night — and Saturday mornings. An hour a day at most, half-hour chunks. Sundays are family.", stated_at: "2026-09-15T21:00:00", session_id: s1, scope: global, payload: {key: max_daily_minutes}}
+  - {memory_kind: standing_rule, text: "Two clear days before any exam. I don't cram; it makes me worse.", stated_at: "2026-09-15T21:05:00", session_id: s1, scope: global, payload: {key: buffer_hours_before_exam, value: 48}}
+  - {memory_kind: standing_rule, text: "Mia can see my study schedule so she can plan around it, but not my grades. The tuition coordinator at work needs grade confirmations for reimbursement — always check with me before sending anything to them.", stated_at: "2026-09-15T21:06:00", session_id: s1, scope: global, payload: {key: share_grades_with}}
+  - {memory_kind: standing_rule, text: "Kids' events on the calendar always win over study, no exceptions.", stated_at: "2026-09-15T21:03:00", session_id: s1, scope: global}
+  - {memory_kind: follow_up, text: "Reimbursement form for this term is due to HR by November 20; I need the grade confirmation before that.", stated_at: "2026-10-28T21:10:00", session_id: s3, scope: global, payload: {key: reimbursement_deadline, value: "2026-11-20"}}
+  - {memory_kind: who_is_who, text: "Dr. Adler teaches the stats course, Lee is at the tutoring centre, Mia is my partner, Jordan is the tuition coordinator at work.", stated_at: "2026-09-15T20:58:00", session_id: s1, scope: global}
+policies:
+  - {action: send_message, level: requires_approval, scope: {recipient_role: other}, note: "partner: schedule only; HR: approval"}
+  - {action: send_message, level: allowed, scope: {recipient_role: tutor}, note: "tutoring centre ok"}
+  - {action: send_message, level: requires_approval, scope: {recipient_role: instructor}, note: "ask first"}
+  - {action: purchase, level: forbidden, note: "employer pays; never buy"}
+  - {action: submit_assignment, level: forbidden, note: "Theo submits his own work"}
+  - {action: book_slot, level: requires_approval, note: "ask before booking"}
+history:
+  - session_id: s1
+    started_at: "2026-09-15T20:58:00"
+    summary: Set-up session. Evening-only study, Sundays off, 48-hour exam buffer, sharing rules.
+    turns:
+      - {role: student, text: "I've got two kids. I can study 8:30 to 10:30 at night and Saturday mornings, an hour a day in half-hour chunks. Sundays are family. Their events always win."}
+      - {role: agent, text: "Understood: weeknights 20:30–22:30 and Saturday mornings, 60 minutes a day in 30-minute blocks, Sundays and kids' events untouchable."}
+      - {role: student, text: "Two clear days before any exam, I don't cram. Mia can see the schedule but not grades. Work's tuition coordinator needs grades for reimbursement — always ask me first."}
+      - {role: agent, text: "Noted: 48 hours free before exams; schedule shareable with Mia, grades only to HR after you approve."}
+  - session_id: s3
+    started_at: "2026-10-28T21:10:00"
+    summary: Theo mentioned the reimbursement deadline.
+    turns:
+      - {role: student, text: "The reimbursement form is due to HR by November 20. I'll need the grade confirmation before then."}
+      - {role: agent, text: "I'll keep that in mind: grade confirmation to HR before November 20, after you approve it."}
+mastery_defaults:
+  data_types: 0.7
+  descriptive: 0.65
+  probability: 0.4
+  distributions: 0.3
+  sampling: 0.2
+  conf_intervals: 0.15
+  hyp_tests: 0.1
+  regression: 0.05
+  chi_square: 0.05
+  study_design: 0.5

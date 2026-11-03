@@ -1,0 +1,79 @@
+# Fictional student. Nothing here describes a real person.
+id: sofia
+description: >
+  Nursing student (English is her third language) with twelve-hour clinical shifts twice a week
+  that are fixed months ahead. Studies in the mornings after night shifts are impossible, so her
+  rules are per-day; she learns vocabulary through flashcards and wants terminology drilled before
+  concepts. Her clinical instructor may be contacted only after approval; her study group may see
+  her schedule but never her grades.
+profile:
+  name: Sofia Almeida
+  pronouns: she/her
+  level: nursing programme, second year
+  program: Anatomy & Physiology II and Microbiology
+  timezone: America/New_York
+  course_ids: [bio220]
+  goals:
+    - Pass Microbiology with at least 75% (programme requirement)
+    - Never study on a clinical-shift day
+  contacts:
+    - {id: prof_haddad, name: Dr. Haddad, role: instructor, email: haddad@example.edu, course_ids: [bio220]}
+    - {id: clin_ramos, name: Nurse Ramos (clinical instructor), role: advisor, email: ramos@example.org}
+    - {id: group_chat, name: "Study group (Ana, Jo, Priya K.)", role: peer, email: a-p-group@example.com}
+    - {id: tutor_mei, name: Mei (language tutor), role: tutor, email: mei.t@example.edu}
+  availability:
+    0: [{start: "08:00", end: "11:00"}, {start: "19:00", end: "21:00"}]
+    1: []
+    2: [{start: "08:00", end: "11:00"}, {start: "19:00", end: "21:00"}]
+    3: []
+    4: [{start: "08:00", end: "11:00"}, {start: "19:00", end: "21:00"}]
+    5: [{start: "09:00", end: "13:00"}]
+    6: [{start: "09:00", end: "13:00"}]
+  traits:
+    learning_pace: steady
+    feedback_receptiveness: high
+    independence: medium
+  notes: Clinical shifts Tuesday and Thursday 07:00–19:00 (fixed); no study at all on those days.
+preferences:
+  - {key: max_daily_minutes, value: 90, scope: global, stated_at: "2026-09-12T19:10:00", source_session: s1}
+  - {key: preferred_block_minutes, value: 30, scope: global, stated_at: "2026-09-12T19:10:00", source_session: s1}
+  - {key: min_block_minutes, value: 20, scope: global, stated_at: "2026-09-12T19:10:00", source_session: s1}
+  - {key: no_study_after, value: "21:00", scope: global, stated_at: "2026-09-12T19:12:00", source_session: s1}
+  - {key: rest_weekdays, value: [1, 3], scope: global, stated_at: "2026-09-12T19:12:00", source_session: s1, note: "clinical days"}
+  - {key: buffer_hours_before_exam, value: 12, scope: global, stated_at: "2026-09-12T19:12:00", source_session: s1}
+  - {key: preferred_activity, value: flashcards, scope: bio220, stated_at: "2026-09-12T19:15:00", source_session: s1, note: "terminology first"}
+  - {key: share_grades_with, value: [tutor_mei], scope: global, stated_at: "2026-09-12T19:16:00", source_session: s1}
+  - {key: share_schedule_with, value: [group_chat], scope: global, stated_at: "2026-09-12T19:16:00", source_session: s1}
+memory:
+  - {memory_kind: standing_rule, text: "Tuesdays and Thursdays are clinical, seven to seven — no study at all those days, I'm dead afterwards. Mornings and evenings the other days, up to ninety minutes in half-hour blocks.", stated_at: "2026-09-12T19:10:00", session_id: s1, scope: global, payload: {key: rest_weekdays}}
+  - {memory_kind: standing_rule, text: "Drill the terminology with flashcards before any new concept — the words are what trip me up in exams.", stated_at: "2026-09-12T19:15:00", session_id: s1, scope: bio220, payload: {key: preferred_activity}}
+  - {memory_kind: standing_rule, text: "The study group can see my schedule so we can sync, but never my grades. Mei can see grades. Nurse Ramos only with my okay.", stated_at: "2026-09-12T19:16:00", session_id: s1, scope: global, payload: {key: share_grades_with}}
+  - {memory_kind: who_is_who, text: "Dr. Haddad teaches Microbiology, Nurse Ramos is my clinical instructor, Mei is my language tutor, the study group is Ana, Jo and Priya K.", stated_at: "2026-09-12T19:05:00", session_id: s1, scope: global}
+policies:
+  - {action: send_message, level: allowed, scope: {recipient_role: tutor}, note: "Mei ok"}
+  - {action: send_message, level: requires_approval, scope: {recipient_role: peer}, note: "group: schedule only, ask"}
+  - {action: send_message, level: requires_approval, scope: {recipient_role: advisor}, note: "clinical instructor: ask"}
+  - {action: send_message, level: requires_approval, scope: {recipient_role: instructor}, note: "ask"}
+  - {action: purchase, level: forbidden, note: "no spending"}
+  - {action: submit_assignment, level: forbidden, note: "own work"}
+  - {action: book_slot, level: requires_approval, note: "ask"}
+history:
+  - session_id: s1
+    started_at: "2026-09-12T19:05:00"
+    summary: Set-up session. Clinical days, block limits, flashcards-first, sharing rules.
+    turns:
+      - {role: student, text: "Tuesdays and Thursdays I'm on clinical from seven to seven, so no study those days. Other days mornings and evenings, ninety minutes max in half-hour blocks."}
+      - {role: agent, text: "Understood: no study on Tuesday or Thursday; other days up to 90 minutes in 30-minute blocks, mornings and evenings."}
+      - {role: student, text: "Please always drill the terminology with flashcards before new concepts. My group can see my schedule but not grades; Mei can see grades; Nurse Ramos only if I say so."}
+      - {role: agent, text: "Noted: flashcards on terminology first; schedule to the group, grades only to Mei, Nurse Ramos with approval."}
+mastery_defaults:
+  cell_structure: 0.6
+  macromolecules: 0.5
+  membranes: 0.45
+  cell_respiration: 0.3
+  photosynthesis: 0.2
+  dna_replication: 0.4
+  gene_expression: 0.25
+  cell_cycle: 0.35
+  genetics: 0.2
+  terminology: 0.35

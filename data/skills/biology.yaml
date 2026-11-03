@@ -1,0 +1,13 @@
+# Introductory biology skill graph (fictional course scope).
+subject: biology
+skills:
+  - {id: cell_structure, name: Cell structure and organelles, subject: biology, difficulty: 0.3}
+  - {id: macromolecules, name: Biological macromolecules, subject: biology, difficulty: 0.4}
+  - {id: membranes, name: Membranes and transport, subject: biology, difficulty: 0.45, prerequisites: [cell_structure, macromolecules]}
+  - {id: cell_respiration, name: Cellular respiration, subject: biology, difficulty: 0.6, prerequisites: [membranes]}
+  - {id: photosynthesis, name: Photosynthesis, subject: biology, difficulty: 0.6, prerequisites: [membranes]}
+  - {id: dna_replication, name: DNA structure and replication, subject: biology, difficulty: 0.5, prerequisites: [macromolecules]}
+  - {id: gene_expression, name: Transcription and translation, subject: biology, difficulty: 0.65, prerequisites: [dna_replication]}
+  - {id: cell_cycle, name: Cell cycle and mitosis, subject: biology, difficulty: 0.5, prerequisites: [cell_structure, dna_replication]}
+  - {id: genetics, name: Mendelian genetics, subject: biology, difficulty: 0.6, prerequisites: [cell_cycle]}
+  - {id: terminology, name: Course terminology (vocabulary), subject: biology, difficulty: 0.3}

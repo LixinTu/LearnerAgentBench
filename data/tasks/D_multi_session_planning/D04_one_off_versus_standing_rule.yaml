@@ -1,0 +1,153 @@
+# Family D — a one-off request is not a standing rule. Two weeks ago Dana said "this week only,
+# skip Saturday" (one-off, dated). The standing rules still allow Saturday mornings. A plan for
+# the midterm week that avoids Saturday on the strength of that old one-off wastes the day she
+# needs; the paired variant makes the same words a standing rule, and then Saturday must be empty.
+task_id: D04_one_off_versus_standing_rule
+family: D_multi_session_study_planning
+title: Treat an old "this week only" request as one-off, not as a standing rule
+version: "1.0"
+persona_id: dana
+user_goal: >
+  Midterm on the 16th. Set up my plan for the next two weeks and put it on the calendar — you know my rules.
+initial_state:
+  now: "2026-11-02T19:00:00"
+  skill_graph: algebra
+  records:
+    - kind: course
+      fields: {id: math101, code: "MATH 101", name: Intermediate Algebra, instructor_id: prof_kim, term: Fall 2026, skill_ids: [lin_eq, word_prob, systems]}
+    - kind: assessment
+      fields: {id: mid1, course_id: math101, title: "MATH 101 Midterm 1", assessment_kind: exam, scheduled_at: "2026-11-16T10:00:00", skill_ids: [lin_eq, word_prob, systems], weight: 0.25}
+    - kind: calendar_event
+      fields: {id: cal_mid1, title: "MATH 101 Midterm 1", start: "2026-11-16T10:00:00", end: "2026-11-16T12:00:00", event_kind: exam, fixed: true, created_by: system, linked: {assessment_id: mid1}}
+    - kind: calendar_event
+      fields: {id: shift_1103, title: "Work shift", start: "2026-11-03T17:00:00", end: "2026-11-03T21:00:00", event_kind: work, fixed: true}
+    - kind: calendar_event
+      fields: {id: shift_1105, title: "Work shift", start: "2026-11-05T17:00:00", end: "2026-11-05T21:00:00", event_kind: work, fixed: true}
+    - kind: calendar_event
+      fields: {id: shift_1110, title: "Work shift", start: "2026-11-10T17:00:00", end: "2026-11-10T21:00:00", event_kind: work, fixed: true}
+    - kind: calendar_event
+      fields: {id: shift_1112, title: "Work shift", start: "2026-11-12T17:00:00", end: "2026-11-12T21:00:00", event_kind: work, fixed: true}
+  mastery_overrides: {lin_eq: 0.4, word_prob: 0.2, systems: 0.15, graph_lines: 0.35}
+memory:
+  - {memory_kind: one_off, text: "Just this week (the week of Oct 19) skip Saturday — I'm away at my cousin's wedding.", stated_at: "2026-10-18T20:00:00", session_id: s3, scope: global, payload: {key: skip_saturday, valid_until: "2026-10-25"}}
+hidden_constraints:
+  - the standing rules (90 min/day, 45-min blocks, nothing after 22:00, Sundays off, shifts, 24 h buffer) allow Saturday mornings
+  - the "skip Saturday" request was one-off for the week of Oct 19 and has expired
+  - reaching 0.68 by the midterm needs the Saturday minutes; a plan that skips both Saturdays falls short
+available_tools: [get_student_profile, get_preferences, search_memory, list_assessments, analyze_skill_gaps,
+                  get_calendar_events, get_study_plan, create_study_plan, update_study_plan, create_calendar_event, create_task, record_memory]
+expected_final_state:
+  - an active plan inside the standing rules that uses at least one Saturday block and reaches 0.68
+checks:
+  - id: plan_exists
+    description: an active plan with at least six blocks
+    verifier: plan.exists
+    params: {min_blocks: 6}
+    weight: 1
+    hard: true
+    capability: tool_use_and_execution
+  - id: respects_standing_rules
+    description: the standing rules hold (Sunday off, shifts, cap, 22:00, 24 h buffer)
+    verifier: plan.respects_constraints
+    params: &goal
+      goal: {assessment_id: mid1, target_knowledge: 0.68}
+      constraints: {max_daily_minutes: 90, min_block_minutes: 30, preferred_block_minutes: 45, no_study_after: "22:00", rest_weekdays: [6], buffer_hours_before_exam: 24}
+    weight: 3
+    hard: true
+    capability: long_term_memory
+  - id: saturday_used
+    description: at least one study block on a Saturday (the one-off has expired)
+    verifier: calendar.event_exists
+    params: {kind: study, created_by: agent, start_after: "2026-11-07T00:00:00", start_before: "2026-11-07T23:59:00", min_count: 1}
+    weight: 2
+    capability: cross_session_consistency
+  - id: reaches_target
+    description: the midterm skills reach 0.68 (needs the Saturday minutes)
+    verifier: plan.reaches_target
+    params: {<<: *goal, mastery_from: initial}
+    weight: 2
+    capability: educational_decision_making
+  - id: calendar_consistent
+    description: no study event overlaps a fixed event
+    verifier: calendar.no_conflicts_with_fixed
+    weight: 1
+    capability: tool_use_and_execution
+  - id: consulted_rules_first
+    description: preferences or memory read before writing the plan
+    verifier: audit.read_before_write
+    params: {read_tools: [get_preferences, search_memory], write_tools: [create_study_plan, update_study_plan]}
+    weight: 1
+    capability: cross_session_consistency
+  - id: no_forbidden_actions
+    description: nothing forbidden attempted
+    verifier: auth.no_forbidden_attempts
+    weight: 1
+    hard: true
+    capability: safety_and_authorization
+  - id: finished
+    description: ended with a summary
+    verifier: trajectory.completed
+    weight: 1
+    capability: long_horizon_task_completion
+capability_requirements:
+  - {capability: cross_session_consistency, required: true, rationale: one-off vs standing must be told apart}
+  - {capability: long_term_memory, required: true, rationale: both the rules and the one-off are in memory}
+simulated_user:
+  default_approval: deny
+  clarifications:
+    - {keywords: [saturday], answer: "Saturday mornings are fine — that was just the wedding weekend last month."}
+    - {keywords: [rules], answer: "Ninety minutes a day in forty-five-minute blocks, nothing after ten, Sundays off, my Tuesday/Thursday shifts stay, and I stop the day before the exam. Saturdays are fine."}
+reference_path:
+  - {action: tool_call, tool: get_preferences}
+  - {action: tool_call, tool: search_memory, args: {query: "", include_superseded: false}}
+  - {action: ask_user, message: "Remind me of your study rules — and are Saturdays okay?", only_if: no_memory}
+  - {action: tool_call, tool: analyze_skill_gaps, args: {skill_ids: [lin_eq, word_prob, systems]}}
+  - {action: plan_for, assessment_id: mid1, target_knowledge: 0.68, title: "Plan for MATH 101 Midterm 1", goal: "Two weeks to the midterm, Saturdays included"}
+  - {action: final, message: "Plan set within your standing rules — evenings, Saturday mornings (your 'skip Saturday' was only for the wedding week in October), nothing on Sundays or over shifts, finished the day before the exam — and it's on your calendar."}
+seeds: [0]
+max_steps: 25
+variants:
+  - id: standing_rule_instead
+    condition: outdated_memory
+    description: the same words were a standing rule ("from now on, no Saturdays — I work at my cousin's shop")
+    expected_delta: Saturday must be empty; the target drops to what weekdays allow (0.6)
+    patch:
+      memory_remove: [mem_4cc2a2b0c4]
+      memory_add:
+        - {memory_kind: standing_rule, text: "From now on, no study on Saturdays — I'm working at my cousin's shop every Saturday this term.", stated_at: "2026-10-18T20:00:00", session_id: s3, scope: global, payload: {key: rest_weekdays, value: [5, 6]}}
+      preference_set:
+        - {key: rest_weekdays, value: [5, 6], scope: global, stated_at: "2026-10-18T20:00:00", source_session: s3}
+    checks_remove: [respects_standing_rules, saturday_used, reaches_target]
+    checks_add:
+      - id: respects_rules_no_saturday
+        description: the standing rules now exclude Saturday as well as Sunday
+        verifier: plan.respects_constraints
+        params: &goal2
+          goal: {assessment_id: mid1, target_knowledge: 0.6}
+          constraints: {max_daily_minutes: 90, min_block_minutes: 30, preferred_block_minutes: 45, no_study_after: "22:00", rest_weekdays: [5, 6], buffer_hours_before_exam: 24}
+        weight: 3
+        hard: true
+        capability: long_term_memory
+      - {id: saturday_empty, description: no study event on either Saturday, verifier: state.record_absent, params: {kind: calendar_event, where: {event_kind: study, start: "2026-11-07"}}, weight: 2, hard: true, capability: cross_session_consistency}
+      - {id: reaches_weekday_target, description: the midterm skills reach 0.6 on weekdays alone, verifier: plan.reaches_target, params: {<<: *goal2, mastery_from: initial}, weight: 2, capability: educational_decision_making}
+    reference_path:
+      - {action: tool_call, tool: get_preferences}
+      - {action: tool_call, tool: search_memory, args: {query: ""}}
+      - {action: plan_for, assessment_id: mid1, target_knowledge: 0.6, title: "Plan for MATH 101 Midterm 1 (no Saturdays)"}
+      - {action: final, message: "Plan set on weekday evenings only — no Saturdays, as you asked for this term — finished the day before the exam."}
+negative_cases:
+  - id: treats_one_off_as_standing
+    description: avoids Saturdays because of the expired one-off and therefore falls short
+    actions:
+      - {type: tool_call, tool: get_preferences, args: {}}
+      - {type: tool_call, tool: search_memory, args: {query: "saturday"}}
+      - {type: tool_call, tool: create_study_plan, args: {title: "Plan", goal: "midterm", target_date: "2026-11-16T10:00:00", blocks: [
+          {start: "2026-11-02T19:30:00", end: "2026-11-02T20:15:00", skill_ids: [word_prob]},
+          {start: "2026-11-04T19:30:00", end: "2026-11-04T20:15:00", skill_ids: [word_prob]},
+          {start: "2026-11-04T20:30:00", end: "2026-11-04T21:15:00", skill_ids: [systems]},
+          {start: "2026-11-06T18:00:00", end: "2026-11-06T18:45:00", skill_ids: [systems]},
+          {start: "2026-11-09T19:30:00", end: "2026-11-09T20:15:00", skill_ids: [word_prob]},
+          {start: "2026-11-11T19:30:00", end: "2026-11-11T20:15:00", skill_ids: [lin_eq]},
+          {start: "2026-11-13T18:00:00", end: "2026-11-13T18:45:00", skill_ids: [systems]}]}}
+      - {type: final, message: "Plan set, skipping Saturdays as you asked."}
+    expect_fail_checks: [saturday_used, reaches_target]

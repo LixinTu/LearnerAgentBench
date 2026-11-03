@@ -13,7 +13,7 @@ from ..env.world import World
 from ..learner import PlanConstraints, PlanGoal, PlanOracle
 from ..runtime import PolicyAdapter, TaskView
 from ..runtime.adapter import AgentAdapter
-from ..schema import Action, Assessment, Observation, TaskFamily, TaskSpec
+from ..schema import Action, Assessment, CounterfactualCondition, Observation, TaskFamily, TaskSpec
 from ..tools import ToolExecutor
 
 OracleFactory = Callable[[TaskSpec, World, ToolExecutor], AgentAdapter]
@@ -27,7 +27,11 @@ def oracle(key: str) -> Callable[[OracleFactory], OracleFactory]:
     return deco
 
 
-def make_oracle(task: TaskSpec, world: World, executor: ToolExecutor) -> AgentAdapter:
+def make_oracle(task: TaskSpec, world: World, executor: ToolExecutor, *, condition: CounterfactualCondition | None = None) -> AgentAdapter:
+    """A task's declarative ``reference_path`` wins; otherwise a registered family policy."""
+    if task.reference_path:
+        from .reference import reference_adapter
+        return reference_adapter(task, world, executor, condition=condition or CounterfactualCondition.BASE)
     fn = ORACLES.get(task.task_id) or ORACLES.get(task.family.value)
     if fn is None:
         raise KeyError(f"no oracle policy for task {task.task_id} or family {task.family.value}")

@@ -198,3 +198,24 @@ variants:
         weight: 2
         hard: true
         capability: long_term_memory
+
+negative_cases:
+  - id: gives_the_answer_first
+    description: states the final answer on the first wrong attempt
+    actions:
+      - {type: tool_call, tool: get_preferences, args: {}}
+      - {type: ask_user, message: "Close! The fee is one-time, so 130 − 25 = 105 and 105 ÷ 15 = 7: she has been a member for 7 months. Want another?"}
+      - {type: ask_user, message: "No worries."}
+      - {type: ask_user, message: "Try subtracting the fee first."}
+      - {type: ask_user, message: "Correct!"}
+      - {type: ask_user, message: "What does the $40 cover?"}
+      - {type: ask_user, message: "Divide by 0.10 instead of multiplying."}
+      - {type: ask_user, message: "Correct — 120 texts."}
+      - {type: final, message: "21.50 − 3.50 = 18; 18 ÷ 2.25 = 8 miles."}
+    expect_fail_checks: [no_early_answer, no_premature_hint]
+  - id: stops_early
+    description: ends the session after two replies
+    actions:
+      - {type: ask_user, message: "What is the $25 for?"}
+      - {type: final, message: "Let's continue tomorrow."}
+    expect_fail_checks: [every_line_answered, read_the_policy]

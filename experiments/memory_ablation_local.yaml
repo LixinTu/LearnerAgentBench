@@ -1,0 +1,12 @@
+# Memory ablation: the same tool-using agent with memory only via tools vs. memory notes in the prompt vs. no memory at all (variant no_memory removes it from the world).
+name: memory_ablation_local
+model: qwen2.5:7b-instruct
+adapter: openai_compatible
+adapter_params: {base_url: "http://127.0.0.1:11434/v1", max_tokens: 900}
+tasks: [all]
+variants: [base, no_memory]
+seeds: [0]
+max_steps: 25
+conditions:
+  memory_via_tools:  {memory_access: tools, tool_profile: full}
+  memory_in_prompt:  {memory_access: full,  tool_profile: full}
