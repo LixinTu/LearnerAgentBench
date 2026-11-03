@@ -2,7 +2,7 @@
 ........................................................................ [ 42%]
 ........................................................................ [ 63%]
 ........................................................................ [ 84%]
-...................................................                      [100%]
+....................................................                     [100%]
 =============================== warnings summary ===============================
 tests/e2e/test_runner_oracle.py::test_oracle_succeeds_on_every_task_and_variant[D03_pick_up_where_we_left_off:other_student]
   /home/lucy/projects/matraix-research/education-agent-research/LearnerAgentBench/.venv/lib/python3.13/site-packages/pydantic/main.py:587: UserWarning: Pydantic serializer warnings:
@@ -30,5 +30,5 @@ tests/e2e/test_runner_oracle.py::test_oracle_succeeds_on_every_task_and_variant[
     return self.__pydantic_serializer__.to_json(
 
 -- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
-339 passed, 4 warnings in 100.87s (0:01:40)
+340 passed, 4 warnings in 110.37s (0:01:50)
 exit=0
