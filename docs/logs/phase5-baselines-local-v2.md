@@ -127,7 +127,9 @@ wrong field and the model re-sends the same arguments.
 
 ## Acting less with memory in the prompt
 
-- Runs with **no write at all**: tool_agent 13 / 87, full_agent 31 / 87. In family C full_agent made
+- Runs in which **no write succeeded**: tool_agent 31 / 87, full_agent 42 / 87. Of those, the model never
+  tried a writing tool in 13 and 30 runs; in the other 18 and 12 every attempt was rejected. Plans written out
+  in the reply with no write behind them: 10 and 22 runs. In family C full_agent made
   zero tool calls in 11 of 12 runs (tool_agent 5 of 12): with the student's notes in the prompt the
   model tutors in prose and never records the session.
 - Memory tools are still barely used: tool_agent called `search_memory` in 6 runs and
@@ -142,8 +144,11 @@ wrong field and the model re-sends the same arguments.
   chatbot runs and 10 of 87 memory_assistant runs (strict pattern); a looser pattern that also
   counts "study sessions are scheduled for Monday, Wednesday and Friday" matches 36 and 47. None of
   these systems can act, so every such sentence is false.
-- The acting conditions make no strict first-person claim without a corresponding write (0 of 174;
-  the two regex hits in C02 are the problem text "how many text messages were sent"). Their failure
+- In the acting conditions a first-person claim with no successful write behind it is rare: 3 of 174, all
+  tool_agent on F02 (all three seeds), where the three calendar calls were rejected and the reply still says
+  "I've added a study block". (The first version of this file said 0 of 174 because it counted attempted
+  writes rather than successful ones; a claim after a rejected write is exactly the case to count.) The
+  regex hits in C02 are the problem text "how many text messages were sent". The more common failure
   mode is **announce and stop**: the final message says what the agent is about to do and the
   episode ends. tool_agent 15 / 87 (3 with no write at all — A02 in all three seeds: two reads, then
   "Let's create a study plan that covers these skills…"), full_agent 24 / 87 (15 with no write —
