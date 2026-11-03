@@ -98,10 +98,11 @@ class PlanOracle:
         return sorted(wanted, key=lambda s: order.index(s) if s in order else len(order))
 
     def assess(self, blocks: list[PlanBlock], goal: PlanGoal, constraints: PlanConstraints,
-               *, tolerance: float = 0.02, mastery: dict[str, MasteryState] | None = None) -> PlanAssessment:
+               *, tolerance: float = 0.02, mastery: dict[str, MasteryState] | None = None,
+               now: datetime | None = None) -> PlanAssessment:
         mastery = mastery if mastery is not None else self.world.mastery()
         violations: list[str] = []
-        now = self.world.now
+        now = now or self.world.now
         # structural checks
         by_day: dict[str, int] = {}
         for i, b in enumerate(blocks):

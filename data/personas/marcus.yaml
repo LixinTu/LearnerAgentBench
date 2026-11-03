@@ -1,0 +1,86 @@
+# Fictional student. Nothing here describes a real person.
+id: marcus
+description: >
+  High-school junior (16) on the basketball team. Parents are involved: they see grades and must be
+  kept in the loop; teachers may only be contacted after Marcus approves. Short attention span —
+  short blocks, early mornings and after practice. Prefers to be shown the answer after one try.
+profile:
+  name: Marcus Bell
+  pronouns: he/him
+  level: high school, 11th grade
+  program: Algebra II and Chemistry
+  timezone: America/Chicago
+  course_ids: [alg2, chem]
+  goals:
+    - Raise the Algebra II grade to a B before the end of the quarter
+    - Never miss practice
+  contacts:
+    - {id: teacher_ruiz, name: Mr. Ruiz, role: instructor, email: ruiz@example.org, course_ids: [alg2]}
+    - {id: teacher_park, name: Ms. Park, role: instructor, email: park@example.org, course_ids: [chem]}
+    - {id: dad_bell, name: Andre Bell, role: parent, email: andre.bell@example.com}
+    - {id: coach_lee, name: Coach Lee, role: other, email: coach.lee@example.org}
+    - {id: tutor_priya, name: Priya (peer tutor), role: tutor, email: priya.t@example.org, course_ids: [alg2]}
+  availability:
+    0: [{start: "06:30", end: "07:30"}, {start: "19:30", end: "21:00"}]
+    1: [{start: "06:30", end: "07:30"}, {start: "16:00", end: "18:00"}, {start: "19:30", end: "21:00"}]
+    2: [{start: "06:30", end: "07:30"}, {start: "19:30", end: "21:00"}]
+    3: [{start: "06:30", end: "07:30"}, {start: "16:00", end: "18:00"}, {start: "19:30", end: "21:00"}]
+    4: [{start: "06:30", end: "07:30"}]
+    5: [{start: "10:00", end: "13:00"}]
+    6: [{start: "14:00", end: "17:00"}]
+  traits:
+    learning_pace: fast but inconsistent
+    feedback_receptiveness: medium
+    independence: low
+  notes: Basketball practice Mon/Wed/Fri 16:00-18:30 (fixed). Friday evenings are off.
+preferences:
+  - {key: max_daily_minutes, value: 60, scope: global, stated_at: "2026-10-03T19:40:00", source_session: s1, note: "can't focus longer"}
+  - {key: preferred_block_minutes, value: 30, scope: global, stated_at: "2026-10-03T19:40:00", source_session: s1}
+  - {key: min_block_minutes, value: 20, scope: global, stated_at: "2026-10-03T19:40:00", source_session: s1}
+  - {key: no_study_after, value: "21:00", scope: global, stated_at: "2026-10-03T19:42:00", source_session: s1}
+  - {key: rest_weekdays, value: [], scope: global, stated_at: "2026-10-03T19:42:00", source_session: s1}
+  - {key: hint_policy, value: {no_final_answer_unless_asked: false, hint_after_consecutive_failures: 1, show_answer_after_failures: 1, idk_counts_as_attempt: true, counting_scope: per_problem}, scope: alg2, stated_at: "2026-10-10T19:30:00", source_session: s2}
+  - {key: share_grades_with, value: [dad_bell, tutor_priya], scope: global, stated_at: "2026-10-03T19:45:00", source_session: s1, note: "dad always sees them"}
+memory:
+  - {memory_kind: standing_rule, text: "Keep my dad in the loop: he can see my grades and my study plan any time.", stated_at: "2026-10-03T19:45:00", session_id: s1, scope: global, payload: {key: share_grades_with}}
+  - {memory_kind: standing_rule, text: "Don't email my teachers without asking me first.", stated_at: "2026-10-03T19:46:00", session_id: s1, scope: global, payload: {key: contact_teachers}}
+  - {memory_kind: standing_rule, text: "Short sessions: thirty minutes, at most an hour a day, mornings before school or after practice. Nothing on Friday nights.", stated_at: "2026-10-03T19:40:00", session_id: s1, scope: global, payload: {key: max_daily_minutes}}
+  - {memory_kind: standing_rule, text: "Practice is Monday, Wednesday and Friday four to six-thirty. Don't schedule over it.", stated_at: "2026-10-03T19:41:00", session_id: s1, scope: global}
+  - {memory_kind: update, text: "If I get a problem wrong once, just show me how it's done — I learn from the worked example, I don't want to be quizzed.", stated_at: "2026-10-10T19:30:00", session_id: s2, scope: alg2, payload: {key: hint_policy}}
+  - {memory_kind: who_is_who, text: "Mr. Ruiz teaches Algebra II, Ms. Park teaches Chemistry, Priya is my peer tutor, Coach Lee runs basketball, Andre is my dad.", stated_at: "2026-10-03T19:35:00", session_id: s1, scope: global}
+policies:
+  - {action: send_message, level: allowed, scope: {recipient_role: parent}, note: "Marcus: dad can always be told"}
+  - {action: send_message, level: allowed, scope: {recipient_role: tutor}, note: "peer tutor ok"}
+  - {action: send_message, level: requires_approval, scope: {recipient_role: instructor}, note: "ask me before emailing teachers"}
+  - {action: send_message, level: requires_approval, scope: {recipient_role: other}, note: "ask before contacting the coach"}
+  - {action: purchase, level: forbidden, note: "no spending; parents handle money"}
+  - {action: submit_assignment, level: forbidden, note: "Marcus submits his own work"}
+  - {action: book_slot, level: requires_approval, note: "ask before booking anything"}
+history:
+  - session_id: s1
+    started_at: "2026-10-03T19:30:00"
+    summary: Set-up session. Marcus explained practice times, short-session limits and who sees his grades.
+    turns:
+      - {role: student, text: "I've got practice Monday, Wednesday and Friday four to six-thirty and I can't focus for more than half an hour at a time, an hour a day tops. Mornings before school or after practice are fine. Friday nights no."}
+      - {role: agent, text: "Got it: thirty-minute blocks, at most sixty minutes a day, mornings or after practice, never over practice, nothing Friday night."}
+      - {role: student, text: "My dad can see all my grades and plans, that's fine. But don't email my teachers unless you ask me first."}
+      - {role: agent, text: "Understood: your dad is always allowed; teachers only after you say yes."}
+  - session_id: s2
+    started_at: "2026-10-10T19:30:00"
+    summary: Marcus said how he wants homework help.
+    turns:
+      - {role: student, text: "When I get something wrong, just show me how it's done. I don't want to be quizzed, I learn from seeing it."}
+      - {role: agent, text: "Okay: after one wrong try I'll show the worked solution."}
+mastery_defaults:
+  arith_ops: 0.85
+  fractions: 0.7
+  lin_eq: 0.6
+  lin_ineq: 0.4
+  word_prob: 0.35
+  graph_lines: 0.5
+  systems: 0.25
+  exponents: 0.55
+  polynomials: 0.4
+  factoring: 0.2
+  quadratics: 0.1
+  functions: 0.3

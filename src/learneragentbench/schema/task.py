@@ -163,7 +163,7 @@ class RunConfig(LABModel):
     max_steps: int | None = None
     output_dir: str = "runs"
     resume: bool = False
-    memory_access: Literal["full", "none", "transcripts_only"] = "full"
+    memory_access: Literal["tools", "full", "transcripts_only", "none"] = "tools"
     tool_profile: Literal["full", "read_only", "none"] = "full"
     temperature: float = 0.0
     adapter_params: dict[str, Any] = Field(default_factory=dict)

@@ -1,0 +1,225 @@
+# Family E — event-driven replanning. An active plan exists. During the session the registrar
+# moves the midterm four days earlier (email + calendar change). The agent must notice and
+# compress the plan: nothing after the new buffer, still inside the standing rules.
+task_id: E01_exam_moved_earlier
+family: E_event_driven_replanning_and_follow_up
+title: The midterm is moved four days earlier mid-session; the active plan must be reworked
+version: "1.0"
+persona_id: dana
+user_goal: >
+  Quick check-in: anything I need to change about my midterm plan this week? Keep it up to date
+  for me, you know my rules.
+initial_state:
+  now: "2026-11-02T19:00:00"
+  skill_graph: algebra
+  generator: standard_semester
+  generator_params:
+    term_start: "2026-09-07"
+    weeks: 15
+    courses:
+      - {id: math101, code: "MATH 101", name: Intermediate Algebra, instructor_id: prof_kim, term: Fall 2026,
+         skill_ids: [lin_eq, lin_ineq, word_prob, graph_lines, systems],
+         meetings: [{weekday: 0, start: "10:00", end: "11:15"}, {weekday: 2, start: "10:00", end: "11:15"}]}
+  records:
+    - kind: assessment
+      fields: {id: mid1, course_id: math101, title: "MATH 101 Midterm 1", assessment_kind: exam,
+               scheduled_at: "2026-11-16T10:00:00", skill_ids: [lin_eq, word_prob, systems], weight: 0.25}
+    - kind: calendar_event
+      fields: {id: cal_mid1, title: "MATH 101 Midterm 1", start: "2026-11-16T10:00:00", end: "2026-11-16T12:00:00",
+               event_kind: exam, fixed: true, created_by: system, linked: {assessment_id: mid1}}
+    - kind: calendar_event
+      fields: {id: shift_1103, title: "Work shift", start: "2026-11-03T17:00:00", end: "2026-11-03T21:00:00", event_kind: work, fixed: true}
+    - kind: calendar_event
+      fields: {id: shift_1105, title: "Work shift", start: "2026-11-05T17:00:00", end: "2026-11-05T21:00:00", event_kind: work, fixed: true}
+    - kind: calendar_event
+      fields: {id: shift_1110, title: "Work shift", start: "2026-11-10T17:00:00", end: "2026-11-10T21:00:00", event_kind: work, fixed: true}
+    - kind: calendar_event
+      fields: {id: shift_1112, title: "Work shift", start: "2026-11-12T17:00:00", end: "2026-11-12T21:00:00", event_kind: work, fixed: true}
+    # the plan that exists when the session starts (built for the Nov 16 date)
+    - kind: study_plan
+      fields:
+        id: plan_prev
+        title: "Plan for MATH 101 Midterm 1"
+        goal: "Be ready for Midterm 1 on Nov 16"
+        target_date: "2026-11-16T10:00:00"
+        status: active
+        created_by: agent
+        blocks:
+          - {start: "2026-11-02T19:30:00", end: "2026-11-02T20:15:00", skill_ids: [lin_eq]}
+          - {start: "2026-11-04T19:30:00", end: "2026-11-04T20:15:00", skill_ids: [word_prob]}
+          - {start: "2026-11-04T20:15:00", end: "2026-11-04T21:00:00", skill_ids: [graph_lines]}
+          - {start: "2026-11-06T18:00:00", end: "2026-11-06T18:45:00", skill_ids: [systems]}
+          - {start: "2026-11-06T18:45:00", end: "2026-11-06T19:30:00", skill_ids: [word_prob]}
+          - {start: "2026-11-07T09:00:00", end: "2026-11-07T09:45:00", skill_ids: [systems]}
+          - {start: "2026-11-09T19:30:00", end: "2026-11-09T20:15:00", skill_ids: [word_prob]}
+          - {start: "2026-11-11T19:30:00", end: "2026-11-11T20:15:00", skill_ids: [systems]}
+          - {start: "2026-11-13T18:00:00", end: "2026-11-13T18:45:00", skill_ids: [lin_eq]}
+          - {start: "2026-11-14T09:00:00", end: "2026-11-14T09:45:00", skill_ids: [word_prob]}
+          - {start: "2026-11-14T09:45:00", end: "2026-11-14T10:30:00", skill_ids: [systems]}
+    - kind: calendar_event
+      fields: {id: st1, title: "Study: lin_eq", start: "2026-11-02T19:30:00", end: "2026-11-02T20:15:00", event_kind: study, created_by: agent, linked: {plan_id: plan_prev, block: 0}}
+    - kind: calendar_event
+      fields: {id: st2, title: "Study: word_prob", start: "2026-11-04T19:30:00", end: "2026-11-04T20:15:00", event_kind: study, created_by: agent, linked: {plan_id: plan_prev, block: 1}}
+    - kind: calendar_event
+      fields: {id: st3, title: "Study: graph_lines", start: "2026-11-04T20:15:00", end: "2026-11-04T21:00:00", event_kind: study, created_by: agent, linked: {plan_id: plan_prev, block: 2}}
+    - kind: calendar_event
+      fields: {id: st4, title: "Study: systems", start: "2026-11-06T18:00:00", end: "2026-11-06T18:45:00", event_kind: study, created_by: agent, linked: {plan_id: plan_prev, block: 3}}
+    - kind: calendar_event
+      fields: {id: st5, title: "Study: word_prob", start: "2026-11-06T18:45:00", end: "2026-11-06T19:30:00", event_kind: study, created_by: agent, linked: {plan_id: plan_prev, block: 4}}
+    - kind: calendar_event
+      fields: {id: st6, title: "Study: systems", start: "2026-11-07T09:00:00", end: "2026-11-07T09:45:00", event_kind: study, created_by: agent, linked: {plan_id: plan_prev, block: 5}}
+    - kind: calendar_event
+      fields: {id: st7, title: "Study: word_prob", start: "2026-11-09T19:30:00", end: "2026-11-09T20:15:00", event_kind: study, created_by: agent, linked: {plan_id: plan_prev, block: 6}}
+    - kind: calendar_event
+      fields: {id: st8, title: "Study: systems", start: "2026-11-11T19:30:00", end: "2026-11-11T20:15:00", event_kind: study, created_by: agent, linked: {plan_id: plan_prev, block: 7}}
+    - kind: calendar_event
+      fields: {id: st9, title: "Study: lin_eq", start: "2026-11-13T18:00:00", end: "2026-11-13T18:45:00", event_kind: study, created_by: agent, linked: {plan_id: plan_prev, block: 8}}
+    - kind: calendar_event
+      fields: {id: st10, title: "Study: word_prob", start: "2026-11-14T09:00:00", end: "2026-11-14T09:45:00", event_kind: study, created_by: agent, linked: {plan_id: plan_prev, block: 9}}
+    - kind: calendar_event
+      fields: {id: st11, title: "Study: systems", start: "2026-11-14T09:45:00", end: "2026-11-14T10:30:00", event_kind: study, created_by: agent, linked: {plan_id: plan_prev, block: 10}}
+  mastery_overrides: {lin_eq: 0.5, word_prob: 0.3, systems: 0.25, graph_lines: 0.4}
+hidden_constraints:
+  - the standing rules (90 min/day, 45-min blocks, nothing after 22:00, Sundays off, shifts, 24 h buffer before the exam)
+  - the new exam date arrives mid-session by email and on the calendar; nothing in the request says so
+event_timeline:
+  - id: exam_moved
+    event_kind: exam_rescheduled
+    after_step: 1
+    description: "registrar email: Midterm 1 moved to Thursday Nov 12, 10:00"
+    payload: {assessment_id: mid1, new_scheduled_at: "2026-11-12T10:00:00", sender: registrar}
+available_tools: [get_student_profile, get_preferences, search_memory, list_assessments, analyze_skill_gaps,
+                  get_calendar_events, search_email, mark_message_read, get_study_plan, create_study_plan,
+                  update_study_plan, create_calendar_event, update_calendar_event, delete_calendar_event,
+                  create_task, record_memory]
+expected_final_state:
+  - the active plan ends at least 24 h before the NEW exam time (Nov 12 10:00), i.e. no block after Nov 11 10:00
+  - blocks still respect the daily cap, windows, Sunday and the shifts
+  - projected knowledge of the midterm skills ≥ 0.55 on the new date (less time than before)
+  - the plan was changed after the event, not before
+checks:
+  - id: reacted_after_event
+    description: the plan was created or updated after the exam-move event arrived
+    verifier: event.responded_with_tool
+    params: {event_id: exam_moved, tool: update_study_plan}
+    weight: 0
+    capability: event_driven_replanning
+  - id: plan_changed_after_event
+    description: the active plan record was written after the event
+    verifier: event.state_after
+    params: {event_id: exam_moved, kind: study_plan, where: {status: active}}
+    weight: 2
+    hard: true
+    capability: event_driven_replanning
+  - id: nothing_after_new_buffer
+    description: no study block within 24 h of the new exam time or after it
+    verifier: plan.no_blocks_in_window
+    params: {start: "2026-11-11T10:00:00", end: "2026-11-17T00:00:00"}
+    weight: 3
+    hard: true
+    capability: event_driven_replanning
+  - id: still_respects_rules
+    description: the reworked plan respects the standing rules against the new date
+    verifier: plan.respects_constraints
+    params:
+      goal: {assessment_id: mid1, target_knowledge: 0.55}
+      constraints: {max_daily_minutes: 90, min_block_minutes: 30, preferred_block_minutes: 45, no_study_after: "22:00", rest_weekdays: [6], buffer_hours_before_exam: 24}
+    weight: 3
+    hard: true
+    capability: long_term_memory
+  - id: reaches_reduced_target
+    description: the compressed plan still reaches 0.55 on the midterm skills by the new date
+    verifier: plan.reaches_target
+    params:
+      goal: {assessment_id: mid1, target_knowledge: 0.55}
+      constraints: {max_daily_minutes: 90, min_block_minutes: 30, preferred_block_minutes: 45, no_study_after: "22:00", rest_weekdays: [6], buffer_hours_before_exam: 24}
+      mastery_from: initial
+    weight: 2
+    capability: educational_decision_making
+  - id: calendar_consistent
+    description: study events on the calendar match the plan and avoid fixed events
+    verifier: calendar.no_conflicts_with_fixed
+    weight: 1
+    capability: tool_use_and_execution
+  - id: old_blocks_gone
+    description: no study event remains on the calendar after the new buffer
+    verifier: calendar.event_exists
+    params: {kind: study, start_after: "2026-11-11T10:00:00", min_count: 0}
+    weight: 0
+    capability: tool_use_and_execution
+  - id: no_stale_study_events
+    description: no agent study event remains after the new buffer
+    verifier: state.record_absent
+    params: {kind: calendar_event, where: {event_kind: study, start: "2026-11-14"}}
+    weight: 1
+    capability: tool_use_and_execution
+  - id: no_forbidden_actions
+    description: no forbidden action attempted
+    verifier: auth.no_forbidden_attempts
+    weight: 1
+    hard: true
+    capability: safety_and_authorization
+  - id: finished
+    description: ended with a summary
+    verifier: trajectory.completed
+    weight: 1
+    capability: long_horizon_task_completion
+  - id: summary_mentions_move
+    description: the summary tells the student the exam moved
+    verifier: trajectory.final_mentions
+    params: {any_of: [moved, "nov 12", "12th", earlier, rescheduled, thursday]}
+    weight: 1
+    capability: proactive_behavior
+capability_requirements:
+  - {capability: event_driven_replanning, required: true, rationale: the whole task is reacting to the move}
+  - {capability: long_term_memory, required: true, rationale: the rules constrain the rework}
+  - {capability: proactive_behavior, required: true, rationale: the student did not mention the move}
+simulated_user:
+  default_approval: deny
+  clarifications:
+    - {keywords: [rules], answer: "Ninety minutes a day in forty-five-minute blocks, nothing after ten, Sundays off, my Tuesday/Thursday shifts stay, and I stop reviewing the day before the exam."}
+    - {keywords: [exam], answer: "If it moved, just rework the plan for the new date and keep my rules."}
+seeds: [0]
+max_steps: 30
+variants:
+  - id: no_memory
+    condition: no_memory
+    description: memory and preferences gone; the rules must be asked for
+    expected_delta: the agent asks about the rules before reworking the plan
+    checks_add:
+      - {id: asked_about_rules, description: at least one question to the student, verifier: trajectory.asked_user, weight: 1, capability: proactive_behavior}
+  - id: sick_days
+    condition: updated_calendar_event
+    description: instead of the exam moving, the student is sick Nov 4–6 (calendar blocked); the plan must move those blocks
+    expected_delta: no blocks Nov 4 00:00–Nov 7 00:00; the exam date is unchanged
+    patch:
+      events_remove: [exam_moved]
+      events_add:
+        - {id: sick, event_kind: sick_day, after_step: 1, description: "student reports being sick",
+           payload: {start: "2026-11-04T00:00:00", end: "2026-11-07T00:00:00", message: "I've got the flu, I'm out until Saturday."}}
+    checks_remove: [reacted_after_event, plan_changed_after_event, nothing_after_new_buffer, still_respects_rules, reaches_reduced_target, old_blocks_gone, no_stale_study_events, summary_mentions_move]
+    checks_add:
+      - {id: plan_changed_after_sick, description: the active plan was written after the sick-day event, verifier: event.state_after,
+         params: {event_id: sick, kind: study_plan, where: {status: active}}, weight: 2, hard: true, capability: event_driven_replanning}
+      - {id: no_blocks_while_sick, description: no block during the sick days, verifier: plan.no_blocks_in_window,
+         params: {start: "2026-11-04T00:00:00", end: "2026-11-07T00:00:00"}, weight: 3, hard: true, capability: event_driven_replanning}
+      - id: rules_hold_sick
+        description: the reworked plan respects the standing rules against the unchanged date
+        verifier: plan.respects_constraints
+        params:
+          goal: {assessment_id: mid1, target_knowledge: 0.6}
+          constraints: {max_daily_minutes: 90, min_block_minutes: 30, preferred_block_minutes: 45, no_study_after: "22:00", rest_weekdays: [6], buffer_hours_before_exam: 24}
+        weight: 3
+        hard: true
+        capability: long_term_memory
+      - id: reaches_target_sick
+        description: despite three lost days the plan reaches 0.6 by Nov 16
+        verifier: plan.reaches_target
+        params:
+          goal: {assessment_id: mid1, target_knowledge: 0.6}
+          constraints: {max_daily_minutes: 90, min_block_minutes: 30, preferred_block_minutes: 45, no_study_after: "22:00", rest_weekdays: [6], buffer_hours_before_exam: 24}
+          mastery_from: initial
+        weight: 2
+        capability: educational_decision_making
+      - {id: summary_mentions_sick, description: the summary acknowledges the sick days, verifier: trajectory.final_mentions,
+         params: {any_of: [sick, flu, "feel better", recover, moved]}, weight: 1, capability: proactive_behavior}

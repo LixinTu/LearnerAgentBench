@@ -20,7 +20,7 @@ from ..schema import LABModel, MasteryState, PlanBlock, SkillGraph
 
 
 class LearnerModelParams(LABModel):
-    learning_rate: float = Field(default=0.35, gt=0)   # mastery gain per hour at mastery 0, prereqs known
+    learning_rate: float = Field(default=0.5, gt=0)    # mastery gain per hour at mastery 0, prereqs known
     prereq_floor: float = Field(default=0.3, ge=0, le=1)  # effectiveness when prerequisites are unknown
     stability_growth: float = Field(default=0.6, ge=0)  # stability multiplier per practice session
     spacing_bonus: float = Field(default=0.5, ge=0)     # extra growth when retention had dropped

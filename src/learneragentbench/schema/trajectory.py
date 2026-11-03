@@ -22,6 +22,7 @@ class Action(LABModel):
     tool_call: ToolCall | None = None
     message: str = ""
     reasoning: str = ""
+    wait_minutes: int = 60
 
     @classmethod
     def call(cls, tool: str, **args: Any) -> Action:
@@ -34,6 +35,10 @@ class Action(LABModel):
     @classmethod
     def ask(cls, message: str) -> Action:
         return cls(type="ask_user", message=message)
+
+    @classmethod
+    def wait(cls, minutes: int = 60, message: str = "") -> Action:
+        return cls(type="wait", wait_minutes=minutes, message=message)
 
 
 class Observation(LABModel):

@@ -115,7 +115,7 @@ checkpoint exists so that nothing can silently substitute for it.
 Verifiers read the audit log, never the agent's text, to score tool correctness,
 authorization and duplicate actions.
 
-## 6. Runtime (Phase 2)
+## 6. Runtime
 
 `runtime.AgentAdapter` protocol: `start(task_view)`, `step(observation) → Action`,
 `state()` / `restore(state)` for resume. Actions: `tool_call`, `ask_user`, `final`, `wait`.
@@ -129,7 +129,7 @@ Adapters: `scripted` (task-specific oracle policies for validation), `mock` (rep
 Ollama/vLLM/llama.cpp or hosted models; a JSON-action fallback for models without native tool
 calling).
 
-## 7. Tasks and counterfactuals (Phase 3)
+## 7. Tasks and counterfactuals
 
 `schema.TaskSpec` is the unit of the dataset (YAML under `data/tasks/<family>/`). It fixes the
 persona, the initial state (generator + explicit records + mastery overrides), prior sessions
@@ -141,7 +141,7 @@ missing_tool_access, updated_calendar_event, new_assessment_result) with a `Stat
 the checks it adds or removes. Runs of a task and its variants share seeds so that pairs can be
 compared directly.
 
-## 8. Verification (Phase 4)
+## 8. Verification
 
 Deterministic verifiers inspect final state, the audit log, the event log and the trajectory:
 plan acceptable (`PlanOracle.assess`), calendar consistency, task completion (expected final
@@ -154,5 +154,5 @@ harness failure (internal tool errors, outages the task did not inject, model AP
 
 ## 9. Status
 
-Phase 1 (this document's sections 3–5): implemented; see docs/logs/phase1-tests.txt for the test run. Phases 2–6: see
+Sections 3–8 are implemented (Phases 1–2); the dataset (section 7) holds one task and one persona so far. Test runs: docs/logs/. Phases 2–6: see
 `docs/ROADMAP.md`.

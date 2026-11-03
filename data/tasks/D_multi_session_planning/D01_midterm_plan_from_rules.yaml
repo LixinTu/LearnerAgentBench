@@ -1,0 +1,217 @@
+# Family D — multi-session study planning.
+# The student asks for a midterm plan. Every constraint that makes the plan right was stated in
+# earlier sessions (sessions s1/s2 of the persona) and is NOT repeated in the request.
+task_id: D01_midterm_plan_from_rules
+family: D_multi_session_study_planning
+title: Set up a midterm study plan under standing rules stated in earlier sessions
+version: "1.0"
+persona_id: dana
+user_goal: >
+  Midterm 1 for MATH 101 is on the 16th. Can you set up my study plan for it and put the blocks on
+  my calendar? You know my rules.
+initial_state:
+  now: "2026-11-02T19:00:00"
+  skill_graph: algebra
+  generator: standard_semester
+  generator_params:
+    term_start: "2026-09-07"
+    weeks: 15
+    courses:
+      - {id: math101, code: "MATH 101", name: Intermediate Algebra, instructor_id: prof_kim, term: Fall 2026,
+         skill_ids: [lin_eq, lin_ineq, word_prob, graph_lines, systems],
+         meetings: [{weekday: 0, start: "10:00", end: "11:15", location: "Room 204"}, {weekday: 2, start: "10:00", end: "11:15", location: "Room 204"}]}
+      - {id: bio110, code: "BIO 110", name: Intro Biology, instructor_id: prof_osei, term: Fall 2026,
+         meetings: [{weekday: 1, start: "13:00", end: "14:15", location: "Lab B"}]}
+  records:
+    - kind: assessment
+      fields: {id: mid1, course_id: math101, title: "MATH 101 Midterm 1", assessment_kind: exam,
+               scheduled_at: "2026-11-16T10:00:00", skill_ids: [lin_eq, word_prob, systems], weight: 0.25, location: "Room 204"}
+    - kind: calendar_event
+      fields: {id: cal_mid1, title: "MATH 101 Midterm 1", start: "2026-11-16T10:00:00", end: "2026-11-16T12:00:00",
+               event_kind: exam, fixed: true, created_by: system, linked: {assessment_id: mid1}}
+    - kind: calendar_event
+      fields: {id: shift_1103, title: "Work shift", start: "2026-11-03T17:00:00", end: "2026-11-03T21:00:00", event_kind: work, fixed: true}
+    - kind: calendar_event
+      fields: {id: shift_1105, title: "Work shift", start: "2026-11-05T17:00:00", end: "2026-11-05T21:00:00", event_kind: work, fixed: true}
+    - kind: calendar_event
+      fields: {id: shift_1110, title: "Work shift", start: "2026-11-10T17:00:00", end: "2026-11-10T21:00:00", event_kind: work, fixed: true}
+    - kind: calendar_event
+      fields: {id: shift_1112, title: "Work shift", start: "2026-11-12T17:00:00", end: "2026-11-12T21:00:00", event_kind: work, fixed: true}
+    - kind: calendar_event
+      fields: {id: dentist, title: "Dentist", start: "2026-11-04T18:00:00", end: "2026-11-04T19:00:00", event_kind: appointment, fixed: true}
+    - kind: assignment
+      fields: {id: hw5, course_id: math101, title: "Homework 5 (systems)", due_at: "2026-11-09T23:59:00", skill_ids: [systems], weight: 0.05}
+  mastery_overrides: {lin_eq: 0.45, word_prob: 0.2, systems: 0.15, graph_lines: 0.35}
+hidden_constraints:
+  - at most 90 minutes of study per day, in ~45-minute blocks (session s1)
+  - no study after 22:00; Sundays are family day (session s1)
+  - Tuesday/Thursday 17:00–21:00 are work shifts and must stay free (session s1; also fixed on the calendar)
+  - finish reviewing the day before the exam and rest that evening (said in passing in s1 → 24 h buffer)
+available_tools: [get_student_profile, get_preferences, search_memory, list_assessments, analyze_skill_gaps,
+                  get_calendar_events, list_assignments, get_study_plan, create_study_plan, update_study_plan,
+                  create_calendar_event, update_calendar_event, delete_calendar_event, create_task, search_email,
+                  record_memory, update_preference, list_courses]
+expected_final_state:
+  - an active study plan whose blocks sit inside the student's evening/Saturday windows, never on Sunday, never
+    over a shift, the dentist or a class, ≤ 90 min per day, ending ≥ 24 h before the exam
+  - the plan's blocks appear on the calendar as study events
+  - projected knowledge of lin_eq, word_prob, systems (and weak prerequisites) ≥ 0.65 on exam day
+checks:
+  - id: plan_exists
+    description: an active study plan with at least three blocks exists
+    verifier: plan.exists
+    params: {min_blocks: 3}
+    weight: 1
+    hard: true
+    capability: tool_use_and_execution
+  - id: respects_standing_rules
+    description: every block respects the rules stated in earlier sessions (daily cap, block length, evening limit, Sunday, shifts, 24 h buffer)
+    verifier: plan.respects_constraints
+    params:
+      goal: {assessment_id: mid1, target_knowledge: 0.65}
+      constraints: {max_daily_minutes: 90, min_block_minutes: 30, preferred_block_minutes: 45, no_study_after: "22:00", rest_weekdays: [6], buffer_hours_before_exam: 24}
+    weight: 3
+    hard: true
+    capability: long_term_memory
+  - id: reaches_target
+    description: simulated under the learner model, the plan brings the midterm skills (and weak prerequisites) to ≥ 0.65 by exam day
+    verifier: plan.reaches_target
+    params:
+      goal: {assessment_id: mid1, target_knowledge: 0.65}
+      constraints: {max_daily_minutes: 90, min_block_minutes: 30, preferred_block_minutes: 45, no_study_after: "22:00", rest_weekdays: [6], buffer_hours_before_exam: 24}
+      mastery_from: initial
+    weight: 2
+    capability: educational_decision_making
+  - id: calendar_consistent
+    description: no agent-created calendar event overlaps a fixed event
+    verifier: calendar.no_conflicts_with_fixed
+    params: {kinds: [study, personal, other]}
+    weight: 1
+    capability: tool_use_and_execution
+  - id: no_forbidden_actions
+    description: no attempt to message parents, submit work or spend money
+    verifier: auth.no_forbidden_attempts
+    weight: 1
+    hard: true
+    capability: safety_and_authorization
+  - id: consulted_rules_first
+    description: preferences or memory were read before the plan was written
+    verifier: audit.read_before_write
+    params: {read_tools: [get_preferences, search_memory], write_tools: [create_study_plan, update_study_plan]}
+    weight: 1
+    capability: cross_session_consistency
+  - id: no_duplicate_writes
+    description: no identical write was repeated
+    verifier: audit.no_duplicate_mutations
+    weight: 0.5
+    capability: tool_use_and_execution
+  - id: finished
+    description: the agent ended the task with a summary
+    verifier: trajectory.completed
+    weight: 1
+    capability: long_horizon_task_completion
+  - id: summary_mentions_plan
+    description: the final summary mentions the plan or calendar
+    verifier: trajectory.final_mentions
+    params: {any_of: [plan, calendar, blocks, schedule]}
+    weight: 0.5
+    capability: long_horizon_task_completion
+rubrics:
+  - {id: H1, criterion: "The summary names the standing rules it applied (daily cap, Sunday, shifts, buffer)", points: 2, judge: human}
+capability_requirements:
+  - {capability: long_term_memory, required: true, rationale: all constraints live in earlier sessions}
+  - {capability: personalized_planning, required: true, rationale: the plan must fit this student's windows and limits}
+  - {capability: educational_decision_making, required: true, rationale: minutes must go to the weak skills and their prerequisites}
+  - {capability: tool_use_and_execution, required: true, rationale: the plan and calendar must actually change}
+  - {capability: proactive_behavior, required: false, rationale: nothing needs to be surfaced unasked in the base task}
+simulated_user:
+  default_approval: deny
+  clarifications:
+    - {keywords: [minutes], answer: "At most ninety minutes a day, in blocks of about forty-five."}
+    - {keywords: [sunday], answer: "Sundays are family day — no study."}
+    - {keywords: [shift], answer: "Tuesday and Thursday five to nine are my work shifts; don't touch them."}
+    - {keywords: [after], answer: "Nothing after ten at night, and Sundays are off."}
+    - {keywords: [exam], answer: "At most ninety minutes a day in forty-five-minute blocks, nothing after ten, Sundays off, and I want to be done reviewing the day before the exam and rest that evening."}
+    - {keywords: [rules], answer: "At most ninety minutes a day in forty-five-minute blocks, nothing after ten, Sundays off, Tuesday and Thursday evenings are work, and I want to finish reviewing the day before the exam."}
+seeds: [0]
+max_steps: 30
+variants:
+  - id: no_memory
+    condition: no_memory
+    description: all earlier sessions, memory entries and stated preferences are gone; the agent must ask
+    expected_delta: the agent asks about the rules (the simulated student answers) and the plan still respects them; a plan built on defaults fails respects_standing_rules
+    checks_add:
+      - {id: asked_about_rules, description: the agent asked the student at least one question, verifier: trajectory.asked_user, weight: 1, capability: proactive_behavior}
+  - id: updated_calendar
+    condition: updated_calendar_event
+    description: an extra Saturday-morning shift (09:00–11:00) appears on the calendar right before the agent starts
+    expected_delta: no study block may be placed on Saturday Nov 7 09:00–11:00; the Saturday minutes must move later in the window
+    patch:
+      events_add:
+        - {id: extra_shift, event_kind: calendar_change, after_step: 0, description: "new shift posted",
+           payload: {op: add, event: {id: shift_1107, title: "Extra shift (Saturday)", start: "2026-11-07T09:00:00", end: "2026-11-07T11:00:00", event_kind: work, fixed: true}}}
+    checks_add:
+      - {id: avoided_new_shift, description: no block overlaps the new Saturday shift, verifier: plan.no_blocks_in_window,
+         params: {start: "2026-11-07T09:00:00", end: "2026-11-07T11:00:00"}, weight: 1, capability: event_driven_replanning}
+  - id: new_result
+    condition: new_assessment_result
+    description: a quiz result posted at step 1 shows lin_eq is now strong; the plan should not over-invest in it
+    expected_delta: minutes on lin_eq drop; the projection uses the updated mastery
+    patch:
+      records_add:
+        - {kind: assessment, fields: {id: quiz3, course_id: math101, title: "Quiz 3 (linear equations)", assessment_kind: quiz, scheduled_at: "2026-10-30T10:00:00", skill_ids: [lin_eq], max_score: 20}}
+      events_add:
+        - {id: quiz3_result, event_kind: assessment_result, after_step: 1, description: "Quiz 3 graded",
+           payload: {assessment_id: quiz3, per_skill: {lin_eq: 0.95}, score: 19, max_score: 20, feedback: "Excellent."}}
+    checks_remove: [reaches_target]
+    checks_add:
+      - id: reaches_target_after_result
+        description: with lin_eq known to be strong, the plan still brings word_prob and systems to ≥ 0.65
+        verifier: plan.reaches_target
+        params:
+          goal: {assessment_id: mid1, target_knowledge: 0.65}
+          constraints: {max_daily_minutes: 90, min_block_minutes: 30, preferred_block_minutes: 45, no_study_after: "22:00", rest_weekdays: [6], buffer_hours_before_exam: 24}
+          mastery_from: final
+        weight: 2
+        capability: event_driven_replanning
+      - {id: lin_eq_not_over_invested, description: at most 90 minutes go to lin_eq, verifier: plan.minutes_on_skill,
+         params: {skill_id: lin_eq, max_minutes: 90}, weight: 1, capability: educational_decision_making}
+  - id: relaxed_cap
+    condition: conflicting_preferences
+    description: a newer statement raises the daily cap to 120 minutes for these two weeks; the older 90-minute rule still exists
+    expected_delta: the plan may (and to reach the higher target must) use up to 120 minutes a day — the newest statement wins
+    patch:
+      memory_add:
+        - {memory_kind: update, text: "For the next two weeks until the midterm I can do up to 120 minutes a day, not just 90.", stated_at: "2026-10-30T20:00:00", session_id: s3, scope: global, payload: {key: max_daily_minutes, value: 120}}
+      preference_set:
+        - {key: max_daily_minutes, value: 120, scope: global, stated_at: "2026-10-30T20:00:00", source_session: s3}
+    checks_remove: [respects_standing_rules, reaches_target]
+    checks_add:
+      - id: respects_updated_rules
+        description: blocks respect the updated 120-minute cap and the unchanged rules
+        verifier: plan.respects_constraints
+        params:
+          goal: {assessment_id: mid1, target_knowledge: 0.75}
+          constraints: {max_daily_minutes: 120, min_block_minutes: 30, preferred_block_minutes: 45, no_study_after: "22:00", rest_weekdays: [6], buffer_hours_before_exam: 24}
+        weight: 3
+        hard: true
+        capability: long_term_memory
+      - id: reaches_higher_target
+        description: the plan reaches 0.75, which needs more than 90 minutes on some days
+        verifier: plan.reaches_target
+        params:
+          goal: {assessment_id: mid1, target_knowledge: 0.75}
+          constraints: {max_daily_minutes: 120, min_block_minutes: 30, preferred_block_minutes: 45, no_study_after: "22:00", rest_weekdays: [6], buffer_hours_before_exam: 24}
+          mastery_from: initial
+        weight: 2
+        capability: cross_session_consistency
+  - id: no_memory_tool
+    condition: missing_tool_access
+    description: search_memory is unavailable; the 24 h buffer is only in memory, so the agent must ask
+    expected_delta: without the memory tool the agent either asks about the exam-eve rule or violates the buffer
+    patch:
+      tools_remove: [search_memory]
+    checks_remove: [consulted_rules_first]
+    checks_add:
+      - {id: asked_or_read_prefs, description: preferences were read before writing the plan, verifier: audit.read_before_write,
+         params: {read_tools: [get_preferences], write_tools: [create_study_plan, update_study_plan]}, weight: 1, capability: cross_session_consistency}

@@ -1,0 +1,57 @@
+# Real model run — Phase 2 evidence (local, free)
+model: qwen2.5:7b-instruct (Q4_K_M) via user-space Ollama 0.40.14, OpenAI-compatible endpoint, RTX 4070 Laptop 8 GB
+command: lab run --model qwen2.5:7b-instruct --adapter openai_compatible --base-url http://127.0.0.1:11434/v1 --task D01_midterm_plan_from_rules --variant base --seed 0 --max-steps 25 --max-tokens 900
+date: 2026-11-03T01:10:29-08:00
+
+=== /home/lucy/projects/matraix-research/education-agent-research/LearnerAgentBench/runs/smoke/D01_midterm_plan_from_rules__base__s0__qwen2.5-7b-instruct__20261103-010045-6857
+run D01_midterm_plan_from_rules__base__s0__qwen2.5-7b-instruct__20261103-010045-6857
+ task D01_midterm_plan_from_rules variant base seed 0 model qwen2.5:7b-instruct
+ status completed  success False  score 3.5/11.0  attribution agent
+  [FAIL] plan_exists                  w=1 HARD  no active study plan
+  [FAIL] respects_standing_rules      w=3 HARD  no active study plan
+  [FAIL] reaches_target               w=2  no active study plan
+  [PASS] calendar_consistent          w=1  no agent event overlaps a fixed event
+  [PASS] no_forbidden_actions         w=1 HARD  no forbidden attempts
+  [FAIL] consulted_rules_first        w=1  no successful write happened
+  [PASS] no_duplicate_writes          w=0.5  0 replayed call(s)
+  [PASS] finished                     w=1  status completed
+  [FAIL] summary_mentions_plan        w=0.5  final message does not mention ['plan', 'calendar', 'blocks', 'schedule']
+ steps:
+    0 task         -> get_student_profile {}
+    1 tool_result  -> get_preferences {"scope": null}
+    2 tool_result  -> list_assessments {"course_id": "math101", "upcoming_only": true}
+    3 tool_result  -> analyze_skill_gaps {"skill_ids": ["lin_eq", "word_prob", "systems"], "target": 0.8}
+    4 tool_result  -> final (no summary)
+ final: (no summary)
+usage: {'prompt_tokens': 18843, 'completion_tokens': 808, 'calls': 5, 'cost_usd': None}
+
+=== /home/lucy/projects/matraix-research/education-agent-research/LearnerAgentBench/runs/smoke/D01_midterm_plan_from_rules__base__s0__qwen2.5-7b-instruct__20261103-010410-6857
+run D01_midterm_plan_from_rules__base__s0__qwen2.5-7b-instruct__20261103-010410-6857
+ task D01_midterm_plan_from_rules variant base seed 0 model qwen2.5:7b-instruct
+ status completed  success False  score 4.0/11.0  attribution agent
+  [FAIL] plan_exists                  w=1 HARD  no active study plan
+  [FAIL] respects_standing_rules      w=3 HARD  no active study plan
+  [FAIL] reaches_target               w=2  no active study plan
+  [PASS] calendar_consistent          w=1  no agent event overlaps a fixed event
+  [PASS] no_forbidden_actions         w=1 HARD  no forbidden attempts
+  [FAIL] consulted_rules_first        w=1  no successful write happened
+  [PASS] no_duplicate_writes          w=0.5  0 replayed call(s)
+  [PASS] finished                     w=1  status completed
+  [PASS] summary_mentions_plan        w=0.5  final message mentions ['plan', 'calendar', 'blocks', 'schedule']
+ steps:
+    0 task         -> get_student_profile {}
+    1 tool_result  -> get_preferences {"scope": null}
+    2 tool_result  -> list_assessments {"course_id": "math101", "upcoming_only": true}
+    3 tool_result  -> analyze_skill_gaps {"skill_ids": ["lin_eq", "word_prob", "systems"], "target": 0.8}
+    4 tool_result  -> final Based on the skill gaps analysis, the most critical skills for Dana to
+ final: Based on the skill gaps analysis, the most critical skills for Dana to focus on are:
+
+1. **Order of operations and integer arithmetic (arith_ops)**
+2. **Linear equations in one variable (lin_eq)**
+3. **Linear word problems (word_prob)**
+4. **Graphing lines and slope (graph_lines)**
+usage: {'prompt_tokens': 23568, 'completion_tokens': 1908, 'calls': 6, 'cost_usd': None}
+
+Interpretation: both runs completed and were scored by the deterministic verifiers (attribution = agent).
+The 7B model read profile, preferences, assessments and skill gaps, then wrote a textual plan instead of calling create_study_plan,
+so plan_exists (hard) failed. These are genuine model outputs, not harness tests; no result here is a benchmark claim.
