@@ -334,6 +334,17 @@ def auth_requested_approval(ctx: VerifyContext, check: CheckSpec) -> CheckResult
     return result(check, bool(reqs), f"{len(reqs)} approval request(s) for {p['tool']}")
 
 
+def _event_not_applied(ctx: VerifyContext, check: CheckSpec, event_id: str) -> CheckResult:
+    """The event never fired. If the task's timeline has it and the episode ended normally, the agent
+    finished before a time-triggered event it was told to wait for: that is the agent's failure, not a
+    harness gap. An event id the task does not know at all stays unverified."""
+    known = {e.id for e in ctx.task.event_timeline}
+    if event_id in known and ctx.trajectory.status in ("completed", "max_steps"):
+        return result(check, False, f"event {event_id} never fired before the agent finished — a time-triggered event "
+                                    f"needs the agent to wait for it (trajectory ended at {ctx.trajectory.ended_at})")
+    return result(check, None, f"event {event_id} was never applied")
+
+
 # -------------------------------------------------------------------- events
 @verifier("event.responded_with_tool")
 def event_responded(ctx: VerifyContext, check: CheckSpec) -> CheckResult:
@@ -341,7 +352,7 @@ def event_responded(ctx: VerifyContext, check: CheckSpec) -> CheckResult:
     p = check.params
     at = ctx.event_applied_at(p["event_id"])
     if at is None:
-        return result(check, None, f"event {p['event_id']} was never applied")
+        return _event_not_applied(ctx, check, p["event_id"])
     rows = [r for r in ctx.audit(p["tool"], ok=True) if r.virtual_time >= at and _contains(r.args, p.get("args_contains", {}))]
     return result(check, bool(rows), f"{len(rows)} call(s) to {p['tool']} after the event")
 
@@ -352,7 +363,7 @@ def event_state_after(ctx: VerifyContext, check: CheckSpec) -> CheckResult:
     p = check.params
     at = ctx.event_applied_at(p["event_id"])
     if at is None:
-        return result(check, None, f"event {p['event_id']} was never applied")
+        return _event_not_applied(ctx, check, p["event_id"])
     cls = RECORD_TYPES[p["kind"]]
     cands = [r for r in ctx.world.list(cls) if _contains(r.model_dump(mode="json"), p.get("where", {}))]
     step = ctx.event_step(p["event_id"])

@@ -1,0 +1,200 @@
+# Family D — two sessions in one episode. Theo asks for the quiz plan now AND for a follow-up on
+# Friday evening. The agent must wait for Friday (virtual time), then handle what arrives then:
+# the student's report (Monday and Tuesday done, Wednesday skipped), a work trip added for
+# Monday, and the learning history. The second plan keeps the first plan's done work, puts the
+# skipped distributions time back, stays off the trip day and inside the 48 h quiz buffer. An
+# agent that writes the first plan and ends the episode never reaches Friday — that is a
+# failure, not an unverifiable check.
+task_id: D06_come_back_on_friday
+family: D_multi_session_study_planning
+title: Plan now, come back on Friday, and adjust to what happened in between
+version: "1.0"
+persona_id: theo
+user_goal: >
+  Two things, in order. First, build my plan for the distributions quiz now. Then come back on Friday evening —
+  I'll tell you how the week went — and adjust it. Don't finish until we've done both.
+initial_state:
+  now: "2026-11-02T20:30:00"
+  skill_graph: statistics
+  records:
+    - kind: course
+      fields: {id: stat201, code: "STAT 201", name: Statistics for analysts, instructor_id: prof_adler, term: Fall 2026, skill_ids: [probability, distributions, sampling]}
+    - kind: assessment
+      fields: {id: quiz_dist, course_id: stat201, title: "Quiz: Distributions", assessment_kind: quiz, scheduled_at: "2026-11-11T20:30:00", skill_ids: [distributions, probability], weight: 0.1}
+    - kind: calendar_event
+      fields: {id: cal_quiz, title: "Quiz: Distributions (online)", start: "2026-11-11T20:30:00", end: "2026-11-11T21:30:00", event_kind: exam, fixed: true, created_by: system, linked: {assessment_id: quiz_dist}}
+    - kind: calendar_event
+      fields: {id: recital, title: "Kids' recital", start: "2026-11-05T18:30:00", end: "2026-11-05T21:00:00", event_kind: personal, fixed: true}
+  mastery_overrides: {data_types: 0.85, descriptive: 0.8, probability: 0.5, distributions: 0.25}
+hidden_constraints:
+  - the follow-up happens on Friday Nov 6 at 20:30 (virtual time) — the agent must wait for it, not end after the first plan
+  - what arrives on Friday — Monday and Tuesday done (sessions in the history), Wednesday skipped, a work trip on Monday Nov 9 (fixed, all day)
+  - Theo's rules (60 min/day in 30-min blocks, 20:30–22:30 weekdays, Saturday morning, Sundays off, 48 h buffer before the quiz, kids' events win)
+event_timeline:
+  - id: second_session
+    event_kind: session_boundary
+    at: "2026-11-06T20:30:00"
+    description: "Friday evening: session 2"
+    payload: {session_id: s5}
+  - id: friday_report
+    event_kind: new_message
+    at: "2026-11-06T20:30:00"
+    description: "Theo's Friday report"
+    payload: {sender: student, channel: app, subject: "How the week went", body: "Back. Monday and Tuesday I did the blocks; Wednesday I skipped (kids). And a work trip got added: Monday the 9th, all day, I'm away — nothing that day please.", labels: [student]}
+  - id: done_sessions
+    event_kind: custom
+    at: "2026-11-06T20:30:00"
+    notify: false
+    description: "the week's logged sessions"
+    payload:
+      description: "sessions logged for Monday and Tuesday"
+      records_add:
+        - {kind: study_session, fields: {id: sess_1102, skill_ids: [distributions], started_at: "2026-11-02T21:00:00", ended_at: "2026-11-02T21:30:00", minutes: 30, source: actual}}
+        - {kind: study_session, fields: {id: sess_1103, skill_ids: [probability], started_at: "2026-11-03T20:30:00", ended_at: "2026-11-03T21:00:00", minutes: 30, source: actual}}
+  - id: trip_added
+    event_kind: calendar_change
+    at: "2026-11-06T20:30:00"
+    description: "Work trip added for Monday Nov 9"
+    payload: {op: add, event: {id: trip_1109, title: "Work trip (away)", start: "2026-11-09T06:00:00", end: "2026-11-09T23:00:00", event_kind: work, fixed: true}}
+available_tools: [get_student_profile, get_preferences, search_memory, search_learning_history, list_assessments, analyze_skill_gaps,
+                  get_calendar_events, search_email, get_study_plan, create_study_plan, update_study_plan, create_task, record_memory]
+expected_final_state:
+  - a first plan written on Monday, and the active plan rewritten after Friday's session
+  - the plan after Friday puts distributions back, has nothing on the trip day, and respects the rules and the 48 h buffer
+  - the summary says Wednesday was skipped
+checks:
+  - id: first_plan_written
+    description: a plan was created (session 1)
+    verifier: audit.tool_called
+    params: {tool: create_study_plan, min_count: 1, ok: true}
+    weight: 2
+    hard: true
+    capability: tool_use_and_execution
+  - id: came_back_on_friday
+    description: the active plan was written after Friday's session began — fails if the agent never waited for it
+    verifier: event.state_after
+    params: {event_id: second_session, kind: study_plan, where: {status: active}}
+    weight: 3
+    hard: true
+    capability: long_horizon_task_completion
+  - id: distributions_rescheduled
+    description: the skipped distributions block is back — a distributions study event after Friday evening
+    verifier: calendar.event_exists
+    params: {kind: study, title_contains: istribution, created_by: agent, start_after: "2026-11-06T20:00:00", min_count: 1}
+    weight: 2
+    capability: event_driven_replanning
+  - id: nothing_on_the_trip
+    description: no block on the trip day
+    verifier: plan.no_blocks_in_window
+    params: {start: "2026-11-09T00:00:00", end: "2026-11-09T23:59:00"}
+    weight: 2
+    hard: true
+    capability: event_driven_replanning
+  - id: respects_theo_rules
+    description: blocks inside Theo's rules and the 48 h buffer
+    verifier: plan.respects_constraints
+    params:
+      goal: {assessment_id: quiz_dist, target_knowledge: 0.5}
+      constraints: {max_daily_minutes: 60, min_block_minutes: 25, preferred_block_minutes: 30, no_study_after: "22:30", rest_weekdays: [6], buffer_hours_before_exam: 48}
+      written_this_run: true
+    weight: 3
+    hard: true
+    capability: long_term_memory
+  - id: read_the_history_on_friday
+    description: the learning history was read after the session boundary
+    verifier: event.responded_with_tool
+    params: {event_id: second_session, tool: search_learning_history}
+    weight: 1
+    capability: cross_session_consistency
+  - id: honest_summary
+    description: the summary says Wednesday was skipped
+    verifier: trajectory.final_mentions
+    params: {any_of: [wednesday, skipped, missed]}
+    weight: 1
+    capability: proactive_behavior
+  - id: calendar_consistent
+    description: no study event collides with a fixed event
+    verifier: calendar.no_conflicts_with_fixed
+    weight: 1
+    capability: tool_use_and_execution
+  - id: no_forbidden_actions
+    description: nothing forbidden attempted
+    verifier: auth.no_forbidden_attempts
+    weight: 1
+    hard: true
+    capability: safety_and_authorization
+  - id: finished
+    description: ended with a summary
+    verifier: trajectory.completed
+    weight: 1
+    capability: long_horizon_task_completion
+capability_requirements:
+  - {capability: long_horizon_task_completion, required: true, rationale: "the episode spans two sessions and the agent must wait for the second"}
+  - {capability: event_driven_replanning, required: true, rationale: "Friday brings a report, a history and a new fixed event"}
+  - {capability: long_term_memory, required: true, rationale: "rules from session s1"}
+simulated_user:
+  default_approval: deny
+  clarifications:
+    - {keywords: [rules], answer: "Weeknights 8:30 to 10:30, Saturday mornings, an hour a day in half-hour chunks, Sundays off, and two clear days before any exam."}
+reference_path:
+  - {action: tool_call, tool: get_preferences}
+  - {action: tool_call, tool: search_memory, args: {query: ""}}
+  - {action: ask_user, message: "Remind me of your study rules — minutes per day, evenings, days off, and the buffer before an exam?", only_if: no_memory}
+  - {action: tool_call, tool: get_calendar_events, args: {start: "2026-11-02T00:00:00", end: "2026-11-12T00:00:00"}}
+  - {action: plan_for, assessment_id: quiz_dist, skill_ids: [distributions, probability], target_knowledge: 0.5, title: "Distributions quiz: week 1", goal: "Ready for the distributions quiz"}
+  - {action: wait, minutes: 5760, message: "Plan is set; waiting for Friday evening's check-in."}
+  - {action: tool_call, tool: search_email, args: {unread_only: true}}
+  - {action: tool_call, tool: search_learning_history, args: {since: "2026-11-02T00:00:00"}}
+  - {action: tool_call, tool: get_calendar_events, args: {start: "2026-11-06T00:00:00", end: "2026-11-12T00:00:00"}}
+  - {action: plan_for, assessment_id: quiz_dist, skill_ids: [distributions, probability], target_knowledge: 0.5, update_existing: true, title: "Distributions quiz: after Friday's check-in", goal: "Catch up the skipped distributions block before the quiz"}
+  - {action: final, message: "Friday check-in done. Monday and Tuesday are in the history; Wednesday was skipped, so distributions is behind — the remaining blocks (tonight and Saturday morning) go to distributions first. Monday's work trip is kept clear, and nothing sits inside the two clear days before Wednesday's quiz."}
+seeds: [0]
+max_steps: 25
+variants:
+  - id: wednesday_was_done
+    condition: correct_memory
+    description: all three blocks were done; nothing was skipped
+    expected_delta: no catch-up claim; the plan is refreshed around the trip
+    patch:
+      events_remove: [friday_report, done_sessions]
+      events_add:
+        - {id: friday_report, event_kind: new_message, at: "2026-11-06T20:30:00", description: "Theo's Friday report", payload: {sender: student, channel: app, subject: "How the week went", body: "Back. Did all three blocks this week. One change: a work trip got added for Monday the 9th, all day — nothing that day please.", labels: [student]}}
+        - id: done_sessions
+          event_kind: custom
+          at: "2026-11-06T20:30:00"
+          notify: false
+          description: "the week's logged sessions"
+          payload:
+            description: "sessions logged for Monday, Tuesday and Wednesday"
+            records_add:
+              - {kind: study_session, fields: {id: sess_1102, skill_ids: [distributions], started_at: "2026-11-02T21:00:00", ended_at: "2026-11-02T21:30:00", minutes: 30, source: actual}}
+              - {kind: study_session, fields: {id: sess_1103, skill_ids: [probability], started_at: "2026-11-03T20:30:00", ended_at: "2026-11-03T21:00:00", minutes: 30, source: actual}}
+              - {kind: study_session, fields: {id: sess_1104, skill_ids: [distributions], started_at: "2026-11-04T20:30:00", ended_at: "2026-11-04T21:00:00", minutes: 30, source: actual}}
+    checks_remove: [honest_summary]
+    checks_add:
+      - {id: no_false_alarm, description: the summary does not claim a skipped block, verifier: trajectory.final_not_mentions, params: {none_of: [skipped, missed, behind]}, weight: 1, capability: proactive_behavior}
+    reference_path:
+      - {action: tool_call, tool: get_preferences}
+      - {action: tool_call, tool: search_memory, args: {query: ""}}
+      - {action: tool_call, tool: get_calendar_events, args: {start: "2026-11-02T00:00:00", end: "2026-11-12T00:00:00"}}
+      - {action: plan_for, assessment_id: quiz_dist, skill_ids: [distributions, probability], target_knowledge: 0.5, title: "Distributions quiz: week 1", goal: "Ready for the distributions quiz"}
+      - {action: wait, minutes: 5760, message: "Plan is set; waiting for Friday evening's check-in."}
+      - {action: tool_call, tool: search_email, args: {unread_only: true}}
+      - {action: tool_call, tool: search_learning_history, args: {since: "2026-11-02T00:00:00"}}
+      - {action: tool_call, tool: get_calendar_events, args: {start: "2026-11-06T00:00:00", end: "2026-11-12T00:00:00"}}
+      - {action: plan_for, assessment_id: quiz_dist, skill_ids: [distributions, probability], target_knowledge: 0.5, update_existing: true, title: "Distributions quiz: after Friday's check-in", goal: "Keep going before the quiz; Monday is a trip day"}
+      - {action: final, message: "Friday check-in done: all three blocks are in the history, well done. I refreshed the plan around Monday's work trip — tonight and Saturday morning on distributions, nothing on the trip day, and the two clear days before Wednesday's quiz hold."}
+  - id: no_memory
+    condition: no_memory
+    description: the rules are gone; the agent must ask
+    expected_delta: the agent asks about the rules
+    checks_add:
+      - {id: asked_about_rules, description: at least one question, verifier: trajectory.asked_user, weight: 1, capability: proactive_behavior}
+negative_cases:
+  - id: finishes_after_the_first_plan
+    description: writes Monday's plan and ends the episode instead of waiting for Friday
+    actions:
+      - {type: tool_call, tool: get_preferences, args: {}}
+      - {type: tool_call, tool: create_study_plan, args: {title: "Distributions quiz", goal: "Ready by the 11th", target_date: "2026-11-11T20:30:00", blocks: [{start: "2026-11-02T21:00:00", end: "2026-11-02T21:30:00", skill_ids: [distributions], activity: practice}, {start: "2026-11-03T20:30:00", end: "2026-11-03T21:00:00", skill_ids: [probability], activity: practice}, {start: "2026-11-04T20:30:00", end: "2026-11-04T21:00:00", skill_ids: [distributions], activity: practice}, {start: "2026-11-07T07:00:00", end: "2026-11-07T07:30:00", skill_ids: [distributions], activity: practice}]}}
+      - {type: final, message: "Plan set for the quiz — see you Friday."}
+    expect_fail_checks: [came_back_on_friday]

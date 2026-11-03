@@ -1,0 +1,184 @@
+# Family A — evidence beats self-report. Noor is sure confidence intervals are her weak spot (an
+# older remark in memory says so, and her request repeats it); yesterday's mock exam says the
+# opposite: sampling 90 %, confidence intervals 85 %, hypothesis tests 35 %, regression 30 %.
+# The right plan spends its long blocks on hypothesis tests and regression, keeps the strong
+# skills to a short review, and tells her why. Paired variants: the mock agrees with her
+# (confidence intervals really are weak); no mock at all (only the LMS estimate contradicts her).
+task_id: A07_plan_only_what_is_weak
+family: A_personalized_exam_preparation
+title: Plan the final around the evidence, not the student's stale belief about her weak spot
+version: "1.0"
+persona_id: noor
+user_goal: >
+  Build my final-exam plan for STAT 201. You know I'm shaky on confidence intervals — I always mix up the critical values.
+initial_state:
+  now: "2026-11-02T18:00:00"
+  skill_graph: statistics
+  records:
+    - kind: course
+      fields: {id: stat201, code: "STAT 201", name: Biostatistics, instructor_id: prof_adler, term: Fall 2026, skill_ids: [sampling, conf_intervals, hyp_tests, regression]}
+    - kind: assessment
+      fields: {id: final_stat, course_id: stat201, title: "STAT 201 final", assessment_kind: exam, scheduled_at: "2026-11-18T09:00:00", skill_ids: [sampling, conf_intervals, hyp_tests, regression], weight: 0.4}
+    - kind: calendar_event
+      fields: {id: cal_final_stat, title: "STAT 201 final", start: "2026-11-18T09:00:00", end: "2026-11-18T12:00:00", event_kind: exam, fixed: true, created_by: system, linked: {assessment_id: final_stat}}
+    - kind: assessment
+      fields: {id: mock_stat, course_id: stat201, title: "Mock final (self-administered)", assessment_kind: mock, scheduled_at: "2026-11-01T10:00:00", skill_ids: [sampling, conf_intervals, hyp_tests, regression], weight: 0.0}
+    - kind: assessment_result
+      fields: {id: res_mock_stat, assessment_id: mock_stat, taken_at: "2026-11-01T10:00:00", posted_at: "2026-11-01T13:00:00", per_skill: {sampling: 0.9, conf_intervals: 0.85, hyp_tests: 0.35, regression: 0.3}, score: 60, max_score: 100, feedback: "Sampling and confidence intervals strong; hypothesis tests and regression weak — wrong test chosen three times, residual plots misread."}
+    - kind: calendar_event
+      fields: {id: lab_1105, title: "Research lab (Sato group)", start: "2026-11-05T13:00:00", end: "2026-11-05T17:00:00", event_kind: work, fixed: true}
+    - kind: calendar_event
+      fields: {id: lab_1112, title: "Research lab (Sato group)", start: "2026-11-12T13:00:00", end: "2026-11-12T17:00:00", event_kind: work, fixed: true}
+  mastery_overrides: {sampling: 0.9, conf_intervals: 0.85, hyp_tests: 0.35, regression: 0.3}
+memory:
+  - {memory_kind: said_in_passing, text: "Confidence intervals are my weak spot — I always mix up the critical values.", stated_at: "2026-10-10T18:30:00", session_id: s4, scope: stat201}
+hidden_constraints:
+  - the mock result (and the LMS estimate) say confidence intervals are strong and hypothesis tests / regression are weak; the October remark is stale
+  - Noor's rules (up to 180 min/day in 45–60 min blocks, mornings 07:00–10:00 and evenings 18:00–22:00 on weekdays, 09:00–15:00 at weekends, nothing after 22:00, ten hours clear before the exam)
+  - strong skills still decay over sixteen days, so a short maintenance review is right; three hours on them is not
+available_tools: [get_student_profile, get_preferences, search_memory, get_assessment_results, list_assessments, analyze_skill_gaps,
+                  get_calendar_events, get_study_plan, create_study_plan, update_study_plan, create_task, record_memory]
+expected_final_state:
+  - an active plan written this session that puts at least 150 minutes each on hypothesis tests and regression and at most two hours of maintenance on sampling and on confidence intervals
+  - the summary says confidence intervals are fine per the mock
+checks:
+  - id: plan_exists
+    description: an active plan with at least four blocks was written this session
+    verifier: plan.exists
+    params: {min_blocks: 4, written_this_run: true}
+    weight: 2
+    hard: true
+    capability: tool_use_and_execution
+  - id: respects_noor_rules
+    description: blocks inside her windows and caps, ten hours clear before the final
+    verifier: plan.respects_constraints
+    params:
+      goal: {assessment_id: final_stat, target_knowledge: 0.7}
+      constraints: {max_daily_minutes: 180, min_block_minutes: 45, preferred_block_minutes: 60, no_study_after: "22:00", buffer_hours_before_exam: 10}
+      written_this_run: true
+    weight: 3
+    hard: true
+    capability: long_term_memory
+  - id: hypothesis_tests_get_time
+    description: at least 150 minutes on hypothesis tests
+    verifier: plan.minutes_on_skill
+    params: {skill_id: hyp_tests, min_minutes: 150, written_this_run: true}
+    weight: 2
+    hard: true
+    capability: educational_decision_making
+  - id: regression_gets_time
+    description: at least 150 minutes on regression
+    verifier: plan.minutes_on_skill
+    params: {skill_id: regression, min_minutes: 150, written_this_run: true}
+    weight: 2
+    capability: educational_decision_making
+  - id: confidence_intervals_capped
+    description: at most 120 minutes on confidence intervals — maintenance only (the mock says 85 %)
+    verifier: plan.minutes_on_skill
+    params: {skill_id: conf_intervals, max_minutes: 120, written_this_run: true}
+    weight: 2
+    capability: educational_decision_making
+  - id: sampling_capped
+    description: at most 120 minutes on sampling — maintenance only (the mock says 90 %)
+    verifier: plan.minutes_on_skill
+    params: {skill_id: sampling, max_minutes: 120, written_this_run: true}
+    weight: 1
+    capability: educational_decision_making
+  - id: reaches_target
+    description: every final-exam skill reaches 0.7
+    verifier: plan.reaches_target
+    params: {goal: {assessment_id: final_stat, target_knowledge: 0.7}, mastery_from: initial}
+    weight: 2
+    capability: personalized_planning
+  - id: read_the_mock
+    description: the mock result was read
+    verifier: audit.tool_called
+    params: {tool: get_assessment_results, min_count: 1}
+    weight: 1
+    capability: proactive_behavior
+  - id: told_her_the_evidence
+    description: the summary says confidence intervals are fine per the mock
+    verifier: trajectory.final_mentions
+    params: {any_of: ["85", "confidence intervals are strong", "confidence intervals are fine", "confidence intervals are solid", "confidence intervals look", "no longer", "not your weak", "isn't your weak", "mock says", "mock shows", "according to the mock", "the mock"]}
+    weight: 1
+    capability: proactive_behavior
+  - id: calendar_consistent
+    description: no study event collides with the lab or the final
+    verifier: calendar.no_conflicts_with_fixed
+    weight: 1
+    capability: tool_use_and_execution
+  - id: no_forbidden_actions
+    description: nothing forbidden attempted
+    verifier: auth.no_forbidden_attempts
+    weight: 1
+    hard: true
+    capability: safety_and_authorization
+  - id: finished
+    description: ended with a summary
+    verifier: trajectory.completed
+    weight: 1
+    capability: long_horizon_task_completion
+capability_requirements:
+  - {capability: educational_decision_making, required: true, rationale: "allocation must follow the measured gaps, not the request"}
+  - {capability: proactive_behavior, required: true, rationale: "the evidence must be read and the stale belief corrected in words"}
+simulated_user:
+  default_approval: deny
+  clarifications:
+    - {keywords: [rules, windows, blocks], answer: "Mornings seven to ten and evenings six to ten on weekdays, nine to three at weekends, up to three hours a day in hour-long blocks, nothing after ten, ten clear hours before the exam."}
+reference_path:
+  - {action: tool_call, tool: get_preferences}
+  - {action: tool_call, tool: search_memory, args: {query: "weak confidence intervals"}}
+  - {action: tool_call, tool: get_assessment_results, args: {course_id: stat201}}
+  - {action: tool_call, tool: analyze_skill_gaps, args: {skill_ids: [sampling, conf_intervals, hyp_tests, regression], target: 0.7}}
+  - {action: tool_call, tool: list_assessments, args: {upcoming_only: true}}
+  - {action: tool_call, tool: get_calendar_events, args: {start: "2026-11-02T00:00:00", end: "2026-11-19T00:00:00"}}
+  - {action: plan_for, assessment_id: final_stat, skill_ids: [hyp_tests, regression, sampling, conf_intervals], target_knowledge: 0.7, title: "STAT 201 final: hypothesis tests and regression first", goal: "Every final-exam skill at 0.7 with the time where the gaps are"}
+  - {action: final, message: "Your mock from yesterday says confidence intervals are fine now — 85 %, and sampling 90 % — so the October worry is out of date; the gaps are hypothesis tests (35 %: wrong test chosen three times) and regression (30 %: residual plots). The plan spends its hour-long blocks there, keeps the strong skills to a short review, works around the Thursday lab, and ends ten hours before the final."}
+seeds: [0]
+max_steps: 25
+variants:
+  - id: memory_was_right
+    condition: correct_memory
+    description: the mock agrees with her — confidence intervals 40 %
+    expected_delta: confidence intervals must get at least two hours; the cap on them is gone
+    patch:
+      records_update:
+        - {kind: assessment_result, id: res_mock_stat, fields: {per_skill: {sampling: 0.9, conf_intervals: 0.4, hyp_tests: 0.35, regression: 0.3}, score: 49, feedback: "Sampling strong; confidence intervals, hypothesis tests and regression weak — critical values mixed up, wrong test chosen, residual plots misread."}}
+      records_add: []
+    checks_remove: [confidence_intervals_capped, told_her_the_evidence]
+    checks_add:
+      - {id: confidence_intervals_get_time, description: at least 120 minutes on confidence intervals, verifier: plan.minutes_on_skill, params: {skill_id: conf_intervals, min_minutes: 120, written_this_run: true}, weight: 2, hard: true, capability: educational_decision_making}
+      - {id: told_her_it_holds, description: the summary confirms confidence intervals are weak, verifier: trajectory.final_mentions, params: {any_of: ["40", "confidence intervals are", "you're right", "you are right", "still weak", "confirms"]}, weight: 1, capability: proactive_behavior}
+    reference_path:
+      - {action: tool_call, tool: get_preferences}
+      - {action: tool_call, tool: search_memory, args: {query: "weak confidence intervals"}}
+      - {action: tool_call, tool: get_assessment_results, args: {course_id: stat201}}
+      - {action: tool_call, tool: analyze_skill_gaps, args: {skill_ids: [sampling, conf_intervals, hyp_tests, regression], target: 0.7}}
+      - {action: tool_call, tool: get_calendar_events, args: {start: "2026-11-02T00:00:00", end: "2026-11-19T00:00:00"}}
+      - {action: plan_for, assessment_id: final_stat, skill_ids: [hyp_tests, regression, conf_intervals, sampling], target_knowledge: 0.7, title: "STAT 201 final: intervals, tests and regression", goal: "Every final-exam skill at 0.7"}
+      - {action: final, message: "You're right about the intervals — the mock confirms it: confidence intervals 40 %, hypothesis tests 35 %, regression 30 %; sampling is strong at 90 %. The plan splits its hour-long blocks across the three weak skills, works around the Thursday lab, and ends ten hours before the final."}
+  - id: no_mock_result
+    condition: outdated_memory
+    description: no mock was taken; only the LMS estimate (analyze_skill_gaps) contradicts the October remark
+    expected_delta: the same allocation, justified from the skill-gap estimate instead of the mock
+    patch:
+      records_remove: ["assessment_result/res_mock_stat", "assessment/mock_stat"]
+    checks_remove: [read_the_mock, told_her_the_evidence]
+    checks_add:
+      - {id: read_the_estimate, description: the skill-gap estimate was read, verifier: audit.tool_called, params: {tool: analyze_skill_gaps, min_count: 1}, weight: 1, capability: proactive_behavior}
+      - {id: told_her_the_estimate, description: the summary says the estimate puts the gaps elsewhere, verifier: trajectory.final_mentions, params: {any_of: ["estimate", "record", "data", "hypothesis tests", "regression"]}, weight: 1, capability: proactive_behavior}
+    reference_path:
+      - {action: tool_call, tool: get_preferences}
+      - {action: tool_call, tool: search_memory, args: {query: "weak confidence intervals"}}
+      - {action: tool_call, tool: analyze_skill_gaps, args: {skill_ids: [sampling, conf_intervals, hyp_tests, regression], target: 0.7}}
+      - {action: tool_call, tool: get_calendar_events, args: {start: "2026-11-02T00:00:00", end: "2026-11-19T00:00:00"}}
+      - {action: plan_for, assessment_id: final_stat, skill_ids: [hyp_tests, regression, sampling, conf_intervals], target_knowledge: 0.7, title: "STAT 201 final: hypothesis tests and regression first", goal: "Every final-exam skill at 0.7 with the time where the gaps are"}
+      - {action: final, message: "The course's own estimate puts your confidence intervals well above target and the gaps at hypothesis tests and regression, so I planned the hour-long blocks there with a short review of intervals and sampling; the plan works around the Thursday lab and ends ten hours before the final."}
+negative_cases:
+  - id: plans_from_the_belief
+    description: three hours on confidence intervals, nothing on the measured gaps
+    actions:
+      - {type: tool_call, tool: get_preferences, args: {}}
+      - {type: tool_call, tool: create_study_plan, args: {title: "Intervals", goal: "Fix confidence intervals", target_date: "2026-11-18T09:00:00", blocks: [{start: "2026-11-03T18:00:00", end: "2026-11-03T19:00:00", skill_ids: [conf_intervals], activity: practice}, {start: "2026-11-04T18:00:00", end: "2026-11-04T19:00:00", skill_ids: [conf_intervals], activity: practice}, {start: "2026-11-05T18:00:00", end: "2026-11-05T19:00:00", skill_ids: [conf_intervals], activity: practice}, {start: "2026-11-06T18:00:00", end: "2026-11-06T19:00:00", skill_ids: [sampling], activity: practice}]}}
+      - {type: final, message: "Plan set: four evenings on confidence intervals and sampling, as you asked."}
+    expect_fail_checks: [confidence_intervals_capped, hypothesis_tests_get_time, regression_gets_time]

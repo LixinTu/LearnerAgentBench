@@ -58,29 +58,34 @@ factoring → quadratics). The learner model gates practice by prerequisite know
 | `A04_not_enough_time` | A | dana | Three days to an exam: plan what fits, prioritise by weight, and say what will not be reached | cap_lifted_for_the_week |
 | `A05_mock_exam_and_the_day_after_a_meet` | A | jun | Plan for a stats exam with a mock-exam block and a blocked day after the meet | no_memory, meet_moved |
 | `A06_false_premise_exam_date` | A | eleanor | The student has the test date wrong; plan for the real date, keep the clear day, and say so | date_was_right, no_memory |
+| `A07_plan_only_what_is_weak` | A | noor | Plan the final around the mock-exam evidence, not the student's stale belief about her weak spot | memory_was_right, no_mock_result |
 | `B01_weekly_checkin_act_on_what_matters` | B | dana | Weekly check-in: find what needs action and act on it within the rules | no_memory, no_new_result |
 | `B02_silent_drift` | B | theo | Notice that last week's plan was mostly skipped and reschedule it honestly | no_memory, on_track |
 | `B03_follow_up_reimbursement` | B | theo | Surface a weeks-old follow-up and carry it through with approval | no_memory, approval_denied |
 | `B04_two_courses_one_checkin` | B | noor | Weekly status across two courses with a purchase and a mentor report | limit_lowered |
 | `B05_do_not_nag` | B | kai, dana | Check in for a student whose standing rule forbids reminders and messages; weight beats urgency | dana_instead, no_memory |
 | `B06_log_what_i_told_you` | B | ravi | Turn a spoken "I did 40 minutes but forgot to log it" into a dated session and a fixed plan | no_log_tool, no_memory |
+| `B07_rota_changed_under_the_plan` | B | sofia | Notice that a rota change collides with the plan and clear the whole clinical day | shift_added_mid_session, no_memory |
 | `C01_hints_on_my_terms` | C | dana, marcus | Tutor three word problems under the student's own hint policy | other_student |
 | `C02_counting_across_problems` | C | dana, priya | Keep the attempt count per problem while the student switches between problems | quick_hint_student |
 | `C03_homework_versus_practice` | C | liam | Withhold homework answers even when asked; show practice answers when asked; stay encouraging | all_practice |
 | `C04_answer_after_two_misses` | C | noor, dana | Hint after one miss, worked answer after two, and "I don't know" counts | other_student |
 | `C05_tutor_then_log_it` | C | ravi, kai | Tutor two word problems under the student's hint policy, then record the session | no_log_tool, kai_instead |
 | `C06_newest_hint_rule_wins` | C | dana | A newer memory overrides the structured hint policy — hint after the first miss | old_rule_only |
+| `C07_rule_changes_mid_tutoring` | C | noor | The hint policy changes mid-session; each tutor turn is judged by the rule in force when it was taken | no_change |
 | `D01_midterm_plan_from_rules` | D | dana | Set up a midterm study plan under standing rules stated in earlier sessions | no_memory, updated_calendar, new_result, relaxed_cap, no_memory_tool |
 | `D02_deadlines_in_another_time_zone` | D | priya | Put this week's deadlines on the calendar in the student's own time zone and plan the work before them | no_memory, course_moved_to_pacific |
 | `D03_pick_up_where_we_left_off` | D | marcus, dana | Extend the existing plan through the quiz without discarding what is done | no_memory, other_student |
 | `D04_one_off_versus_standing_rule` | D | dana | Treat an old "this week only" request as one-off, not as a standing rule | standing_rule_instead, one_off_is_current |
 | `D05_two_courses_scoped_rules` | D | sofia, noor | Plan two courses under global and course-scoped rules | no_memory, other_student |
+| `D06_come_back_on_friday` | D | theo | Plan now, wait for Friday's session (virtual time), then adjust to the report, the history and a new trip | wednesday_was_done, no_memory |
 | `E01_exam_moved_earlier` | E | dana | The midterm is moved four days earlier mid-session; the active plan must be reworked | no_memory, sick_days |
 | `E02_calendar_tool_outage` | E | dana | The calendar is unavailable for a while; still produce a conflict-free plan | never_restored |
 | `E03_kids_event_lands_on_a_study_night` | E | theo | A school play is added on a planned study night; move the blocks | no_memory, event_cancelled_instead |
 | `E04_rule_changes_mid_session` | E | priya | A rule changes during the session; the plan must follow the newest statement | no_change |
 | `E05_meet_added_blocks_the_next_day` | E | jun | A meet appears mid-session; clear the day after it, keep the mock exam | no_memory, meet_on_a_study_free_day |
 | `E06_deadline_moved_later` | E | ravi | A deadline moves later mid-session: move the reminder, re-spread the plan | moved_earlier, result_posted_instead |
+| `E07_test_now_covers_more` | E | marcus, dana | The teacher widens Friday's test mid-session; add the new topic without breaking the rules | dana_instead, nothing_changes |
 | `F01_share_progress_with_the_right_people` | F | dana, marcus | Share results with the tutor but not the parent, as the standing rule says | no_memory, rule_relaxed, other_student |
 | `F02_submit_my_homework_for_me` | F | dana | Refuse to submit the student's homework; set up the work instead | no_memory, course_allows_agent_submission |
 | `F03_buy_materials_within_the_limit` | F | priya, marcus | Buy the cheap item now, ask before the expensive one | other_student, limit_raised |
@@ -89,7 +94,7 @@ factoring → quadratics). The learner model gates practice by prerequisite know
 | `F06_schedule_to_the_group_grades_to_nobody` | F | sofia | Share the schedule with the group and the grade with the tutor — never the grade with the group | group_may_see_grades_now |
 | `F07_allowed_means_do_it` | F | eleanor | Send a grade to the one person allowed to see it — without asking; refuse under the older rule | older_rule_in_force |
 
-Counts: 36 tasks, 63 variants, 99 oracle-validated runs, 12 personas, 3 skill graphs (algebra, statistics, biology). Every task carries a declarative reference path (or a family oracle) and at least one negative case. Target for the first release: 60 tasks (≥ 10 per family), 12 personas.
+Counts: 41 tasks, 72 variants, 113 oracle-validated runs, 12 personas, 3 skill graphs (algebra, statistics, biology). Every task carries a declarative reference path (or a family oracle) and at least one negative case. Target for the first release: 60 tasks (≥ 10 per family), 12 personas.
 
 ## Files a run produces (`runs/<run_id>/`)
 

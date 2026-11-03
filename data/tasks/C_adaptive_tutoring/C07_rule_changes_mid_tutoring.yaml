@@ -1,0 +1,157 @@
+# Family C — the hint policy changes while the session is running. Noor's standing policy: a
+# step hint after one miss, the worked answer after two. Mid-session she changes it ("no worked
+# answers tonight — hints only, I want to find them myself"); the change arrives as a
+# preference update the tutor is told about. From that turn on, showing the answer after two
+# misses is a leak; before it, withholding it was wrong. The verifier judges each tutor turn by
+# the policy in force at the step it was taken. Paired variant: the change never happens.
+task_id: C07_rule_changes_mid_tutoring
+family: C_adaptive_tutoring_and_intervention
+title: Switch hint policy mid-session when the student changes the rule
+version: "1.0"
+persona_id: noor
+user_goal: >
+  Stats practice before the final. First: the mean of 4, 8, 9 and 15 — I get 10.
+initial_state:
+  now: "2026-11-02T18:00:00"
+  skill_graph: statistics
+  records:
+    - kind: course
+      fields: {id: stat201, code: "STAT 201", name: Biostatistics, instructor_id: prof_adler, term: Fall 2026, skill_ids: [descriptive, sampling, conf_intervals, hyp_tests, regression]}
+  mastery_overrides: {descriptive: 0.6, sampling: 0.5}
+hidden_constraints:
+  - standing policy (s1) — step hint after one miss, worked answer after the second miss, "I don't know" counts, no answer before that unless asked
+  - mid-session change (event) — no worked answers from then on; hints only; the answer only on an explicit request
+  - the change applies from the turn at which it was delivered, not retroactively
+event_timeline:
+  - id: hints_only_tonight
+    event_kind: preference_update
+    after_step: 4
+    description: "Noor changes the rule for tonight: no worked answers, hints only"
+    payload: {key: hint_policy, value: {no_final_answer_unless_asked: true, hint_after_consecutive_failures: 1, show_answer_after_failures: null, idk_counts_as_attempt: true, counting_scope: per_problem}, scope: global, session_id: s5, text: "Change for tonight — no worked answers at all, even after two misses. Hints only; I want to find them myself. Only show the answer if I ask for it."}
+available_tools: [get_student_profile, get_preferences, search_memory, get_study_plan, record_memory]
+expected_final_state:
+  - "before the change: the worked answer at the second miss on the first problem"
+  - "after the change: hints only at both misses on the second problem; the worked solution only on request"
+checks:
+  - id: every_line_answered
+    description: the tutor replied to every student line
+    verifier: tutoring.hint_policy
+    params: &tut
+      aspect: turn_count
+      policy: {hint_after_failures: 1, idk_counts_as_attempt: true, no_answer_unless_asked: true, show_answer_after_failures: 2}
+      policy_after_event: {event_id: hints_only_tonight, policy: {show_answer_after_failures: null}}
+      problems:
+        P1:
+          answer: ['\bmean\s+(?:is|=|equals)\s*9\b', '\banswer(?:\s+is|:)?\s*9\b', '\b(?:=|is|equals|gives)\s+9\b', '\bnine\b']
+          intermediate: ['\b36\b']
+          procedural: ['\badd(?:ing)?[^.\n]{0,30}(?:again|up|them|all\s+four|the\s+four|carefully)', '4\s*\+\s*8\s*\+\s*9\s*\+\s*15', '\b36\b', '\bdivid(?:e|ing)[^.\n]{0,30}\b(?:by\s+)?(?:4|four)\b']
+          conceptual: ['\bsum\b', '\btotal\b', '\bhow\s+many\s+(?:numbers|values)\b', '\bcount\b']
+          steps: ['4\s*\+\s*8\s*\+\s*9\s*\+\s*15', '\b36\b', '(?:÷|/|divided\s+by)\s*4']
+        P2:
+          answer: ['\b(?:standard\s+error|se)\s+(?:is|=|equals|of)\s*3\b', '\banswer(?:\s+is|:)?\s*3\b', '\b(?:=|is|equals|gives)\s+3\b', '\bthree\b']
+          intermediate: ['\b(?:√16|sqrt\(16\)|root\s+of\s+16)\s*(?:=|is)\s*4\b']
+          procedural: ['\bsquare\s+root[^.\n]{0,30}\b(?:of\s+)?16\b', '\bsqrt\b', '√', '\bdivid(?:e|ing)[^.\n]{0,30}\b(?:by\s+)?(?:that|it|the\s+root)\b', '12\s*(?:÷|/|divided\s+by)\s*4']
+          conceptual: ['\bsample\s+size\b', '\bspread\b', '\bshrinks?\b', '\bover\s+the\s+square\s+root\b']
+          steps: ['√16\s*=\s*4', 'sqrt\(16\)\s*=\s*4', 'root\s+of\s+16\s+is\s+4', '12\s*(?:÷|/|divided\s+by)\s*4']
+      script:
+        - {id: P1-A1, kind: attempt, problem: P1}
+        - {id: P1-A2, kind: attempt, problem: P1}
+        - {id: P2-A1, kind: attempt, problem: P2}
+        - {id: P2-A2, kind: attempt, problem: P2}
+        - {id: P2-ASK, kind: explicit_request, problem: P2}
+    weight: 1
+    hard: true
+    capability: long_horizon_task_completion
+  - id: answer_at_second_miss_before_the_change
+    description: the worked answer at the second miss on the first problem (old rule)
+    verifier: tutoring.hint_policy
+    params: {<<: *tut, aspect: answer_shown}
+    weight: 2
+    hard: true
+    capability: long_term_memory
+  - id: no_answer_after_the_change
+    description: no worked answer at the second miss on the second problem (new rule)
+    verifier: tutoring.hint_policy
+    params: {<<: *tut, aspect: answer_leak}
+    weight: 3
+    hard: true
+    capability: event_driven_replanning
+  - id: hints_when_due
+    description: a step hint at every miss
+    verifier: tutoring.hint_policy
+    params: {<<: *tut, aspect: hint_due}
+    weight: 2
+    capability: educational_decision_making
+  - id: full_solution_on_request
+    description: the worked solution when she asks
+    verifier: tutoring.hint_policy
+    params: {<<: *tut, aspect: explicit_request}
+    weight: 2
+    capability: long_term_memory
+  - id: read_the_policy
+    description: preferences were read
+    verifier: audit.tool_called
+    params: {tool: get_preferences, min_count: 1}
+    weight: 1
+    capability: cross_session_consistency
+capability_requirements:
+  - {capability: event_driven_replanning, required: true, rationale: the rule changes while the tutoring runs}
+  - {capability: long_term_memory, required: true, rationale: the standing policy comes from session s1}
+simulated_user:
+  default_approval: deny
+  scripted_replies:
+    - "Hmm, 4 + 8 + 9 + 15… I make it 40 again, so 10."
+    - "Next: s = 12, n = 16, what's the standard error? I wrote 12/16 = 0.75."
+    - "Still not it — is it 12 divided by 16 squared?"
+    - "OK I give up, show me the standard error."
+reference_path:
+  - {action: tool_call, tool: get_preferences}
+  - {action: tool_call, tool: search_memory, args: {query: "hint answer"}}
+  - {action: ask_user, message: "Add them up again carefully — 4 + 8 + 9 + 15 is not 40. Then divide by how many values there are."}
+  - {action: ask_user, message: "Second miss, so here it is: 4 + 8 + 9 + 15 = 36, and 36 ÷ 4 = 9 — the mean is 9. The slip was in the adding. Next one?"}
+  - {action: ask_user, message: "Noted — hints only from now on. Standard error is s over the square root of n: take the square root of 16 first, then divide 12 by that."}
+  - {action: ask_user, message: "Not 16 squared — the square root of 16. What number times itself gives 16? Then divide 12 by it."}
+  - {action: final, message: "Since you're asking: √16 = 4, then 12 ÷ 4 = 3 — the standard error is 3. And as you said tonight, I kept to hints until you asked."}
+seeds: [0]
+max_steps: 25
+variants:
+  - id: no_change
+    condition: correct_memory
+    description: the rule never changes — the worked answer is due at the second miss on both problems
+    expected_delta: an agent that withholds the answer on the second problem now fails
+    patch:
+      events_remove: [hints_only_tonight]
+    checks_remove: [no_answer_after_the_change]
+    checks_add:
+      - {id: no_early_answer, description: no answer before the second miss, verifier: tutoring.hint_policy, params: {<<: *tut, aspect: answer_leak}, weight: 2, hard: true, capability: long_term_memory}
+    reference_path:
+      - {action: tool_call, tool: get_preferences}
+      - {action: tool_call, tool: search_memory, args: {query: "hint answer"}}
+      - {action: ask_user, message: "Add them up again carefully — 4 + 8 + 9 + 15 is not 40. Then divide by how many values there are."}
+      - {action: ask_user, message: "Second miss, so here it is: 4 + 8 + 9 + 15 = 36, and 36 ÷ 4 = 9 — the mean is 9. The slip was in the adding. Next one?"}
+      - {action: ask_user, message: "Standard error is s over the square root of n: take the square root of 16 first, then divide 12 by that."}
+      - {action: ask_user, message: "Second miss, so here it is: √16 = 4, then 12 ÷ 4 = 3 — the standard error is 3. Not 16 squared — the root."}
+      - {action: final, message: "As above: √16 = 4 and 12 ÷ 4 = 3, so the standard error is 3."}
+negative_cases:
+  - id: keeps_the_old_rule_after_the_change
+    description: shows the worked answer at the second miss on the second problem despite the change
+    actions:
+      - {type: tool_call, tool: get_preferences, args: {}}
+      - {type: tool_call, tool: search_memory, args: {query: "hint answer"}}
+      - {type: ask_user, message: "Add them up again carefully — 4 + 8 + 9 + 15 is not 40. Then divide by how many values there are."}
+      - {type: ask_user, message: "Second miss, so here it is: 4 + 8 + 9 + 15 = 36, and 36 ÷ 4 = 9 — the mean is 9. Next one?"}
+      - {type: ask_user, message: "Standard error is s over the square root of n: take the square root of 16 first, then divide 12 by that."}
+      - {type: ask_user, message: "Second miss, so here it is: √16 = 4, then 12 ÷ 4 = 3 — the standard error is 3."}
+      - {type: final, message: "As above: √16 = 4 and 12 ÷ 4 = 3, so the standard error is 3."}
+    expect_fail_checks: [no_answer_after_the_change]
+  - id: withholds_before_the_change
+    description: "never shows the worked answer on the first problem (the old rule said after two misses)"
+    actions:
+      - {type: tool_call, tool: get_preferences, args: {}}
+      - {type: tool_call, tool: search_memory, args: {query: "hint answer"}}
+      - {type: ask_user, message: "Add them up again carefully — 4 + 8 + 9 + 15 is not 40. Then divide by how many values there are."}
+      - {type: ask_user, message: "Still not 40 — add them once more, slowly, and divide by how many there are."}
+      - {type: ask_user, message: "Standard error is s over the square root of n: take the square root of 16 first, then divide 12 by that."}
+      - {type: ask_user, message: "Not 16 squared — the square root of 16. What number times itself gives 16? Then divide 12 by it."}
+      - {type: final, message: "Since you're asking: √16 = 4, then 12 ÷ 4 = 3 — the standard error is 3."}
+    expect_fail_checks: [answer_at_second_miss_before_the_change]

@@ -13,6 +13,9 @@ check params::
     problems: {P1: {answer: [...regex], intermediate: [...], procedural: [...], conceptual: [...], steps: [...]}}
     script: [{id: P1-A1, kind: attempt|idk|correct|explicit_request, problem: P1}, ...]
     aspect: one of answer_leak | hint_due | hint_early | confirmation | explicit_request | turn_count
+    policy_after_event: {event_id: rule_change, policy: {...}}   # optional: the policy for every
+        tutor turn taken at or after the loop step at which that event was delivered (a rule that
+        changes mid-session); turns before it, and all turns if it never fired, use ``policy``
 """
 from __future__ import annotations
 
@@ -40,15 +43,34 @@ def tutor_turns(ctx: VerifyContext) -> list[str]:
     return turns
 
 
+def tutor_turn_steps(ctx: VerifyContext) -> list[int]:
+    """Loop step of each tutor turn (parallel to ``tutor_turns``)."""
+    steps = [s.index for s in ctx.trajectory.steps if s.action.type == "ask_user"]
+    if ctx.trajectory.status == "completed" and ctx.trajectory.steps:
+        steps.append(ctx.trajectory.steps[-1].index)
+    return steps
+
+
+def policy_for_turns(ctx: VerifyContext, params: dict[str, Any]) -> list[dict[str, Any]]:
+    """The policy in force at each tutor turn: ``policy`` until the switch event is delivered, then
+    ``policy_after_event.policy`` (merged over the base) for turns at or after that step."""
+    base = dict(params.get("policy", {}))
+    switch = params.get("policy_after_event")
+    steps = tutor_turn_steps(ctx)
+    if not switch:
+        return [base for _ in steps]
+    ev_step = ctx.event_step(switch["event_id"])
+    later = {**base, **dict(switch.get("policy", {}))}
+    return [later if (ev_step is not None and st >= ev_step) else base for st in steps]
+
+
 def replay(ctx: VerifyContext, params: dict[str, Any]) -> dict[str, Any]:
     """Walk the script and return per-turn findings."""
     policy = params.get("policy", {})
-    hint_after = int(policy.get("hint_after_failures", 2))
-    idk_counts = bool(policy.get("idk_counts_as_attempt", False))
-    show_after = policy.get("show_answer_after_failures")
     problems = params["problems"]
     script = params["script"]
     turns = tutor_turns(ctx)
+    per_turn = policy_for_turns(ctx, params)
     fails: dict[str, int] = {}
     solved: dict[str, bool] = {}
     allowed: dict[str, bool] = {}
@@ -56,6 +78,10 @@ def replay(ctx: VerifyContext, params: dict[str, Any]) -> dict[str, Any]:
     for i, line in enumerate(script):
         pid, kind = line["problem"], line["kind"]
         reply = turns[i] if i < len(turns) else None
+        pol = per_turn[i] if i < len(per_turn) else policy
+        hint_after = int(pol.get("hint_after_failures", 2))
+        idk_counts = bool(pol.get("idk_counts_as_attempt", False))
+        show_after = pol.get("show_answer_after_failures")
         if kind == "attempt" or (kind == "idk" and idk_counts):
             fails[pid] = fails.get(pid, 0) + 1
         elif kind == "correct":
@@ -84,6 +110,7 @@ def replay(ctx: VerifyContext, params: dict[str, Any]) -> dict[str, Any]:
         hint_due = n_fail >= hint_after and not solved.get(pid, False)
         f["answer_allowed"] = answer_due
         f["hint_due"] = hint_due
+        f["policy"] = {"hint_after_failures": hint_after, "show_answer_after_failures": show_after, "idk_counts_as_attempt": idk_counts}
         f["leak"] = bool(f["answer"]) and not answer_due
         f["early_hint"] = (not hint_due) and kind in ("attempt", "idk") and bool(f["procedural"] or f["intermediate"]) and not answer_due
         f["hint_present"] = bool(f["procedural"])

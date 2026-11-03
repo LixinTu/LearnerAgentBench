@@ -1,0 +1,191 @@
+# Family E — the event changes the *content* of the goal, not its date. Marcus asks for a plan
+# for Friday's quadratics test. After the first plan is written, Mr. Ruiz emails: the test will
+# also cover systems of equations (chapter 5), and the assessment record gains the skill. The
+# plan must be reworked to give systems real time without dropping quadratics or breaking
+# Marcus's short-block rules. Paired variants: Dana instead (same change, her rules); and no
+# change at all (nothing to add — systems must stay out of the plan).
+task_id: E07_test_now_covers_more
+family: E_event_driven_replanning_and_follow_up
+title: The teacher widens Friday's test mid-session — add the new topic, keep the rules
+version: "1.0"
+persona_id: marcus
+user_goal: >
+  Quadratics test on Friday the 13th. Set me up for the week.
+initial_state:
+  now: "2026-11-02T19:35:00"
+  skill_graph: algebra
+  records:
+    - kind: course
+      fields: {id: alg2, code: "ALG 2", name: Algebra II, instructor_id: teacher_ruiz, term: Fall 2026, skill_ids: [lin_eq, graph_lines, systems, exponents, polynomials, factoring, quadratics, functions]}
+    - kind: assessment
+      fields: {id: test_quad, course_id: alg2, title: "Test: quadratics", assessment_kind: exam, scheduled_at: "2026-11-13T10:00:00", skill_ids: [quadratics, factoring], weight: 0.15}
+    - kind: calendar_event
+      fields: {id: cal_test_quad, title: "Test: quadratics", start: "2026-11-13T10:00:00", end: "2026-11-13T11:00:00", event_kind: exam, fixed: true, created_by: system, linked: {assessment_id: test_quad}}
+    - kind: calendar_event
+      fields: {id: prac_1102, title: Basketball practice, start: "2026-11-02T15:30:00", end: "2026-11-02T17:30:00", event_kind: personal, fixed: true}
+    - kind: calendar_event
+      fields: {id: prac_1104, title: Basketball practice, start: "2026-11-04T15:30:00", end: "2026-11-04T17:30:00", event_kind: personal, fixed: true}
+    - kind: calendar_event
+      fields: {id: prac_1106, title: Basketball practice, start: "2026-11-06T15:30:00", end: "2026-11-06T17:30:00", event_kind: personal, fixed: true}
+    - kind: calendar_event
+      fields: {id: game_1107, title: Away game, start: "2026-11-07T13:00:00", end: "2026-11-07T19:00:00", event_kind: personal, fixed: true}
+    - kind: calendar_event
+      fields: {id: prac_1109, title: Basketball practice, start: "2026-11-09T15:30:00", end: "2026-11-09T17:30:00", event_kind: personal, fixed: true}
+    - kind: calendar_event
+      fields: {id: prac_1111, title: Basketball practice, start: "2026-11-11T15:30:00", end: "2026-11-11T17:30:00", event_kind: personal, fixed: true}
+  mastery_overrides: {factoring: 0.3, quadratics: 0.2, systems: 0.25, lin_eq: 0.7, graph_lines: 0.65, polynomials: 0.6, exponents: 0.7, arith_ops: 0.85}
+hidden_constraints:
+  - after the first plan, the test's content changes (email from Mr. Ruiz; the assessment record now lists systems) — the plan must be reworked, not left as it was
+  - Marcus's rules (60 min/day in 20–30 min blocks, early mornings and after practice, nothing after 21:00, 12 h clear before the test, nothing on practice or the game)
+  - factoring is a prerequisite of quadratics and is weak; systems is new and weak; the deeper prerequisites are already solid
+event_timeline:
+  - id: syllabus_change
+    event_kind: custom
+    after_step: 4
+    description: "Assessment updated: Friday's test now also covers systems of equations"
+    payload:
+      description: "Friday's test now covers quadratics, factoring and systems of equations"
+      records_update:
+        - {kind: assessment, id: test_quad, fields: {title: "Test: quadratics and systems", skill_ids: [quadratics, factoring, systems]}}
+  - id: ruiz_email
+    event_kind: new_message
+    after_step: 4
+    description: "Email from Mr. Ruiz"
+    payload: {sender: ruiz@example.org, subject: "Friday's test — chapter 5 added", body: "Heads up: Friday's test will cover systems of equations (chapter 5) as well as quadratics. Same time, same room. — Mr. Ruiz", channel: email, labels: [schedule]}
+available_tools: [get_student_profile, get_preferences, search_memory, list_assessments, analyze_skill_gaps, get_calendar_events,
+                  search_email, get_study_plan, create_study_plan, update_study_plan, create_task, record_memory]
+expected_final_state:
+  - an active plan written after the change with at least an hour on systems and at least an hour on quadratics, inside Marcus's rules
+  - the summary mentions the added topic
+checks:
+  - id: plan_exists
+    description: an active plan with at least four blocks was written this session
+    verifier: plan.exists
+    params: {min_blocks: 4, written_this_run: true}
+    weight: 2
+    hard: true
+    capability: tool_use_and_execution
+  - id: plan_after_change
+    description: the active plan was written after the syllabus change
+    verifier: event.state_after
+    params: {event_id: syllabus_change, kind: study_plan, where: {status: active}}
+    weight: 2
+    hard: true
+    capability: event_driven_replanning
+  - id: systems_added
+    description: systems gets at least 60 minutes
+    verifier: plan.minutes_on_skill
+    params: {skill_id: systems, min_minutes: 60, written_this_run: true}
+    weight: 2
+    hard: true
+    capability: event_driven_replanning
+  - id: quadratics_kept
+    description: quadratics still gets at least 60 minutes
+    verifier: plan.minutes_on_skill
+    params: {skill_id: quadratics, min_minutes: 60, written_this_run: true}
+    weight: 2
+    capability: educational_decision_making
+  - id: respects_marcus_rules
+    description: short blocks, 60 min/day, nothing after 21:00, 12 h clear before the test
+    verifier: plan.respects_constraints
+    params:
+      goal: {assessment_id: test_quad, target_knowledge: 0.5}
+      constraints: {max_daily_minutes: 60, min_block_minutes: 20, preferred_block_minutes: 30, no_study_after: "21:00", buffer_hours_before_exam: 12}
+      written_this_run: true
+    weight: 3
+    hard: true
+    capability: long_term_memory
+  - id: calendar_consistent
+    description: nothing on practice, the game or the test
+    verifier: calendar.no_conflicts_with_fixed
+    weight: 1
+    capability: tool_use_and_execution
+  - id: read_the_email
+    description: the inbox was read
+    verifier: audit.tool_called
+    params: {tool: search_email, min_count: 1}
+    weight: 1
+    capability: proactive_behavior
+  - id: summary_mentions_systems
+    description: the summary mentions the added topic
+    verifier: trajectory.final_mentions
+    params: {any_of: [systems, "chapter 5", "also cover", added, widened, "now covers"]}
+    weight: 1
+    capability: event_driven_replanning
+  - id: no_forbidden_actions
+    description: nothing forbidden attempted
+    verifier: auth.no_forbidden_attempts
+    weight: 1
+    hard: true
+    capability: safety_and_authorization
+  - id: finished
+    description: ended with a summary
+    verifier: trajectory.completed
+    weight: 1
+    capability: long_horizon_task_completion
+capability_requirements:
+  - {capability: event_driven_replanning, required: true, rationale: the goal's content changes while the agent works}
+  - {capability: long_term_memory, required: true, rationale: short blocks and practice days come from earlier sessions}
+simulated_user:
+  default_approval: deny
+  clarifications:
+    - {keywords: [rules, blocks, practice, windows], answer: "Short blocks, 20 to 30 minutes, an hour a day max, early mornings and after practice, nothing after nine, nothing on practice days' practice hours or games, and half a day clear before a test."}
+reference_path:
+  - {action: tool_call, tool: get_preferences}
+  - {action: tool_call, tool: search_memory, args: {query: ""}}
+  - {action: ask_user, message: "Remind me of your study rules — block length, daily cap, when you study, and anything about practice days?", only_if: no_memory}
+  - {action: tool_call, tool: get_calendar_events, args: {start: "2026-11-02T00:00:00", end: "2026-11-14T00:00:00"}}
+  - {action: tool_call, tool: list_assessments, args: {upcoming_only: true}}
+  - {action: plan_for, assessment_id: test_quad, skill_ids: [factoring, quadratics], target_knowledge: 0.5, title: "Quadratics test (Nov 13)", goal: "Factoring first, then quadratics"}
+  - {action: tool_call, tool: search_email, args: {unread_only: true}}
+  - {action: tool_call, tool: list_assessments, args: {upcoming_only: true}}
+  - {action: plan_for, assessment_id: test_quad, skill_ids: [factoring, quadratics, systems], target_knowledge: 0.5, update_existing: true, title: "Test: quadratics and systems (Nov 13)", goal: "Factoring, quadratics and the newly added systems of equations"}
+  - {action: final, message: "Plan set — and reworked once already: Mr. Ruiz just emailed that Friday's test now also covers systems of equations (chapter 5), so I added systems blocks alongside factoring and quadratics. Short blocks, an hour a day, early mornings and after practice, nothing on practice hours or Saturday's game, and the plan ends the evening before the test."}
+seeds: [0]
+max_steps: 25
+variants:
+  - id: dana_instead
+    condition: different_persona
+    description: the same change for Dana, with her longer evening blocks and Sunday off
+    expected_delta: Dana's rules replace Marcus's; the content change is handled the same way
+    patch:
+      persona_id: dana
+    checks_remove: [respects_marcus_rules, quadratics_kept]
+    checks_add:
+      - {id: quadratics_kept_dana, description: quadratics still gets at least 45 minutes (Dana has fewer study days before her 24 h buffer), verifier: plan.minutes_on_skill, params: {skill_id: quadratics, min_minutes: 45, written_this_run: true}, weight: 2, capability: educational_decision_making}
+      - id: respects_dana_rules
+        description: blocks inside Dana's rules
+        verifier: plan.respects_constraints
+        params:
+          goal: {assessment_id: test_quad, target_knowledge: 0.5}
+          constraints: {max_daily_minutes: 90, min_block_minutes: 30, preferred_block_minutes: 45, no_study_after: "22:00", rest_weekdays: [6], buffer_hours_before_exam: 24}
+          written_this_run: true
+        weight: 3
+        hard: true
+        capability: long_term_memory
+  - id: nothing_changes
+    condition: correct_memory
+    description: no email, no change — systems must stay out of the plan
+    expected_delta: the first plan stands; adding systems would be wasted time
+    patch:
+      events_remove: [syllabus_change, ruiz_email]
+    checks_remove: [plan_after_change, systems_added, summary_mentions_systems, read_the_email]
+    checks_add:
+      - {id: systems_left_out, description: no time on systems — it is not on the test, verifier: plan.minutes_on_skill, params: {skill_id: systems, max_minutes: 0, written_this_run: true}, weight: 2, hard: true, capability: educational_decision_making}
+      - {id: no_phantom_change, description: the summary does not claim the test changed, verifier: trajectory.final_not_mentions, params: {none_of: ["also cover", "now covers", "added systems", "chapter 5"]}, weight: 1, capability: proactive_behavior}
+    reference_path:
+      - {action: tool_call, tool: get_preferences}
+      - {action: tool_call, tool: search_memory, args: {query: ""}}
+      - {action: ask_user, message: "Remind me of your study rules — block length, daily cap, when you study, and anything about practice days?", only_if: no_memory}
+      - {action: tool_call, tool: get_calendar_events, args: {start: "2026-11-02T00:00:00", end: "2026-11-14T00:00:00"}}
+      - {action: tool_call, tool: list_assessments, args: {upcoming_only: true}}
+      - {action: plan_for, assessment_id: test_quad, skill_ids: [factoring, quadratics], target_knowledge: 0.5, title: "Quadratics test (Nov 13)", goal: "Factoring first, then quadratics"}
+      - {action: final, message: "Plan set for Friday's quadratics test: factoring first (quadratics build on it), then quadratics, in short blocks, an hour a day, early mornings and after practice, nothing on practice hours or Saturday's game, ending the evening before the test."}
+negative_cases:
+  - id: ignores_the_change
+    description: writes the first plan, finishes before reading anything else
+    actions:
+      - {type: tool_call, tool: get_preferences, args: {}}
+      - {type: tool_call, tool: create_study_plan, args: {title: "Quadratics", goal: "Friday", target_date: "2026-11-13T10:00:00", blocks: [{start: "2026-11-03T06:30:00", end: "2026-11-03T07:00:00", skill_ids: [factoring], activity: practice}, {start: "2026-11-03T19:30:00", end: "2026-11-03T20:00:00", skill_ids: [factoring], activity: practice}, {start: "2026-11-04T06:30:00", end: "2026-11-04T07:00:00", skill_ids: [quadratics], activity: practice}, {start: "2026-11-05T06:30:00", end: "2026-11-05T07:00:00", skill_ids: [quadratics], activity: practice}, {start: "2026-11-10T06:30:00", end: "2026-11-10T07:00:00", skill_ids: [quadratics], activity: practice}]}}
+      - {type: final, message: "Plan set for Friday's quadratics test."}
+    expect_fail_checks: [plan_after_change, systems_added]

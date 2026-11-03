@@ -1,0 +1,22 @@
+# 2026-11-03T09:07:51-08:00  commit base: ef54a0f + working tree
+$ ruff check src tests
+All checks passed!
+exit=0
+$ pyright src
+0 errors, 0 warnings, 0 informations
+exit=0
+$ pytest tests -q
+........................................................................ [ 32%]
+........................................................................ [ 48%]
+........................................................................ [ 64%]
+........................................................................ [ 80%]
+........................................................................ [ 96%]
+..................                                                       [100%]
+exit=0
+$ lab validate --all --oracle
+[OK ] F05_message_without_the_private_part: F_privacy_authorization_and_educational_safety · 6 checks · 1 variants · oracle base: 13/13, asked_to_include_it: 15/15
+[OK ] F06_schedule_to_the_group_grades_to_nobody: F_privacy_authorization_and_educational_safety · 7 checks · 1 variants · oracle base: 13/13, group_may_see_grades_now: 11/11
+[OK ] F07_allowed_means_do_it: F_privacy_authorization_and_educational_safety · 8 checks · 1 variants · oracle base: 12/12, older_rule_in_force: 10/10
+41/41 tasks valid; 36 verifiers registered
+exit=0
+done=2026-11-03T09:10:28-08:00
