@@ -1,0 +1,154 @@
+# Family C — a tutoring session that must leave something behind. Dana makes the same sign
+# error on two problems in a row (she drops the minus when solving ax + b = 0). The tutor
+# follows her policy (hint after two consecutive misses, no answer unless asked) AND records the
+# recurring misconception in memory so the next session starts from it. Paired variant: the
+# second error is an unrelated arithmetic slip — no pattern, nothing to record.
+task_id: C10_same_mistake_twice_write_it_down
+family: C_adaptive_tutoring_and_intervention
+title: Tutor two problems, notice the same mistake twice, and write it down for next time
+version: "1.0"
+persona_id: dana
+user_goal: >
+  Equations practice. First: 2x + 6 = 0. I get x = 3.
+initial_state:
+  now: "2026-11-02T19:30:00"
+  skill_graph: algebra
+  records:
+    - kind: course
+      fields: {id: math101, code: "MATH 101", name: Intermediate Algebra, instructor_id: prof_kim, term: Fall 2026, skill_ids: [arith_ops, fractions, lin_eq, lin_ineq, word_prob, graph_lines, systems, exponents, polynomials, factoring, quadratics, functions]}
+  mastery_overrides: {lin_eq: 0.45}
+hidden_constraints:
+  - Dana's hint policy — a step hint after two consecutive misses on the same problem, no final answer unless asked, "I don't know" is not an attempt
+  - the same sign error appears on both problems; a memory entry about it is expected before the session ends
+available_tools: [get_student_profile, get_preferences, search_memory, get_study_plan, record_memory]
+expected_final_state:
+  - "every line answered within the policy: no hint at a first miss, a step hint at the second miss, confirmations, no early answer"
+  - a memory entry recorded this session about the recurring sign error
+checks:
+  - id: every_line_answered
+    description: the tutor replied to every student line
+    verifier: tutoring.hint_policy
+    params: &tut
+      aspect: turn_count
+      policy: {hint_after_failures: 2, idk_counts_as_attempt: false, no_answer_unless_asked: true, show_answer_after_failures: null}
+      problems:
+        P1:
+          answer: ['\bx\s*=\s*(?:-|−|–)\s*3\b', '\bnegative\s+three\b', '\bminus\s+three\b', '\bx\s+(?:is|equals)\s+(?:-|−|–)\s*3\b']
+          intermediate: ['2x\s*=\s*(?:-|−|–)\s*6\b', '\b(?:-|−|–)\s*6\b']
+          procedural: ['(?:subtract|minus|take\s+(?:off|away))[^.\n]{0,25}\b6\b', '\bdivid(?:e|ing)[^.\n]{0,25}\b(?:by\s+)?2\b', '2x\s*=\s*(?:-|−|–)\s*6\b']
+          conceptual: ['\bsign\b', '\bnegative\b', '\bboth\s+sides\b', '\bundo\b', '\bput\s+.{0,12}\s+back\s+in\b', '\bcheck\b']
+          steps: ['2x\s*=\s*(?:-|−|–)\s*6\b', '(?:÷|/|divided\s+by)\s*2']
+        P2:
+          answer: ['\bx\s*=\s*(?:-|−|–)\s*2\b', '\bnegative\s+two\b', '\bminus\s+two\b', '\bx\s+(?:is|equals)\s+(?:-|−|–)\s*2\b']
+          intermediate: ['4x\s*=\s*(?:-|−|–)\s*8\b', '\b(?:-|−|–)\s*8\b']
+          procedural: ['(?:subtract|minus|take\s+(?:off|away))[^.\n]{0,25}\b8\b', '\bdivid(?:e|ing)[^.\n]{0,25}\b(?:by\s+)?4\b', '4x\s*=\s*(?:-|−|–)\s*8\b']
+          conceptual: ['\bsign\b', '\bnegative\b', '\bboth\s+sides\b', '\bundo\b', '\bput\s+.{0,12}\s+back\s+in\b', '\bcheck\b']
+          steps: ['4x\s*=\s*(?:-|−|–)\s*8\b', '(?:÷|/|divided\s+by)\s*4']
+      script:
+        - {id: P1-A1, kind: attempt, problem: P1}
+        - {id: P1-A2, kind: attempt, problem: P1}
+        - {id: P1-C, kind: correct, problem: P1}
+        - {id: P2-A1, kind: attempt, problem: P2}
+        - {id: P2-C, kind: correct, problem: P2}
+    weight: 1
+    hard: true
+    capability: long_horizon_task_completion
+  - id: hint_at_second_miss
+    description: a step-level hint at the second consecutive miss
+    verifier: tutoring.hint_policy
+    params: {<<: *tut, aspect: hint_due}
+    weight: 2
+    hard: true
+    capability: educational_decision_making
+  - id: no_premature_hint
+    description: no step-level hint at a first miss
+    verifier: tutoring.hint_policy
+    params: {<<: *tut, aspect: hint_early}
+    weight: 2
+    hard: true
+    capability: long_term_memory
+  - id: no_answer_leak
+    description: no final answer before it is allowed
+    verifier: tutoring.hint_policy
+    params: {<<: *tut, aspect: answer_leak}
+    weight: 2
+    hard: true
+    capability: long_term_memory
+  - id: confirmed_the_correct_answers
+    description: correct answers are confirmed
+    verifier: tutoring.hint_policy
+    params: {<<: *tut, aspect: confirmation}
+    weight: 1
+    capability: educational_decision_making
+  - id: pattern_recorded
+    description: a memory entry was written this session
+    verifier: audit.tool_called
+    params: {tool: record_memory, min_count: 1, ok: true}
+    weight: 3
+    hard: true
+    capability: proactive_behavior
+  - id: said_so
+    description: the summary names the sign pattern
+    verifier: trajectory.final_mentions
+    params: {any_of: [sign, minus, negative, noted, "written down", remember]}
+    weight: 1
+    capability: proactive_behavior
+  - id: read_the_policy
+    description: preferences were read
+    verifier: audit.tool_called
+    params: {tool: get_preferences, min_count: 1}
+    weight: 1
+    capability: cross_session_consistency
+capability_requirements:
+  - {capability: proactive_behavior, required: true, rationale: "nobody asks for the note; the pattern must be noticed and kept"}
+  - {capability: long_term_memory, required: true, rationale: "the hint policy comes from earlier sessions"}
+simulated_user:
+  default_approval: deny
+  scripted_replies:
+    - "Hmm, 3 again — 6 divided by 2 is 3, isn't it?"
+    - "Oh — the minus. 2x = −6, so x = −3."
+    - "Next one: 4x + 8 = 0. I get x = 2."
+    - "Right, the sign again: 4x = −8, x = −2."
+reference_path:
+  - {action: tool_call, tool: get_preferences}
+  - {action: tool_call, tool: search_memory, args: {query: "hint answer"}}
+  - {action: ask_user, message: "Not quite — check it: put x = 3 back in. Does 2 × 3 + 6 make 0? Have another go."}
+  - {action: ask_user, message: "Second miss, so here's the step: undo the +6 by subtracting 6 from both sides — that gives 2x = −6 — and then divide both sides by 2. Mind the sign."}
+  - {action: ask_user, message: "That's it — x = −3, well done. Next one when you're ready."}
+  - {action: ask_user, message: "Check it: put x = 2 back in — does 4 × 2 + 8 make 0? Look at the sign of what you moved across."}
+  - {action: tool_call, tool: record_memory, args: {text: "Tutoring Nov 2: on both ax + b = 0 problems Dana dropped the minus when moving the constant across (x = 3 for 2x + 6 = 0, x = 2 for 4x + 8 = 0) and corrected it only after a prompt — a recurring sign error on linear equations; start the next session with a sign check.", memory_kind: fact, scope: math101, payload: {key: misconception, value: "sign error moving constants across in ax + b = 0"}}}
+  - {action: final, message: "Exactly — x = −2. Both problems went the same way: the minus got dropped when the constant moved across, then you caught it. I've noted that sign pattern in your memory so next time we start with a sign check."}
+seeds: [0]
+max_steps: 20
+variants:
+  - id: different_slip_the_second_time
+    condition: correct_memory
+    description: the second error is an arithmetic slip, not the sign — no pattern to record
+    expected_delta: the same tutoring; no memory entry is required
+    patch:
+      simulated_user:
+        scripted_replies:
+          - "Hmm, 3 again — 6 divided by 2 is 3, isn't it?"
+          - "Oh — the minus. 2x = −6, so x = −3."
+          - "Next one: 4x + 8 = 0. I get x = −3."
+          - "Oops, 8 over 4 is 2, not 3 — x = −2."
+    checks_remove: [pattern_recorded, said_so]
+    reference_path:
+      - {action: tool_call, tool: get_preferences}
+      - {action: tool_call, tool: search_memory, args: {query: "hint answer"}}
+      - {action: ask_user, message: "Not quite — check it: put x = 3 back in. Does 2 × 3 + 6 make 0? Have another go."}
+      - {action: ask_user, message: "Second miss, so here's the step: undo the +6 by subtracting 6 from both sides — that gives 2x = −6 — and then divide both sides by 2. Mind the sign."}
+      - {action: ask_user, message: "That's it — x = −3, well done. Next one when you're ready."}
+      - {action: ask_user, message: "Close — check the last step: put x = −3 back in. Does 4 × (−3) + 8 make 0?"}
+      - {action: final, message: "Exactly — x = −2. Two different slips, both caught by checking your answer in the original equation; keep doing that."}
+negative_cases:
+  - id: tutors_well_but_records_nothing
+    description: good tutoring, no memory entry
+    actions:
+      - {type: tool_call, tool: get_preferences, args: {}}
+      - {type: ask_user, message: "Not quite — check it: put x = 3 back in. Does 2 × 3 + 6 make 0? Have another go."}
+      - {type: ask_user, message: "Second miss, so here's the step: subtract 6 from both sides — 2x = −6 — then divide both sides by 2."}
+      - {type: ask_user, message: "That's it — x = −3, well done. Next one when you're ready."}
+      - {type: ask_user, message: "Check it: put x = 2 back in — does 4 × 2 + 8 make 0?"}
+      - {type: final, message: "Exactly — x = −2. Nice work tonight."}
+    expect_fail_checks: [pattern_recorded]

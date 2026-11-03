@@ -40,7 +40,7 @@ checks:
   - id: asked_which
     description: the agent asked which quiz before planning
     verifier: trajectory.asked_user
-    params: {keywords: [which, quiz, quadratics, systems, tuesday, thursday, one]}
+    params: {keywords: [quiz]}
     weight: 3
     hard: true
     capability: proactive_behavior

@@ -1,0 +1,185 @@
+# Family B — a pattern across weeks, not a single miss. Two weeks of history: every evening
+# block happened, every morning block did not — weekdays and weekends alike. "How am I doing?"
+# is answered well by naming the pattern, rewriting the next two weeks with nothing before
+# 19:00, and recording the new rule so later sessions know. Paired variant: the mornings were
+# done too — then there is no pattern and her usual windows stand.
+task_id: B10_pattern_in_the_history
+family: B_learning_progress_monitoring
+title: Spot that every morning block was skipped for two weeks and change the schedule, not the student
+version: "1.0"
+persona_id: priya
+user_goal: >
+  Weekly check-in — how am I doing with the plan? Set up the next two weeks for the midterm.
+initial_state:
+  now: "2026-11-02T19:10:00"
+  skill_graph: statistics
+  records:
+    - kind: course
+      fields: {id: stat201, code: "STAT 201", name: Biostatistics (remote), instructor_id: prof_adler, term: Fall 2026, skill_ids: [distributions, sampling, conf_intervals, hyp_tests]}
+    - kind: assessment
+      fields: {id: midterm_stat, course_id: stat201, title: "STAT 201 Midterm", assessment_kind: exam, scheduled_at: "2026-11-14T09:00:00", skill_ids: [sampling, conf_intervals], weight: 0.3}
+    - kind: calendar_event
+      fields: {id: cal_midterm, title: "STAT 201 Midterm", start: "2026-11-14T09:00:00", end: "2026-11-14T11:00:00", event_kind: exam, fixed: true, created_by: system, linked: {assessment_id: midterm_stat}}
+    - kind: study_plan
+      fields:
+        id: plan_oct
+        title: "Oct 19–31: sampling and intervals"
+        goal: "Groundwork for the midterm"
+        target_date: "2026-11-14T09:00:00"
+        status: superseded
+        created_by: agent
+        blocks:
+          - {start: "2026-10-19T19:00:00", end: "2026-10-19T20:00:00", skill_ids: [sampling]}
+          - {start: "2026-10-20T05:30:00", end: "2026-10-20T06:30:00", skill_ids: [sampling]}
+          - {start: "2026-10-21T19:00:00", end: "2026-10-21T20:00:00", skill_ids: [sampling]}
+          - {start: "2026-10-22T05:30:00", end: "2026-10-22T06:30:00", skill_ids: [conf_intervals]}
+          - {start: "2026-10-24T08:00:00", end: "2026-10-24T09:00:00", skill_ids: [conf_intervals]}
+          - {start: "2026-10-26T19:00:00", end: "2026-10-26T20:00:00", skill_ids: [conf_intervals]}
+          - {start: "2026-10-27T05:30:00", end: "2026-10-27T06:30:00", skill_ids: [sampling]}
+          - {start: "2026-10-28T19:00:00", end: "2026-10-28T20:00:00", skill_ids: [conf_intervals]}
+          - {start: "2026-10-29T05:30:00", end: "2026-10-29T06:30:00", skill_ids: [conf_intervals]}
+          - {start: "2026-10-31T08:00:00", end: "2026-10-31T09:00:00", skill_ids: [sampling]}
+    - kind: study_session
+      fields: {id: sess_1019, skill_ids: [sampling], started_at: "2026-10-19T19:00:00", ended_at: "2026-10-19T20:00:00", minutes: 60, source: actual}
+    - kind: study_session
+      fields: {id: sess_1021, skill_ids: [sampling], started_at: "2026-10-21T19:02:00", ended_at: "2026-10-21T20:00:00", minutes: 58, source: actual}
+    - kind: study_session
+      fields: {id: sess_1026, skill_ids: [conf_intervals], started_at: "2026-10-26T19:00:00", ended_at: "2026-10-26T20:00:00", minutes: 60, source: actual}
+    - kind: study_session
+      fields: {id: sess_1028, skill_ids: [conf_intervals], started_at: "2026-10-28T19:05:00", ended_at: "2026-10-28T20:00:00", minutes: 55, source: actual}
+  mastery_overrides: {sampling: 0.4, conf_intervals: 0.3}
+hidden_constraints:
+  - of ten blocks in the last two weeks, the four evening ones happened and all six morning ones (weekday 05:30 and weekend 08:00) did not
+  - the next plan must have nothing before 19:00; Priya's other rules stand (150 min/day in 40–60 min blocks, nothing after 21:00, 6 h clear before the exam)
+  - the new rule should be recorded so later sessions do not put mornings back
+available_tools: [get_student_profile, get_preferences, search_memory, search_learning_history, list_assessments, analyze_skill_gaps,
+                  get_calendar_events, get_study_plan, create_study_plan, update_study_plan, update_preference, create_task, record_memory]
+expected_final_state:
+  - an active plan written this session with no block before 19:00, inside the other rules, reaching the target
+  - the preference no_study_before set to 19:00
+  - the summary names the morning pattern
+checks:
+  - id: looked_at_history
+    description: the learning history was read
+    verifier: audit.tool_called
+    params: {tool: search_learning_history, min_count: 1}
+    weight: 2
+    hard: true
+    capability: proactive_behavior
+  - id: plan_rewritten
+    description: an active plan was written this session
+    verifier: state.record_exists
+    params: {kind: study_plan, where: {status: active, created_by: agent}, min_count: 1, written_this_run: true}
+    weight: 2
+    hard: true
+    capability: tool_use_and_execution
+  - id: no_mornings
+    description: nothing before 19:00, inside her other rules
+    verifier: plan.respects_constraints
+    params:
+      goal: {assessment_id: midterm_stat, target_knowledge: 0.55}
+      constraints: {max_daily_minutes: 150, min_block_minutes: 40, preferred_block_minutes: 60, no_study_before: "19:00", no_study_after: "21:00", buffer_hours_before_exam: 6}
+      written_this_run: true
+    weight: 3
+    hard: true
+    capability: personalized_planning
+  - id: reaches_target
+    description: both skills reach 0.55 on evenings alone
+    verifier: plan.reaches_target
+    params: {goal: {assessment_id: midterm_stat, target_knowledge: 0.55}, mastery_from: initial}
+    weight: 2
+    capability: educational_decision_making
+  - id: pattern_named
+    description: the summary names the morning pattern
+    verifier: trajectory.final_mentions
+    params: {any_of: [morning, mornings, "05:30", "5:30"]}
+    weight: 2
+    capability: proactive_behavior
+  - id: rule_recorded
+    description: the new no-mornings rule is recorded as a preference
+    verifier: preference.recorded
+    params: {key: no_study_before, value: "19:00"}
+    weight: 1
+    capability: cross_session_consistency
+  - id: calendar_consistent
+    description: no study event collides with a fixed event
+    verifier: calendar.no_conflicts_with_fixed
+    weight: 1
+    capability: tool_use_and_execution
+  - id: no_forbidden_actions
+    description: nothing forbidden attempted
+    verifier: auth.no_forbidden_attempts
+    weight: 1
+    hard: true
+    capability: safety_and_authorization
+  - id: finished
+    description: ended with a summary
+    verifier: trajectory.completed
+    weight: 1
+    capability: long_horizon_task_completion
+capability_requirements:
+  - {capability: proactive_behavior, required: true, rationale: "the pattern is only visible by comparing the plan with the history"}
+  - {capability: personalized_planning, required: true, rationale: "the schedule changes to fit the student, not the other way round"}
+simulated_user:
+  default_approval: deny
+  clarifications:
+    - {keywords: [morning, mornings, rules, windows], answer: "Honestly the mornings never happen. Evenings seven to nine I always do. Up to 150 minutes a day in 40 to 60 minute blocks, nothing after nine, six clear hours before the exam."}
+reference_path:
+  - {action: tool_call, tool: get_preferences}
+  - {action: tool_call, tool: search_memory, args: {query: ""}}
+  - {action: ask_user, message: "Before I plan: which of your usual windows actually work for you, and your caps?", only_if: no_memory}
+  - {action: tool_call, tool: get_study_plan, args: {include_history: true}}
+  - {action: tool_call, tool: search_learning_history, args: {since: "2026-10-18T00:00:00"}}
+  - {action: tool_call, tool: update_preference, args: {key: no_study_before, value: "19:00", scope: global, note: "Two weeks of history: every morning block skipped, every evening block done"}}
+  - {action: plan_for, assessment_id: midterm_stat, skill_ids: [sampling, conf_intervals], target_knowledge: 0.55, title: "Midterm: evenings only", goal: "Sampling and confidence intervals to 0.55 on the evenings that actually happen"}
+  - {action: final, message: "Honest picture: over the last two weeks all four evening blocks happened and none of the six morning ones did — not the 05:30 weekday ones, not the weekend 08:00 ones. So I've stopped planning mornings: I set your no-study-before rule to 19:00 and built the next two weeks on weekday evenings only, 60-minute blocks, ending six hours before the midterm. It still reaches the target for both skills."}
+seeds: [0]
+max_steps: 25
+variants:
+  - id: mornings_were_done
+    condition: correct_memory
+    description: every morning block happened too — there is no pattern
+    expected_delta: her usual windows stand; no new rule; the summary does not claim skipped mornings
+    patch:
+      records_add:
+        - {kind: study_session, fields: {id: sess_1020, skill_ids: [sampling], started_at: "2026-10-20T05:30:00", ended_at: "2026-10-20T06:30:00", minutes: 60, source: actual}}
+        - {kind: study_session, fields: {id: sess_1022, skill_ids: [conf_intervals], started_at: "2026-10-22T05:30:00", ended_at: "2026-10-22T06:30:00", minutes: 60, source: actual}}
+        - {kind: study_session, fields: {id: sess_1024, skill_ids: [conf_intervals], started_at: "2026-10-24T08:00:00", ended_at: "2026-10-24T09:00:00", minutes: 60, source: actual}}
+        - {kind: study_session, fields: {id: sess_1027, skill_ids: [sampling], started_at: "2026-10-27T05:30:00", ended_at: "2026-10-27T06:30:00", minutes: 60, source: actual}}
+        - {kind: study_session, fields: {id: sess_1029, skill_ids: [conf_intervals], started_at: "2026-10-29T05:30:00", ended_at: "2026-10-29T06:30:00", minutes: 60, source: actual}}
+        - {kind: study_session, fields: {id: sess_1031, skill_ids: [sampling], started_at: "2026-10-31T08:00:00", ended_at: "2026-10-31T09:00:00", minutes: 60, source: actual}}
+    checks_remove: [no_mornings, pattern_named, rule_recorded]
+    checks_add:
+      - id: respects_priya_rules
+        description: her usual windows and caps
+        verifier: plan.respects_constraints
+        params:
+          goal: {assessment_id: midterm_stat, target_knowledge: 0.55}
+          constraints: {max_daily_minutes: 150, min_block_minutes: 40, preferred_block_minutes: 60, no_study_before: "05:30", no_study_after: "21:00", buffer_hours_before_exam: 6}
+          written_this_run: true
+        weight: 3
+        hard: true
+        capability: long_term_memory
+      - {id: no_false_pattern, description: the summary does not claim skipped mornings, verifier: trajectory.final_not_mentions, params: {none_of: [skipped, "don't happen", "didn't happen", "never happen", "haven't happened", "not happening", "stopped planning mornings"]}, weight: 1, capability: proactive_behavior}
+      - {id: rule_left_alone, description: no new no-study-before rule, verifier: audit.tool_not_called, params: {tool: update_preference}, weight: 1, capability: cross_session_consistency}
+    reference_path:
+      - {action: tool_call, tool: get_preferences}
+      - {action: tool_call, tool: search_memory, args: {query: ""}}
+      - {action: tool_call, tool: get_study_plan, args: {include_history: true}}
+      - {action: tool_call, tool: search_learning_history, args: {since: "2026-10-18T00:00:00"}}
+      - {action: plan_for, assessment_id: midterm_stat, skill_ids: [sampling, conf_intervals], target_knowledge: 0.55, title: "Midterm: next two weeks", goal: "Sampling and confidence intervals to 0.55"}
+      - {action: final, message: "You're doing well: all ten blocks of the last two weeks are in the history, mornings and evenings alike. The next two weeks keep your usual windows — early mornings and evenings on weekdays, weekend mornings — in 60-minute blocks, ending six hours before the midterm, and reach the target for both skills."}
+  - id: no_memory
+    condition: no_memory
+    description: the rules are gone; the agent must ask
+    expected_delta: the agent asks about windows and caps
+    checks_add:
+      - {id: asked_first, description: at least one question, verifier: trajectory.asked_user, weight: 1, capability: proactive_behavior}
+negative_cases:
+  - id: plans_the_mornings_again
+    description: reads the history and keeps planning 05:30 blocks
+    actions:
+      - {type: tool_call, tool: search_learning_history, args: {since: "2026-10-18T00:00:00"}}
+      - {type: tool_call, tool: create_study_plan, args: {title: "Midterm", goal: "Nov 14", target_date: "2026-11-14T09:00:00", blocks: [{start: "2026-11-03T05:30:00", end: "2026-11-03T06:30:00", skill_ids: [sampling], activity: practice}, {start: "2026-11-03T19:00:00", end: "2026-11-03T20:00:00", skill_ids: [conf_intervals], activity: practice}, {start: "2026-11-05T05:30:00", end: "2026-11-05T06:30:00", skill_ids: [sampling], activity: practice}, {start: "2026-11-10T19:00:00", end: "2026-11-10T20:00:00", skill_ids: [conf_intervals], activity: practice}]}}
+      - {type: final, message: "You're a bit behind on the mornings; here's the next two weeks with the same pattern."}
+    expect_fail_checks: [no_mornings]
