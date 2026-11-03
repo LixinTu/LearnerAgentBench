@@ -1,0 +1,18 @@
+# Baseline re-run on the fixed environment (commit 70b0701+): four systems from one model,
+# every base task, THREE seeds. v1 (`baselines_local.yaml`, seed 0) ran before the course-id /
+# empty-skill-list / atomic-call fixes and showed per-task swings of up to ±0.5 between two runs
+# of the same configuration — one seed is not enough to compare conditions. Local Ollama; no cost.
+name: baselines_local_v2
+model: qwen2.5:7b-instruct
+adapter: openai_compatible
+adapter_params: {base_url: "http://127.0.0.1:11434/v1", max_tokens: 900}
+tasks: [all]
+variants: [base]
+seeds: [0, 1, 2]
+max_steps: 25
+# Acting systems first so an interrupted sweep still yields acting-agent evidence; floors are fast.
+conditions:
+  tool_agent:       {memory_access: tools, tool_profile: full}
+  full_agent:       {memory_access: full,  tool_profile: full}
+  chatbot:          {memory_access: none,  tool_profile: none}
+  memory_assistant: {memory_access: full,  tool_profile: none}
