@@ -80,7 +80,7 @@ checks:
   - id: summary_mentions_change
     description: the summary acknowledges the change
     verifier: trajectory.final_mentions
-    params: {any_of: [morning, "no evening", "8:30", "08:30", "rule"]}
+    params: {any_of: [morning, "no evening", "8:30", "08:30", "new rule", "rule change", "rule changed", "changed the rule", "changed your rule"]}
     weight: 1
     capability: proactive_behavior
   - id: finished

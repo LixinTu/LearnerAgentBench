@@ -1,0 +1,31 @@
+runs/baselines_local_v2: 348 runs judged against the current checks, 2 changed, 0 refused
+baselines_local_v2 rescore exit=0
+runs/baselines_local_v3_new_tasks: 336 runs judged against the current checks, 2 changed, 0 refused
+baselines_local_v3_new_tasks rescore exit=0
+runs/paired_variants_new_tasks_local: 123 runs judged against the current checks, 5 changed, 0 refused
+paired_variants_new_tasks_local rescore exit=0
+runs/tool_ablation_local: 96 runs judged against the current checks, 0 changed, 0 refused
+tool_ablation_local rescore exit=0
+runs/memory_ablation_local: 114 runs judged against the current checks, 0 changed, 0 refused
+memory_ablation_local rescore exit=0
+runs/persona_swap_local: 27 runs judged against the current checks, 0 changed, 0 refused
+persona_swap_local rescore exit=0
+runs/family_c_c07_rule_at_a_line_local: 18 runs judged against the current checks, 0 changed, 0 refused
+family_c_c07_rule_at_a_line_local rescore exit=0
+runs/family_c_v2_local: 165 runs judged against the current checks, 0 changed, 0 refused
+family_c_v2_local rescore exit=0
+300 runs collected into runs/_analysis/v2
+336 runs collected into runs/_analysis/new
+84 runs collected into runs/_analysis/tool
+114 runs collected into runs/_analysis/memory
+18 runs collected into runs/_analysis/persona
+135 runs collected into runs/_analysis/c
+15 runs collected into runs/_analysis/c
+300 runs collected into runs/_analysis/record
+336 runs collected into runs/_analysis/record
+108 runs collected into runs/_analysis/record
+12 runs collected into runs/_analysis/record
+123 runs collected into runs/_analysis/variants
+30 runs collected into runs/_analysis/cvariants
+3 runs collected into runs/_analysis/cvariants
+worst=0

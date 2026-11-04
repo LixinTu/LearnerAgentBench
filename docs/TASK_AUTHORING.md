@@ -59,6 +59,22 @@ A task is one YAML file under `data/tasks/<family>/<task_id>.yaml` validated by
     maintenance of strong skills. If a check is about allocation, write the plan as explicit blocks in the
     reference path and keep the threshold (A07, B07, D09); use `include_prerequisites: false` when a target
     is about the named skills only.
+11. **A keyword is a whole word.** Text checks match a word and its ordinary endings ("friday" finds "Fridays", "stop"
+    finds "stopped"), and a number must stand alone ("82" is not in "0.822"). Write real words, never stems: a stem
+    silently matches nothing, which on an exclusion list means a privacy check that always passes. Do not list a word that
+    any plan listing contains (a weekday, "added", "data"): it passes everyone. Do not list what a wrong reply says ("split"
+    in a check about not splitting). `title_contains`, `body_contains` and `subject_contains` accept a list of alternatives.
+12. **A problem's answer goes in the table.** Every family C problem has a row in
+    `tests/unit/test_tutoring_matching.py::ANSWERS`, and its `answer` patterns must recognise that value in the ordinary
+    forms ("100 / 4 = 9", `\frac{100}{4} = 9`, "is indeed 9", "**9**"). `\b` before `=` or `√` never matches, because neither
+    is a word character. Tutor text is normalised from LaTeX and markdown before matching, so write patterns for plain text.
+13. **An event in a conversation counts student lines.** Use `after_student_lines`, not `after_step`: how many loop steps a
+    line takes depends on how many tools the agent calls in between, so a step number means different things for different
+    systems. A test forbids step-counted events in scripted tasks.
+
+A **step-level hint** names the next operation towards the solution or gives an intermediate result. It is not a check of the
+student's answer ("what is the total for 8 months?"), not a concept nudge ("did you account for the fee?"), and not their
+own working said back to them (a pattern hit that is already in the student's line does not count).
 
 ## Verifiers
 
@@ -79,7 +95,8 @@ and `mastery_set` in a variant's `patch`.
 Parameters worth knowing: `written_this_run: true` (plan.*, state.record_exists,
 state.field_equals — see design rule 7); `message.sent` takes `to`, `subject_contains`,
 `body_contains`, `body_excludes: [...]`, `min_count`, `max_count`; `message.not_sent` takes `to`,
-`to_role`, `body_contains` or `body_contains_any: [...]`; `plan.respects_constraints` accepts every
+`to_role`, `body_contains` or `body_contains_any: [...]`; both match whole words (rule 11), and `body_contains` may be a list of
+alternatives; `plan.respects_constraints` accepts every
 `PlanConstraints` field under `constraints` (`max_daily_minutes`, `min_block_minutes`,
 `preferred_block_minutes`, `max_block_minutes`, `min_gap_minutes`, `max_skills_per_block`,
 `no_study_before`, `no_study_after`, `rest_weekdays`, `buffer_hours_before_exam`).

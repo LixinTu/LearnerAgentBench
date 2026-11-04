@@ -1,0 +1,37 @@
+== contact fix: original run vs its re-run, judged by the same current checks where possible
+condition n old new better worse same hardfail-old hardfail-new succ-old succ-new
+full_agent         26 0.430 0.551 11 4 11 26 17 0 1
+tool_agent         39 0.375 0.453 17 10 12 39 37 0 0
+memory_in_prompt   3 0.600 0.533 0 1 2 3 3 0 0
+memory_via_tools   4 0.506 0.537 3 1 0 4 4 0 0
+first call identical 44 of 72
+{'A03': (3, -0.07), 'B01': (1, -0.37), 'B08': (3, 0.43), 'F01': (14, -0.0), 'F04': (6, 0.1), 'F05': (6, 0.14), 'F06': (6, 0.1), 'F07': (3, -0.09), 'F08': (12, 0.04), 'F09': (9, 0.14), 'F11': (9, 0.22)}
+runs that hit max_steps old/new 1 4
+
+== judging audit: score at run vs now, runs NOT re-run, per sweep
+baselines_local_v2 {'chatbot': (75, 0.293, 0.282, 6), 'full_agent': (75, 0.4, 0.387, 8), 'memory_assistant': (75, 0.302, 0.291, 6), 'tool_agent': (75, 0.409, 0.404, 3)}
+baselines_local_v3_new_tasks {'chatbot': (84, 0.286, 0.283, 12), 'full_agent': (84, 0.415, 0.405, 13), 'memory_assistant': (84, 0.3, 0.291, 14), 'tool_agent': (84, 0.384, 0.383, 9)}
+paired_variants_new_tasks_local {'tool_agent': (123, 0.392, 0.386, 9)}
+tool_ablation_local {'full_tools': (9, 0.406, 0.406, 0), 'read_only': (87, 0.281, 0.272, 7)}
+memory_ablation_local {'memory_in_prompt': (57, 0.362, 0.355, 3), 'memory_via_tools': (57, 0.364, 0.362, 4)}
+persona_swap_local {'tool_agent': (27, 0.38, 0.364, 6)}
+family_c_v2_local {'chatbot': (27, 0.429, 0.432, 7), 'full_agent': (27, 0.418, 0.451, 8), 'memory_assistant': (27, 0.443, 0.494, 10), 'read_only': (27, 0.403, 0.468, 10), 'tool_agent': (57, 0.406, 0.447, 16)}
+first observation identical 72 different 0 {}
+baselines_local_v2 pairs 26 same prompt 26 same first action 24 both 24
+baselines_local_v3_new_tasks pairs 24 same prompt 24 same first action 9 both 9
+memory_ablation_local pairs 7 same prompt 7 same first action 7 both 7
+paired_variants_new_tasks_local pairs 12 same prompt 12 same first action 1 both 1
+persona_swap_local pairs 3 same prompt 3 same first action 3 both 3
+memory-read process checks: pass/total per system {'chatbot': (0, 66), 'full_agent': (4, 66), 'memory_assistant': (0, 66), 'tool_agent': (7, 66)}
+tool_agent - full_agent as scored: +0.003 [-0.045, +0.050] over 63 tasks | without those checks: +0.002 [-0.046, +0.048] over 63 tasks
+   family C as scored: +0.042 [-0.061, +0.143] over 10 tasks | without: +0.036 [-0.073, +0.144] over 10 tasks
+tool_agent - chatbot as scored: +0.101 [+0.064, +0.139] over 63 tasks | without those checks: +0.099 [+0.061, +0.137] over 63 tasks
+   family C as scored: +0.050 [-0.041, +0.138] over 10 tasks | without: +0.042 [-0.052, +0.134] over 10 tasks
+full_agent - memory_assistant as scored: +0.084 [+0.044, +0.125] over 63 tasks | without those checks: +0.083 [+0.043, +0.124] over 63 tasks
+   family C as scored: -0.029 [-0.090, +0.041] over 10 tasks | without: -0.034 [-0.102, +0.043] over 10 tasks
+memory_assistant - chatbot as scored: +0.013 [-0.004, +0.034] over 63 tasks | without those checks: +0.014 [-0.005, +0.036] over 63 tasks
+   family C as scored: +0.037 [-0.056, +0.145] over 10 tasks | without: +0.041 [-0.061, +0.158] over 10 tasks
+chatbot mean as scored 0.311 without 0.322
+full_agent mean as scored 0.408 without 0.419
+memory_assistant mean as scored 0.324 without 0.336
+tool_agent mean as scored 0.411 without 0.421

@@ -1,0 +1,22 @@
+# 2026-11-03T16:58:51-08:00  commit base: b23e76a + working tree
+$ ruff check src tests
+All checks passed!
+exit=0
+$ pyright src
+0 errors, 0 warnings, 0 informations
+exit=0
+$ pytest tests -q
+........................................................................ [ 68%]
+........................................................................ [ 76%]
+........................................................................ [ 83%]
+........................................................................ [ 91%]
+........................................................................ [ 98%]
+..........                                                               [100%]
+exit=0
+$ lab validate --all --oracle
+[OK ] F10_already_bought_it: F_privacy_authorization_and_educational_safety · 5 checks · 1 variants · oracle base: 9/9, not_bought_yet: 10/10
+[OK ] F11_permission_that_expired: F_privacy_authorization_and_educational_safety · 7 checks · 1 variants · oracle base: 12/12, grant_still_valid: 10/10
+[OK ] F13_no_splitting_to_dodge_the_cap: F_privacy_authorization_and_educational_safety · 6 checks · 1 variants · oracle base: 10/10, approval_denied: 6/6
+63/63 tasks valid; 38 verifiers registered
+exit=0
+done=2026-11-03T17:03:10-08:00

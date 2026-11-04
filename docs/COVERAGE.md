@@ -84,8 +84,8 @@
 | D08_put_it_back_the_way_it_was | D | marcus | 11 (5) | 1 | — | yes | 2 | cross session consistency, long term memory, proactive behavior, safety and authorization, tool use and execution |
 | D09_four_hours_a_week_total | D | ravi | 9 (4) | 2 | — | yes | 1 | cross session consistency, educational decision making, long term memory, personalized planning, proactive behavior, safety and authorization, tool use and execution |
 | D10_new_rule_goes_into_memory | D | eleanor | 8 (4) | 2 | — | yes | 3 | cross session consistency, long term memory, personalized planning, proactive behavior, safety and authorization, tool use and execution |
-| E01_exam_moved_earlier | E | dana | 11 (4) | 2 | exam_rescheduled, sick_day | family oracle | 2 | educational decision making, event driven replanning, long term memory, proactive behavior, safety and authorization, tool use and execution |
-| E02_calendar_tool_outage | E | dana | 7 (3) | 1 | tool_outage, tool_restored | yes | 1 | educational decision making, long horizon task completion, long term memory, proactive behavior, safety and authorization, tool use and execution |
+| E01_exam_moved_earlier | E | dana | 10 (4) | 2 | exam_rescheduled, sick_day | family oracle | 2 | educational decision making, event driven replanning, long term memory, proactive behavior, safety and authorization, tool use and execution |
+| E02_calendar_tool_outage | E | dana | 7 (3) | 1 | tool_outage, tool_restored | yes | 2 | educational decision making, long horizon task completion, long term memory, proactive behavior, safety and authorization, tool use and execution |
 | E03_kids_event_lands_on_a_study_night | E | theo | 7 (3) | 2 | calendar_change | yes | 1 | educational decision making, event driven replanning, long term memory, proactive behavior, tool use and execution |
 | E04_rule_changes_mid_session | E | priya | 6 (2) | 1 | preference_update | yes | 2 | cross session consistency, educational decision making, event driven replanning, long term memory, proactive behavior, tool use and execution |
 | E05_meet_added_blocks_the_next_day | E | jun | 8 (3) | 2 | calendar_change | yes | 2 | cross session consistency, educational decision making, event driven replanning, long term memory, proactive behavior, tool use and execution |
@@ -103,7 +103,7 @@
 | F06_schedule_to_the_group_grades_to_nobody | F | sofia | 7 (4) | 1 | — | yes | 1 | cross session consistency, long term memory, safety and authorization, tool use and execution |
 | F07_allowed_means_do_it | F | eleanor | 8 (2) | 1 | — | yes | 3 | educational decision making, proactive behavior, safety and authorization, tool use and execution |
 | F08_no_data_no_report | F | priya | 7 (3) | 2 | tool_outage, tool_restored | yes | 3 | educational decision making, event driven replanning, proactive behavior, safety and authorization, tool use and execution |
-| F09_tell_her_only_if_i_pass | F | priya | 7 (2) | 1 | assessment_result | yes | 2 | event driven replanning, long term memory, proactive behavior, safety and authorization, tool use and execution |
+| F09_tell_her_only_if_i_pass | F | priya | 8 (2) | 1 | assessment_result | yes | 3 | event driven replanning, long term memory, proactive behavior, safety and authorization, tool use and execution |
 | F10_already_bought_it | F | noor | 5 (3) | 1 | — | yes | 1 | proactive behavior, safety and authorization, tool use and execution |
-| F11_permission_that_expired | F | priya | 7 (3) | 1 | — | yes | 2 | proactive behavior, safety and authorization, tool use and execution |
+| F11_permission_that_expired | F | priya | 7 (3) | 1 | — | yes | 4 | proactive behavior, safety and authorization, tool use and execution |
 | F13_no_splitting_to_dodge_the_cap | F | priya | 6 (3) | 1 | — | yes | 1 | proactive behavior, safety and authorization, tool use and execution |

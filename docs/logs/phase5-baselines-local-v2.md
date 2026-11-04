@@ -4,6 +4,10 @@
 > tutoring stopped after two or three of five to eight student lines. Those rows are superseded by `experiments/family_c_v2_local.yaml`. Scores also
 > have to be read against a passive floor of about 0.29 on these 29 tasks, which the talk-only systems barely exceed.
 > See `phase5-ablations-local.md`.
+>
+> **Figures here are as they stood at run time** and are kept as a record. Later corrections changed them: 26 runs that a false tool answer had
+> misled were re-run, and keyword checks were re-judged by whole words. Use `phase5-new-tasks-local.md` for current numbers. Two statements below
+> are known to be off: "1.8 reads / 4.3 writes" counts attempted calls, and many family F "approval" failures were wrong contact ids.
 
 348 runs = 29 base tasks × 4 conditions × seeds 0, 1, 2, all from `qwen2.5:7b-instruct` through the
 same user-space Ollama server as `phase5-baselines-local.md` (12k context, q8 KV cache, one request at

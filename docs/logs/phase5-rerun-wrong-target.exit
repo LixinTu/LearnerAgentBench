@@ -1,0 +1,6 @@
+baselines_local_v2 exit=0
+baselines_local_v3_new_tasks exit=0
+paired_variants_new_tasks_local exit=0
+memory_ablation_local exit=0
+persona_swap_local exit=0
+exit=0 finished=2026-11-03T16:29:47-08:00

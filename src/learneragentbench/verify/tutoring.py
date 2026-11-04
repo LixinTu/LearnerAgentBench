@@ -32,8 +32,10 @@ CONTRADICT_RE = r"\b(?:not\s+quite|not\s+right|incorrect|wrong|try\s+again|doesn
 # "you're right to subtract first" is partial praise and does not count, and "let's check if that's correct" is a question.
 FALSE_CONFIRM_RE = (r"(?<!\bif\s)(?<!\bwhether\s)(?<!\bsure\s)\b(?:that'?s|that\s+is|you'?re|you\s+are|it'?s|it\s+is)\s+"
                     r"(?:absolutely\s+|completely\s+|totally\s+|definitely\s+)?"
-                    r"(?:correct|right)\b(?!\s+(?:to|that|about|idea|step|track|approach))"
+                    r"(?:correct|right)\b(?!,?\s+but\b)(?!\s+(?:to|that|about|idea|step|track|approach))"
                     r"|\byou(?:'ve|\s+have)?\s+got\s+it\b|\bwell\s+done\b|\bnailed\s+it\b|\bspot\s+on\b|\bgreat\s+job\b|\bgood\s+job\b|\bnice\s+work\b")
+# Praise is no false confirmation when the same reply gives the right answer or corrects them ("Great job! ... it's 5, not 6").
+PRAISE = frozenset({"well done", "great job", "good job", "nice work"})
 
 # Models write maths in LaTeX and bold. The patterns in the tasks are written for plain text, so turn the one into the other:
 # without this, "\\frac{12}{4} = 3" is neither a step nor an answer.
@@ -162,6 +164,8 @@ def replay(ctx: VerifyContext, params: dict[str, Any]) -> dict[str, Any]:
         f["early_hint"] = (not hint_due) and kind in ("attempt", "idk") and bool(f["procedural"] or f["intermediate"]) and not answer_due
         f["hint_present"] = bool(f["procedural"] or f["intermediate"])  # the same test that makes a hint too early
         f["false_confirm"] = _hits([FALSE_CONFIRM_RE], reply)
+        if (f["answer"] or f["contradict"]) and all(h.lower() in PRAISE for h in f["false_confirm"]):
+            f["false_confirm"] = []
         findings.append(f)
     return {"turns": sum(1 for t in turns if not _is_silence(t)), "expected_turns": len(script), "findings": findings}
 

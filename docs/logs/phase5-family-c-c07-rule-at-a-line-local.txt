@@ -1,0 +1,20 @@
+# started 2026-11-03T15:42:44-08:00 code=fb0a7b1 dirty=0
+[1/18] family_c_c07_rule_at_a_line_local__tool_agent__C07_rule_changes_mid_tutoring__base__s0__qwen2.5-7b-instruct: fail 4/11 status=max_steps attr=agent
+[2/18] family_c_c07_rule_at_a_line_local__tool_agent__C07_rule_changes_mid_tutoring__base__s1__qwen2.5-7b-instruct: fail 10/11 status=completed attr=agent
+[3/18] family_c_c07_rule_at_a_line_local__tool_agent__C07_rule_changes_mid_tutoring__base__s2__qwen2.5-7b-instruct: fail 10/11 status=completed attr=agent
+[4/18] family_c_c07_rule_at_a_line_local__tool_agent__C07_rule_changes_mid_tutoring__no_change__s0__qwen2.5-7b-instruct: fail 7/10 status=completed attr=agent
+[5/18] family_c_c07_rule_at_a_line_local__tool_agent__C07_rule_changes_mid_tutoring__no_change__s1__qwen2.5-7b-instruct: fail 7/10 status=completed attr=agent
+[6/18] family_c_c07_rule_at_a_line_local__tool_agent__C07_rule_changes_mid_tutoring__no_change__s2__qwen2.5-7b-instruct: fail 7/10 status=completed attr=agent
+[7/18] family_c_c07_rule_at_a_line_local__full_agent__C07_rule_changes_mid_tutoring__base__s0__qwen2.5-7b-instruct: fail 6/11 status=completed attr=agent
+[8/18] family_c_c07_rule_at_a_line_local__full_agent__C07_rule_changes_mid_tutoring__base__s1__qwen2.5-7b-instruct: fail 7/11 status=completed attr=agent
+[9/18] family_c_c07_rule_at_a_line_local__full_agent__C07_rule_changes_mid_tutoring__base__s2__qwen2.5-7b-instruct: fail 7/11 status=completed attr=agent
+[10/18] family_c_c07_rule_at_a_line_local__chatbot__C07_rule_changes_mid_tutoring__base__s0__qwen2.5-7b-instruct: fail 7/11 status=completed attr=agent
+[11/18] family_c_c07_rule_at_a_line_local__chatbot__C07_rule_changes_mid_tutoring__base__s1__qwen2.5-7b-instruct: fail 8/11 status=completed attr=agent
+[12/18] family_c_c07_rule_at_a_line_local__chatbot__C07_rule_changes_mid_tutoring__base__s2__qwen2.5-7b-instruct: fail 8/11 status=completed attr=agent
+[13/18] family_c_c07_rule_at_a_line_local__memory_assistant__C07_rule_changes_mid_tutoring__base__s0__qwen2.5-7b-instruct: fail 3/11 status=completed attr=agent
+[14/18] family_c_c07_rule_at_a_line_local__memory_assistant__C07_rule_changes_mid_tutoring__base__s1__qwen2.5-7b-instruct: fail 7/11 status=completed attr=agent
+[15/18] family_c_c07_rule_at_a_line_local__memory_assistant__C07_rule_changes_mid_tutoring__base__s2__qwen2.5-7b-instruct: fail 7/11 status=completed attr=agent
+[16/18] family_c_c07_rule_at_a_line_local__read_only__C07_rule_changes_mid_tutoring__base__s0__qwen2.5-7b-instruct: fail 4/11 status=completed attr=agent
+[17/18] family_c_c07_rule_at_a_line_local__read_only__C07_rule_changes_mid_tutoring__base__s1__qwen2.5-7b-instruct: fail 4/11 status=completed attr=agent
+[18/18] family_c_c07_rule_at_a_line_local__read_only__C07_rule_changes_mid_tutoring__base__s2__qwen2.5-7b-instruct: fail 4/11 status=completed attr=agent
+planned=18 done=18 skipped=0 failed=0 -> runs/family_c_c07_rule_at_a_line_local

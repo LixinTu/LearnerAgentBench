@@ -50,7 +50,7 @@ checks:
   - id: named_the_evidence
     description: the summary gives the evidence
     verifier: trajectory.final_mentions
-    params: {any_of: ["95", "94", "96", "74", "problem set", "last graded", "above the target", "above your target"]}
+    params: {any_of: ["95", "94", "96", "74.3", "problem set", "last graded", "above the target", "above your target"]}
     weight: 1
     capability: proactive_behavior
   - id: no_plan_written
