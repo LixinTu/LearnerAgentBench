@@ -96,13 +96,13 @@ checks:
   - id: mentor_report_sent
     description: one message to the mentor mentioning both courses
     verifier: message.sent
-    params: {to: mentor_sato, body_contains: "Biostat", min_count: 1, max_count: 1}
+    params: {to: mentor_sato, body_contains: [biostat, biostatistics, "stat 201"], min_count: 1, max_count: 1}
     weight: 2
     capability: tool_use_and_execution
   - id: mentor_report_covers_bio
     description: the mentor message also covers Cell Biology
     verifier: message.sent
-    params: {to: mentor_sato, body_contains: "Cell Bio", min_count: 1}
+    params: {to: mentor_sato, body_contains: ["cell bio", "cell biology", "bio 110", "bio 201"], min_count: 1}
     weight: 1
     capability: proactive_behavior
   - id: parent_untouched

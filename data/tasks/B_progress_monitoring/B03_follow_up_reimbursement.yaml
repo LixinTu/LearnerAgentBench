@@ -34,7 +34,7 @@ checks:
   - id: reimbursement_task
     description: a task for the reimbursement form exists
     verifier: todo.exists
-    params: {title_contains: "reimburs", created_by: agent}
+    params: {title_contains: [reimburse, reimbursement], created_by: agent}
     weight: 2
     hard: true
     capability: long_term_memory
@@ -67,7 +67,7 @@ checks:
   - id: summary_names_deadline
     description: the summary mentions the reimbursement deadline
     verifier: trajectory.final_mentions
-    params: {any_of: ["november 20", "nov 20", "20th", reimburs]}
+    params: {any_of: ["november 20", "nov 20", "20th", reimburse, reimbursement]}
     weight: 1
     capability: proactive_behavior
   - id: finished

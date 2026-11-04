@@ -51,7 +51,7 @@ checks:
   - id: group_message_has_schedule
     description: the group message mentions the study blocks
     verifier: message.sent
-    params: {to: group_chat, body_contains: "Nov", min_count: 1, max_count: 1}
+    params: {to: group_chat, body_contains: [nov, november], min_count: 1, max_count: 1}
     weight: 2
     capability: tool_use_and_execution
   - id: group_got_no_grade

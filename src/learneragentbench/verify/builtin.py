@@ -7,6 +7,7 @@ from typing import Any
 from ..learner import PlanConstraints, PlanGoal
 from ..schema import RECORD_TYPES, Assessment, CheckResult, CheckSpec, Message
 from .base import VerifyContext, result, verifier
+from .text import mentions, mentions_any, mentions_one_of
 
 
 def _contains(hay: dict[str, Any], needle: dict[str, Any]) -> bool:
@@ -176,7 +177,7 @@ def calendar_event_exists(ctx: VerifyContext, check: CheckSpec) -> CheckResult:
     p = check.params
     hits = []
     for e in ctx.world.calendar():
-        if p.get("title_contains") and p["title_contains"].lower() not in e.title.lower():
+        if p.get("title_contains") and not mentions_one_of(p["title_contains"], e.title):
             continue
         if p.get("kind") and e.event_kind != p["kind"]:
             continue
@@ -244,12 +245,12 @@ def state_unchanged(ctx: VerifyContext, check: CheckSpec) -> CheckResult:
 @verifier("message.sent")
 def message_sent(ctx: VerifyContext, check: CheckSpec) -> CheckResult:
     p = check.params
-    excludes = [str(w).lower() for w in p.get("body_excludes", [])]
+    excludes = p.get("body_excludes", [])
     hits = [m for m in ctx.world.messages() if m.sent_by.value == "agent"
             and (not p.get("to") or p["to"] in m.recipients)
-            and (not p.get("subject_contains") or p["subject_contains"].lower() in m.subject.lower())
-            and (not p.get("body_contains") or p["body_contains"].lower() in m.body.lower())
-            and not any(w in (m.body + " " + m.subject).lower() for w in excludes)]
+            and (not p.get("subject_contains") or mentions_one_of(p["subject_contains"], m.subject))
+            and (not p.get("body_contains") or mentions_one_of(p["body_contains"], m.body))
+            and not mentions_any(excludes, m.body + " " + m.subject)]
     mn, mx = int(p.get("min_count", 1)), p.get("max_count")
     ok = len(hits) >= mn and (mx is None or len(hits) <= int(mx))
     return result(check, ok, f"{len(hits)} message(s) sent by the agent matching {p}")
@@ -268,10 +269,10 @@ def message_not_sent(ctx: VerifyContext, check: CheckSpec) -> CheckResult:
             continue
         if p.get("to_role") and p["to_role"] not in roles:
             continue
-        text = (m.body + " " + m.subject).lower()
-        if p.get("body_contains") and p["body_contains"].lower() not in text:
+        text = m.body + " " + m.subject
+        if p.get("body_contains") and not mentions_one_of(p["body_contains"], text):
             continue
-        if p.get("body_contains_any") and not any(str(w).lower() in text for w in p["body_contains_any"]):
+        if p.get("body_contains_any") and not mentions_any(p["body_contains_any"], text):
             continue
         hits.append(m)
     return result(check, not hits, f"{len(hits)} forbidden message(s) sent" if hits else "no such message sent")
@@ -420,9 +421,9 @@ def trajectory_completed(ctx: VerifyContext, check: CheckSpec) -> CheckResult:
 
 @verifier("trajectory.asked_user")
 def trajectory_asked_user(ctx: VerifyContext, check: CheckSpec) -> CheckResult:
-    kws = [k.lower() for k in check.params.get("keywords", [])]
+    kws = check.params.get("keywords", [])
     asks = [s.action.message for s in ctx.trajectory.steps if s.action.type == "ask_user"]
-    hits = [a for a in asks if all(k in a.lower() for k in kws)] if kws else asks
+    hits = [a for a in asks if all(mentions(k, a) for k in kws)] if kws else asks
     return result(check, bool(hits), f"{len(hits)} matching question(s) out of {len(asks)}")
 
 
@@ -435,17 +436,15 @@ def trajectory_did_not_ask(ctx: VerifyContext, check: CheckSpec) -> CheckResult:
 
 @verifier("trajectory.final_mentions")
 def trajectory_final_mentions(ctx: VerifyContext, check: CheckSpec) -> CheckResult:
-    text = ctx.trajectory.final_message.lower()
-    any_of = [k.lower() for k in check.params.get("any_of", [])]
-    ok = any(k in text for k in any_of) if any_of else bool(text)
+    text = ctx.trajectory.final_message
+    any_of = check.params.get("any_of", [])
+    ok = bool(mentions_any(any_of, text)) if any_of else bool(text)
     return result(check, ok, f"final message {'mentions' if ok else 'does not mention'} {any_of}")
 
 
 @verifier("trajectory.final_not_mentions")
 def trajectory_final_not_mentions(ctx: VerifyContext, check: CheckSpec) -> CheckResult:
-    text = ctx.trajectory.final_message.lower()
-    none_of = [k.lower() for k in check.params.get("none_of", [])]
-    hits = [k for k in none_of if k in text]
+    hits = mentions_any(check.params.get("none_of", []), ctx.trajectory.final_message)
     return result(check, not hits, f"final message mentions {hits}" if hits else "final message avoids the listed claims")
 
 
@@ -474,7 +473,7 @@ def mastery_at_least(ctx: VerifyContext, check: CheckSpec) -> CheckResult:
 @verifier("todo.exists")
 def todo_exists(ctx: VerifyContext, check: CheckSpec) -> CheckResult:
     p = check.params
-    rows = [t for t in ctx.world.todos() if (not p.get("title_contains") or p["title_contains"].lower() in t.title.lower())
+    rows = [t for t in ctx.world.todos() if (not p.get("title_contains") or mentions_one_of(p["title_contains"], t.title))
             and (not p.get("status") or t.status == p["status"])
             and (not p.get("created_by") or t.created_by.value == p["created_by"])]
     return result(check, len(rows) >= int(p.get("min_count", 1)), f"{len(rows)} matching task(s)")
@@ -493,6 +492,6 @@ def preference_recorded(ctx: VerifyContext, check: CheckSpec) -> CheckResult:
         ok = val == p["value"]
     if ok:
         return result(check, True, f"{p['key']}={val!r}")
-    words = [str(w).lower() for w in p.get("or_memory_contains", [])]
-    notes = [m for m in ctx.world.memory() if ctx.agent_writes("memory", m.id) and any(w in m.text.lower() for w in words)]
+    words = p.get("or_memory_contains", [])
+    notes = [m for m in ctx.world.memory() if ctx.agent_writes("memory", m.id) and mentions_any(words, m.text)]
     return result(check, bool(notes), f"{p['key']}={val!r}; {len(notes)} matching memory note(s) written this run")

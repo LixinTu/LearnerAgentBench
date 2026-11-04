@@ -21,7 +21,7 @@ from ..schema import (
     ToolCallRecord,
     new_id,
 )
-from .permissions import resolve_permission
+from .permissions import resolve_permission, unknown_target
 from .registry import ToolRegistry, ToolSpec
 
 
@@ -117,6 +117,9 @@ class ToolExecutor:
                           error_type="permission", _status="forbidden")
         approval_id: str | None = None
         if spec.mutates and level == PermissionLevel.REQUIRES_APPROVAL:
+            missing = unknown_target(world, norm_args)
+            if missing:
+                return finish(error=missing, error_type="not_found")
             req = self._find_or_create_request(spec, norm_args)
             approval_id = req.id
             if req.status == ApprovalStatus.PENDING:

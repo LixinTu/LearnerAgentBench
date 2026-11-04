@@ -141,7 +141,7 @@ variants:
         hard: true
         capability: long_term_memory
       - {id: looked_at_the_calendar, description: the calendar was read after the change, verifier: event.responded_with_tool, params: {event_id: wednesday_event, tool: get_calendar_events}, weight: 1, capability: proactive_behavior}
-      - {id: said_what_moved, description: the summary names the football, verifier: trajectory.final_mentions, params: {any_of: [football, wednesday, moved]}, weight: 1, capability: proactive_behavior}
+      - {id: said_what_moved, description: the summary names the football, verifier: trajectory.final_mentions, params: {any_of: [football, moved]}, weight: 1, capability: proactive_behavior}
     reference_path:
       - {action: tool_call, tool: get_preferences}
       - {action: tool_call, tool: get_study_plan}

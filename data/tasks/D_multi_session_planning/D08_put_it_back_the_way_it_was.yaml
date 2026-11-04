@@ -124,7 +124,7 @@ checks:
   - id: said_restored
     description: the summary says the earlier version is back
     verifier: trajectory.final_mentions
-    params: {any_of: ["put back", "restored", "reverted", "back to", "as it was", "back the way", "saturday"]}
+    params: {any_of: ["put back", "restored", "reverted", "back to", "as it was", "back the way", "saturday back", "saturday is back", "saturday morning is back"]}
     weight: 1
     capability: proactive_behavior
   - id: calendar_consistent

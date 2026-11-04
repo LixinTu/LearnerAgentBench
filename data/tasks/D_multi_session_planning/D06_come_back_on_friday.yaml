@@ -80,7 +80,7 @@ checks:
   - id: distributions_rescheduled
     description: the skipped distributions block is back — a distributions study event after Friday evening
     verifier: calendar.event_exists
-    params: {kind: study, title_contains: istribution, created_by: agent, start_after: "2026-11-06T20:00:00", min_count: 1}
+    params: {kind: study, title_contains: [distribution, distributions], created_by: agent, start_after: "2026-11-06T20:00:00", min_count: 1}
     weight: 2
     capability: event_driven_replanning
   - id: nothing_on_the_trip
@@ -109,7 +109,7 @@ checks:
   - id: honest_summary
     description: the summary says Wednesday was skipped
     verifier: trajectory.final_mentions
-    params: {any_of: [wednesday, skipped, missed]}
+    params: {any_of: ["wednesday's", "wednesday block", "wednesday session", skipped, missed, "didn't do", "did not do"]}
     weight: 1
     capability: proactive_behavior
   - id: calendar_consistent

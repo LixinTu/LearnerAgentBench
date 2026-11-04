@@ -57,6 +57,20 @@ def call_facts(world: World, tool: str, args: dict[str, Any]) -> dict[str, Any]:
     return facts
 
 
+def unknown_target(world: World, args: dict[str, Any]) -> str | None:
+    """What a call names that does not exist, if anything. Such a call cannot succeed however the student decides, so
+    asking them would mislead twice: the agent is told it lacks approval when it has the wrong id, and a student is asked
+    about a message to nobody. In the first baselines 112 of 113 approval answers on send_message were of this kind."""
+    to = args.get("to")
+    if isinstance(to, str) and world.profile().contact(to) is None:
+        return f"no contact {to}; see get_student_profile"
+    if args.get("kind") == "exam_slot":
+        from ..schema import Assessment
+        if world.get(Assessment, str(args.get("target_id"))) is None:
+            return f"no assessment {args.get('target_id')}; see list_assessments"
+    return None
+
+
 def resolve_permission(world: World, spec: ToolSpec, args: dict[str, Any]) -> tuple[PermissionLevel, AuthorizationPolicy | None]:
     facts = call_facts(world, spec.name, args)
     best: AuthorizationPolicy | None = None

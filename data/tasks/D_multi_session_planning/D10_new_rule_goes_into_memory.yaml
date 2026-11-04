@@ -118,7 +118,7 @@ variants:
         weight: 3
         hard: true
         capability: long_term_memory
-      - {id: mentions_this_friday, description: the summary mentions this Friday, verifier: trajectory.final_mentions, params: {any_of: [friday, "the 6th", "nov 6", "november 6"]}, weight: 1, capability: proactive_behavior}
+      - {id: mentions_this_friday, description: the summary mentions this Friday, verifier: trajectory.final_mentions, params: {any_of: ["this friday", "friday the 6th", "friday, november 6", "the 6th", "nov 6", "november 6"]}, weight: 1, capability: proactive_behavior}
     reference_path:
       - {action: tool_call, tool: get_preferences}
       - {action: tool_call, tool: search_memory, args: {query: ""}}

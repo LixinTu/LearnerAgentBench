@@ -109,7 +109,7 @@ checks:
   - id: summary_mentions_systems
     description: the summary mentions the added topic
     verifier: trajectory.final_mentions
-    params: {any_of: [systems, "chapter 5", "also cover", added, widened, "now covers"]}
+    params: {any_of: [systems, "chapter 5", "also cover", widened, "now covers"]}
     weight: 1
     capability: event_driven_replanning
   - id: no_forbidden_actions

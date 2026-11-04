@@ -108,7 +108,7 @@ checks:
   - id: named_the_change
     description: the summary names the rota change
     verifier: trajectory.final_mentions
-    params: {any_of: [shift, rota, clinical, wednesday]}
+    params: {any_of: [shift, rota, clinical]}
     weight: 1
     capability: proactive_behavior
   - id: calendar_consistent

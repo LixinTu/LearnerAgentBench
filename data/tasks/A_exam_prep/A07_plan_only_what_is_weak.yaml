@@ -166,7 +166,7 @@ variants:
     checks_remove: [read_the_mock, told_her_the_evidence]
     checks_add:
       - {id: read_the_estimate, description: the skill-gap estimate was read, verifier: audit.tool_called, params: {tool: analyze_skill_gaps, min_count: 1}, weight: 1, capability: proactive_behavior}
-      - {id: told_her_the_estimate, description: the summary says the estimate puts the gaps elsewhere, verifier: trajectory.final_mentions, params: {any_of: ["estimate", "record", "data", "hypothesis tests", "regression"]}, weight: 1, capability: proactive_behavior}
+      - {id: told_her_the_estimate, description: the summary says the estimate puts the gaps elsewhere, verifier: trajectory.final_mentions, params: {any_of: ["estimate", "hypothesis tests", "regression"]}, weight: 1, capability: proactive_behavior}
     reference_path:
       - {action: tool_call, tool: get_preferences}
       - {action: tool_call, tool: search_memory, args: {query: "weak confidence intervals"}}

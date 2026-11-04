@@ -9,7 +9,7 @@ from pathlib import Path
 from learneragentbench.env import build_world
 from learneragentbench.schema import AuthorizationPolicy, PermissionLevel
 from learneragentbench.tasks import Dataset
-from learneragentbench.tools import REGISTRY
+from learneragentbench.tools import REGISTRY, ToolContext, ToolExecutor
 from learneragentbench.tools.permissions import resolve_permission
 
 DS = Dataset()
@@ -54,3 +54,41 @@ def test_grant_expires_as_virtual_time_advances() -> None:
         assert resolve_permission(w, spec, args)[0] == PermissionLevel.ALLOWED
         w.advance(minutes=180, reason="test")
         assert resolve_permission(w, spec, args)[0] == PermissionLevel.REQUIRES_APPROVAL
+
+
+def _executor(tmp: Path):
+    world = _world(tmp)
+    return world, ToolExecutor(REGISTRY, ToolContext(world, run_id="r"))
+
+
+def test_a_message_to_someone_who_does_not_exist_is_not_a_question_of_approval(tmp_path: Path) -> None:
+    """Models write `dr.cho` when the contact is `advisor_cho`. They used to be told to wait for the student's approval,
+    and the student then denied a message to nobody, so the real problem never reached them."""
+    world, ex = _executor(tmp_path)
+    r = ex.call("send_message", {"to": "dr.cho", "subject": "s", "body": "b"})
+    assert r.status == "error"
+    assert "no contact dr.cho" in (r.error or "") and "get_student_profile" in (r.error or "")
+    assert world.approvals() == []  # the student is not bothered
+
+
+def test_a_real_contact_without_a_grant_still_needs_approval(tmp_path: Path) -> None:
+    world, ex = _executor(tmp_path)
+    spec = REGISTRY.spec("send_message")
+    who = next(c.id for c in world.profile().contacts if resolve_permission(world, spec, {"to": c.id})[0] == PermissionLevel.REQUIRES_APPROVAL)
+    r = ex.call("send_message", {"to": who, "subject": "s", "body": "b"})
+    assert r.status == "pending_approval"
+    assert len(world.approvals()) == 1
+
+
+def test_booking_an_exam_that_does_not_exist_is_not_a_question_of_approval(tmp_path: Path) -> None:
+    world, ex = _executor(tmp_path)
+    r = ex.call("book_slot", {"kind": "exam_slot", "target_id": "exam_1234567890", "slot_start": "2026-11-20T09:00:00", "slot_end": "2026-11-20T11:00:00"})
+    assert r.status == "error"
+    assert "no assessment" in (r.error or "")
+    assert world.approvals() == []
+
+
+def test_a_forbidden_tool_stays_forbidden_whatever_it_names(tmp_path: Path) -> None:
+    _, ex = _executor(tmp_path)
+    r = ex.call("submit_assignment", {"assignment_id": "nothing_like_this", "content": "x"})
+    assert r.status == "forbidden"
