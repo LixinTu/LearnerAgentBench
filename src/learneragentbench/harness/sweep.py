@@ -155,3 +155,49 @@ def run_sweep(path: str | Path, *, out_root: str | Path, data_dir: str | None = 
         manifest_path.write_text(json.dumps(manifest, indent=2), encoding="utf-8")
     manifest_path.write_text(json.dumps(manifest, indent=2), encoding="utf-8")
     return {"planned": len(runs), "done": done, "skipped": skipped, "failed": failed, "out": str(out_dir)}
+
+
+def rerun_runs(root: str | Path, run_ids: list[str], *, data_dir: str | None = None, log=print, **run_kw: Any) -> dict[str, int]:
+    """Run stored runs again, same configuration and seed, after a fix to something the agent sees. They replace the old
+    ones in place, so every analysis of the sweep sees the fixed set; the originals move to ``_superseded/<sweep>/`` beside
+    the sweep. Runs the fix cannot have touched stay as they are. Resumable: a re-run that finished is skipped."""
+    root = Path(root)
+    ds = Dataset(data_dir)
+    old_root = root.parent / "_superseded" / root.name
+    done = skipped = failed = 0
+    fields = set(RunConfig.model_fields)
+    manifest_path = root / "manifest.json"
+    manifest: dict[str, Any] = json.loads(manifest_path.read_text(encoding="utf-8")) if manifest_path.is_file() else {}
+    exp = manifest.get("experiment")
+    if exp and not run_kw:
+        manifest.setdefault("reruns", []).append({**provenance(exp), "run_ids": run_ids})
+    for i, rid in enumerate(run_ids):
+        d, old = root / rid, old_root / rid
+        if old.exists() and (d / "verdict.json").is_file():
+            skipped += 1
+            continue
+        if d.exists() and old.exists():
+            shutil.rmtree(d)  # a re-run that was interrupted
+        elif d.exists():
+            old_root.mkdir(parents=True, exist_ok=True)
+            shutil.move(str(d), str(old))
+        elif not old.exists():
+            raise FileNotFoundError(f"no stored run {rid} under {root}")
+        stored = json.loads((old / "config.json").read_text(encoding="utf-8"))
+        cfg = RunConfig.model_validate({k: v for k, v in stored.items() if k in fields}).model_copy(update={"output_dir": str(root)})
+        try:
+            res = run_one(ds, stored["task_id"], stored["variant_id"], cfg, stored["seed"], out_root=root, run_id=rid, **run_kw)
+            v = res.verdict
+            log(f"[{i + 1}/{len(run_ids)}] {rid}: {'SUCCESS' if v.task_success else 'fail'} {v.score:g}/{v.max_score:g} "
+                f"status={res.trajectory.status} attr={v.failure_attribution}")
+            if "runs" in manifest:
+                manifest["runs"][rid] = {"condition": stored.get("condition"), "task_id": stored["task_id"], "variant_id": stored["variant_id"],
+                                         "seed": stored["seed"], "success": v.task_success, "score": v.score, "max_score": v.max_score,
+                                         "status": res.trajectory.status, "attribution": v.failure_attribution, "rerun": True}
+            done += 1
+        except Exception as exc:
+            failed += 1
+            log(f"[{i + 1}/{len(run_ids)}] {rid}: ERROR {type(exc).__name__}: {exc}")
+        if manifest:
+            manifest_path.write_text(json.dumps(manifest, indent=2), encoding="utf-8")
+    return {"done": done, "skipped": skipped, "failed": failed}

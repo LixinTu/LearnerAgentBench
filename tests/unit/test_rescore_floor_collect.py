@@ -12,6 +12,7 @@ from learneragentbench.analysis import collect_runs, passive_floor, summarize_ru
 from learneragentbench.harness import run_one
 from learneragentbench.harness.cli import main
 from learneragentbench.harness.runner import RescoreError, rescore
+from learneragentbench.harness.sweep import rerun_runs
 from learneragentbench.runtime import ActionListAdapter
 from learneragentbench.schema import Action, RunConfig
 from learneragentbench.tasks import Dataset
@@ -100,3 +101,26 @@ def test_collect_filters_and_never_counts_a_run_twice(tmp_path: Path) -> None:
     assert "cond" in summarize_runs(tmp_path / "out", group_by="condition")
     with pytest.raises(ValueError, match="collected before"):
         collect_runs(tmp_path / "out", [tmp_path / "a"])
+
+
+def test_rerun_replaces_in_place_and_keeps_the_original(tmp_path: Path) -> None:
+    ds = Dataset()
+    root = tmp_path / "sweep"
+    out = _run(ds, root, "First attempt.")
+    before = json.loads((out / "verdict.json").read_text(encoding="utf-8"))
+    factory = lambda c, t, w, e: ActionListAdapter([Action.final("Second attempt.")])  # noqa: E731
+    assert rerun_runs(root, ["r1"], adapter_factory=factory, log=lambda _: None) == {"done": 1, "skipped": 0, "failed": 0}
+    old = tmp_path / "_superseded" / "sweep" / "r1"
+    assert json.loads((old / "verdict.json").read_text(encoding="utf-8")) == before
+    new = json.loads((out / "trajectory.json").read_text(encoding="utf-8"))
+    assert new["final_message"] == "Second attempt."
+    cfg = json.loads((out / "config.json").read_text(encoding="utf-8"))
+    assert (cfg["seed"], cfg["condition"], cfg["task_id"], cfg["variant_id"]) == (0, "cond", TASK, "base")
+    # Resumable: a finished re-run is not repeated, and its original is not overwritten by it.
+    assert rerun_runs(root, ["r1"], adapter_factory=factory, log=lambda _: None) == {"done": 0, "skipped": 1, "failed": 0}
+    assert json.loads((old / "trajectory.json").read_text(encoding="utf-8"))["final_message"] == "First attempt."
+    # An interrupted re-run starts over from the stored configuration.
+    (out / "verdict.json").unlink()
+    assert rerun_runs(root, ["r1"], adapter_factory=factory, log=lambda _: None)["done"] == 1
+    with pytest.raises(FileNotFoundError):
+        rerun_runs(root, ["nothing_here"], adapter_factory=factory, log=lambda _: None)

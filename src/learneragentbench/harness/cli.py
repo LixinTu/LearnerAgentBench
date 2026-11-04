@@ -11,6 +11,7 @@
     lab show RUN_DIR
     lab summarize RUNS_ROOT [--group-by condition,family] [--floor]
     lab rescore RUNS_ROOT [--dry-run] [--skip-family F] [--skip-task T]
+    lab rerun RUNS_ROOT --ids FILE
     lab collect OUT ROOT [ROOT ...] [--where k=v] [--where-not k=v]
     lab compare RUNS_A RUNS_B [--filter-a k=v,...] [--filter-b k=v,...] [--pair-on task_id,seed]
     lab coverage [--write docs/COVERAGE.md]
@@ -137,6 +138,14 @@ def cmd_sweep(a: argparse.Namespace) -> int:
     stats = run_sweep(a.experiment, out_root=a.out, data_dir=a.data_dir, dry_run=a.dry_run, limit=a.limit)
     print(f"planned={stats['planned']} done={stats['done']} skipped={stats['skipped']} failed={stats['failed']} -> {stats['out']}")
     return 0
+
+
+def cmd_rerun(a: argparse.Namespace) -> int:
+    from .sweep import rerun_runs
+    ids = [line.strip() for line in Path(a.ids).read_text(encoding="utf-8").splitlines() if line.strip()]
+    stats = rerun_runs(a.runs_root, ids, data_dir=a.data_dir)
+    print(f"{a.runs_root}: {len(ids)} listed, done={stats['done']} skipped={stats['skipped']} failed={stats['failed']}")
+    return 1 if stats["failed"] else 0
 
 
 def cmd_coverage(a: argparse.Namespace) -> int:
@@ -286,6 +295,11 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("--dry-run", action="store_true")
     p.add_argument("--limit", type=int, default=None, help="run at most N new runs (resumable)")
     p.set_defaults(fn=cmd_sweep)
+
+    p = sub.add_parser("rerun", help="run stored runs again after a fix to what the agent sees; the originals move to _superseded/")
+    p.add_argument("runs_root")
+    p.add_argument("--ids", required=True, help="a file with one run id per line")
+    p.set_defaults(fn=cmd_rerun)
 
     p = sub.add_parser("coverage")
     p.add_argument("--write", default=None, help="write the Markdown matrix to this path")
